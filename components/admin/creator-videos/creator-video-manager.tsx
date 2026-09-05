@@ -540,7 +540,7 @@ export function CreatorVideoManager({
                     <span className="text-[11px] font-medium text-black/70 truncate max-w-[200px]">
                       {vid.product.name}
                     </span>
-                    <Link
+                    <Link prefetch={false}
                       href={`/product/${vid.product.slug}`}
                       target="_blank"
                       className="text-black/40 hover:text-black transition shrink-0"

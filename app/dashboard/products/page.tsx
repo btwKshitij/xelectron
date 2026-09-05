@@ -52,7 +52,7 @@ export default async function ProductsPage() {
                 >
                   More actions <ChevronDown className="size-3.5" />
                 </button>
-                <Link
+                <Link prefetch={false}
                   href="/dashboard/products/new"
                   className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-black px-3 text-xs font-medium text-white hover:bg-black/80"
                 >

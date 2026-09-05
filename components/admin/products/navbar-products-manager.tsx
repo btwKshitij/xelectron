@@ -126,7 +126,7 @@ export function NavbarProductsManager({ initialProducts }: { initialProducts: Na
                         <div className="relative flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50 text-xs font-bold text-slate-400">
                           {product.mainImage ? <Image src={product.mainImage} alt="" fill sizes="48px" className="object-contain p-1" /> : product.name.slice(0, 1)}
                         </div>
-                        <Link href={`/dashboard/products/${product.id}`} className="max-w-[430px] truncate text-sm font-semibold text-slate-900 transition-colors hover:text-[#005BD3] hover:underline">{product.name}</Link>
+                        <Link prefetch={false} href={`/dashboard/products/${product.id}`} className="max-w-[430px] truncate text-sm font-semibold text-slate-900 transition-colors hover:text-[#005BD3] hover:underline">{product.name}</Link>
                       </div>
                     </td>
                     <td className="border-b border-slate-100 px-4 py-3">{menuControl(product, "showInNavbar")}</td>

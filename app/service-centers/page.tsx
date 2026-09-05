@@ -75,10 +75,10 @@ export default function ServiceCentersPage() {
             <ShieldCheck className="size-6 text-[#0a7ae6]" />
             <h2 className="mt-4 text-xl font-bold text-slate-950">Can&apos;t visit us?</h2>
             <p className="mt-2 text-sm leading-6 text-slate-600">Submit a repair or replacement request to check whether your product is eligible for doorstep pickup.</p>
-            <Link href="/repair-replacement" className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#0a7ae6] px-4 py-3 text-sm font-bold text-white transition hover:bg-blue-600">
+            <Link prefetch={false} href="/repair-replacement" className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#0a7ae6] px-4 py-3 text-sm font-bold text-white transition hover:bg-blue-600">
               Submit a service request <ArrowRight className="size-4" />
             </Link>
-            <Link href="/terms-policy" className="mt-3 block text-center text-sm font-semibold text-[#0a7ae6] hover:underline">Read warranty terms</Link>
+            <Link prefetch={false} href="/terms-policy" className="mt-3 block text-center text-sm font-semibold text-[#0a7ae6] hover:underline">Read warranty terms</Link>
           </aside>
         </div>
       </section>

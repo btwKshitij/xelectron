@@ -527,7 +527,7 @@ export default function ProductDetail({
                     </span>
                     <span>/month (3 months)</span>
                   </div>
-                  <Link
+                  <Link prefetch={false}
                     href={`/checkout?product=${encodeURIComponent(product.slug || product.id)}&payment=velocity&emiTenure=3`}
                     onClick={addProductToCart}
                     className="rounded-lg bg-[#0a7ae6] px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-[#086ac9] transition active:scale-95"
@@ -702,7 +702,7 @@ export default function ProductDetail({
                       Out of Stock
                     </button>
                   ) : (
-                    <Link
+                    <Link prefetch={false}
                       href={`/checkout?product=${encodeURIComponent(product.slug || product.id)}`}
                       onClick={addProductToCart}
                       className="h-12 w-full rounded-lg bg-[#0a7ae6] text-white font-bold text-xs sm:text-sm uppercase tracking-wider shadow-md shadow-blue-500/25 hover:bg-[#086ac9] active:scale-[0.98] transition flex items-center justify-center gap-2"
@@ -1532,7 +1532,7 @@ export default function ProductDetail({
                 {isOutOfStock ? (
                   <span className="rounded-lg bg-slate-300 px-6 py-2 text-xs font-bold text-slate-600 sm:py-2.5 sm:text-sm">Out of Stock</span>
                 ) : (
-                  <Link
+                  <Link prefetch={false}
                     href={`/checkout?product=${encodeURIComponent(product.slug || product.id)}`}
                     onClick={addProductToCart}
                     className="rounded-lg bg-[#0a7ae6] px-6 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#086ac9] active:scale-95 sm:py-2.5 sm:text-sm"

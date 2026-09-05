@@ -834,7 +834,7 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
                           <span className="font-semibold text-black">
                             {banner.cta || "Shop now"}
                           </span>
-                          <Link
+                          <Link prefetch={false}
                             href={banner.linkUrl || "/shop"}
                             target="_blank"
                             className="inline-flex items-center gap-1 truncate text-[11px] text-sky-600 hover:text-sky-800 hover:underline max-w-[170px]"

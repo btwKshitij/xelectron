@@ -233,7 +233,7 @@ export function CollectionEditor() {
       <div className="mx-auto max-w-[968px]">
         <header className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="flex items-center gap-1.5 text-lg font-semibold"><Tag className="size-4" /><ChevronRight className="size-4 text-black/45" /> Add collection</h1>
-          <div className="flex items-center gap-2"><Link href="/dashboard/products/collections" className="inline-flex h-8 items-center rounded-lg bg-black/[0.06] px-3 text-xs font-medium hover:bg-black/10">Discard</Link><button type="button" disabled={!canSave} onClick={() => setSaved(true)} className="inline-flex h-8 items-center rounded-lg bg-black px-3 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:bg-black/15">{saved ? "Saved" : "Save"}</button></div>
+          <div className="flex items-center gap-2"><Link prefetch={false} href="/dashboard/products/collections" className="inline-flex h-8 items-center rounded-lg bg-black/[0.06] px-3 text-xs font-medium hover:bg-black/10">Discard</Link><button type="button" disabled={!canSave} onClick={() => setSaved(true)} className="inline-flex h-8 items-center rounded-lg bg-black px-3 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:bg-black/15">{saved ? "Saved" : "Save"}</button></div>
         </header>
 
         <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_318px]">

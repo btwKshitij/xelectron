@@ -27,14 +27,14 @@ export default async function DiscountsPage() {
                 <h1 className="flex items-center gap-2.5 text-xl font-medium text-[#1a1a1a]"><Settings2 className="size-5" /> Discounts</h1>
                 <p className="mt-1 text-sm text-black/55">Create and manage discounts for your online store.</p>
               </div>
-              <Link href="/dashboard/discounts/new" className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-black px-3 text-xs font-medium text-white hover:bg-black/80"><Plus className="size-3.5" /> Create discount</Link>
+              <Link prefetch={false} href="/dashboard/discounts/new" className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-black px-3 text-xs font-medium text-white hover:bg-black/80"><Plus className="size-3.5" /> Create discount</Link>
             </div>
             {discounts.length ? <DiscountsTable discounts={discounts.map((discount: any) => ({ ...discount, createdAt: discount.createdAt.toISOString() }))} /> : (
               <section className="mt-4 rounded-xl border border-black/10 bg-white px-4 py-14 text-center shadow-sm">
                 <div className="mx-auto flex size-10 items-center justify-center rounded-xl bg-[#005BD3]/10 text-[#005BD3]"><Tag className="size-5" /></div>
                 <h2 className="mt-4 text-sm font-semibold">Create your first discount</h2>
                 <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-black/55">Offer a percentage or fixed amount off across all products with a customer code or an automatic discount.</p>
-                <Link href="/dashboard/discounts/new" className="mt-5 inline-flex h-8 items-center gap-1.5 rounded-lg bg-black px-3 text-xs font-medium text-white hover:bg-black/80"><Plus className="size-3.5" /> Create discount</Link>
+                <Link prefetch={false} href="/dashboard/discounts/new" className="mt-5 inline-flex h-8 items-center gap-1.5 rounded-lg bg-black px-3 text-xs font-medium text-white hover:bg-black/80"><Plus className="size-3.5" /> Create discount</Link>
               </section>
             )}
           </main>

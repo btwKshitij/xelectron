@@ -66,7 +66,7 @@ export default function ReportsPage() {
               <header className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <Link
+                    <Link prefetch={false}
                       href="/dashboard/analytics"
                       className="text-xs font-semibold text-slate-500 hover:text-black flex items-center gap-1"
                     >

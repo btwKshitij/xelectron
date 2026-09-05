@@ -101,7 +101,7 @@ export default function BrandSetupSection({
               );
 
               return item.linkUrl ? (
-                <Link key={item.id} href={item.linkUrl} className="block shrink-0">
+                <Link prefetch={false} key={item.id} href={item.linkUrl} className="block shrink-0">
                   {cardContent}
                 </Link>
               ) : (
@@ -163,7 +163,7 @@ export default function BrandSetupSection({
             );
 
             return item.linkUrl ? (
-              <Link
+              <Link prefetch={false}
                 key={item.id}
                 href={item.linkUrl}
                 className={`h-full transition-all duration-500 ease-in-out ${

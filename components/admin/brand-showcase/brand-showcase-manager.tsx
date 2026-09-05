@@ -509,7 +509,7 @@ export function BrandShowcaseManager({
                       {/* Destination Category / Store / Custom Link */}
                       <td className="py-3 px-4">
                         {item.linkUrl && dest ? (
-                          <Link
+                          <Link prefetch={false}
                             href={item.linkUrl}
                             target="_blank"
                             className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition ${

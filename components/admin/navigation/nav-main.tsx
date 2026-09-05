@@ -66,7 +66,7 @@ function NavMainItem({
       >
         <SidebarMenuItem>
           <SidebarMenuButton isActive={routeActive} tooltip={item.title}>
-            <Link
+            <Link prefetch={false}
               href={item.url}
               data-active={routeActive}
               className={`flex flex-row items-center gap-2.5 w-full h-8 px-2.5 text-[13px] rounded-lg transition-all ${
@@ -86,7 +86,7 @@ function NavMainItem({
                 return (
                   <SidebarMenuSubItem key={subItem.title}>
                     <SidebarMenuSubButton isActive={isSubActive}>
-                      <Link
+                      <Link prefetch={false}
                         href={subItem.url}
                         className={`group/sub flex items-center gap-2 h-8 px-2 text-[13px] rounded-lg transition-all ${
                           isSubActive
@@ -113,7 +113,7 @@ function NavMainItem({
   return (
     <SidebarMenuItem>
       <SidebarMenuButton isActive={routeActive} tooltip={item.title}>
-        <Link
+        <Link prefetch={false}
           href={item.url}
           data-active={routeActive}
           className={`flex flex-row items-center gap-2.5 w-full h-8 px-2.5 text-[13px] rounded-lg transition-all ${

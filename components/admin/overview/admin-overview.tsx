@@ -327,7 +327,7 @@ export function AdminOverview({ data }: { data: DashboardData }) {
         <section className="min-w-0 rounded-xl border border-black/10 bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold">Recent orders</h2>
-            <Link href="/dashboard/orders" className="text-xs text-black/55 underline underline-offset-2 hover:text-black">
+            <Link prefetch={false} href="/dashboard/orders" className="text-xs text-black/55 underline underline-offset-2 hover:text-black">
               View all
             </Link>
           </div>
@@ -336,7 +336,7 @@ export function AdminOverview({ data }: { data: DashboardData }) {
           ) : (
             <div className="mt-3 divide-y divide-black/10">
               {currentData.recentOrders.map((order) => (
-                <Link key={order.id} href="/dashboard/orders" className="flex items-center justify-between gap-3 py-3 text-xs hover:bg-black/[0.02] min-w-0">
+                <Link prefetch={false} key={order.id} href="/dashboard/orders" className="flex items-center justify-between gap-3 py-3 text-xs hover:bg-black/[0.02] min-w-0">
                   <span className="font-medium shrink-0">{formatOrderReference(order.id)}</span>
                   <span className="text-black/55 truncate">{formatOrderStatus(order.status)}</span>
                   <span className="font-medium shrink-0">{currencyFormatter.format(order.total)}</span>
@@ -365,8 +365,8 @@ export function AdminOverview({ data }: { data: DashboardData }) {
         <section className="min-w-0 rounded-xl border border-black/10 bg-white p-4 shadow-sm">
           <h2 className="text-sm font-semibold">Quick actions</h2>
           <div className="mt-3 grid gap-2">
-            <Link href="/dashboard/products/new" className="rounded-md border border-black/15 px-3 py-2 text-left text-xs font-medium transition-colors hover:bg-black hover:text-white">Add product</Link>
-            <Link href="/dashboard/customers" className="rounded-md border border-black/15 px-3 py-2 text-left text-xs font-medium transition-colors hover:bg-black hover:text-white">View customers</Link>
+            <Link prefetch={false} href="/dashboard/products/new" className="rounded-md border border-black/15 px-3 py-2 text-left text-xs font-medium transition-colors hover:bg-black hover:text-white">Add product</Link>
+            <Link prefetch={false} href="/dashboard/customers" className="rounded-md border border-black/15 px-3 py-2 text-left text-xs font-medium transition-colors hover:bg-black hover:text-white">View customers</Link>
           </div>
         </section>
       </div>
@@ -394,7 +394,7 @@ export function AdminOverview({ data }: { data: DashboardData }) {
           <div className="mt-3 space-y-3 text-xs">
             <div className="flex items-center justify-between"><span className="text-black/70">Low stock</span><span className="rounded-full bg-amber-100 px-2 py-1 font-medium text-amber-800">{currentData.lowStockCount} items</span></div>
             <div className="flex items-center justify-between"><span className="text-black/70">Out of stock</span><span className="rounded-full bg-red-100 px-2 py-1 font-medium text-red-800">{currentData.outOfStockCount} items</span></div>
-            <Link href="/dashboard/products" className="inline-block pt-1 text-black/55 underline underline-offset-2 hover:text-black">Review inventory</Link>
+            <Link prefetch={false} href="/dashboard/products" className="inline-block pt-1 text-black/55 underline underline-offset-2 hover:text-black">Review inventory</Link>
           </div>
         </section>
 

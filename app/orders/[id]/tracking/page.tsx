@@ -78,7 +78,7 @@ function TrackingContent({ orderId }: { orderId: string }) {
   return (
     <div className="min-h-[70vh] bg-slate-50/60 py-8 sm:py-12">
       <div className="mx-auto max-w-3xl px-4 sm:px-6">
-        <Link
+        <Link prefetch={false}
           href="/orders"
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0a7ae6] hover:underline"
         >
@@ -117,7 +117,7 @@ function TrackingContent({ orderId }: { orderId: string }) {
                 <AlertCircle className="mx-auto size-7 text-amber-600" />
                 <h2 className="mt-3 font-semibold text-slate-900">Tracking is not ready yet</h2>
                 <p className="mt-1 text-sm leading-6 text-slate-600">{error}</p>
-                <Link href="/orders" className="mt-5 inline-flex text-sm font-semibold text-[#0a7ae6] hover:underline">Return to My Orders</Link>
+                <Link prefetch={false} href="/orders" className="mt-5 inline-flex text-sm font-semibold text-[#0a7ae6] hover:underline">Return to My Orders</Link>
               </div>
             ) : data && !data.found ? (
               <div className="rounded-2xl border border-blue-100 bg-blue-50/60 p-6 text-center sm:p-8">

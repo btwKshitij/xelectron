@@ -64,7 +64,7 @@ export function NavUser() {
     <SidebarMenu>
       <SidebarMenuItem>
         <div className="flex items-center gap-2 rounded-xl p-1.5 transition-colors hover:bg-black/5">
-          <Link
+          <Link prefetch={false}
             href="/dashboard/profile"
             className="flex flex-1 items-center gap-2.5 min-w-0 group"
             title="Edit Profile"
@@ -84,7 +84,7 @@ export function NavUser() {
             </div>
           </Link>
 
-          <Link
+          <Link prefetch={false}
             href="/dashboard/profile"
             title="Edit Profile"
             className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-black/10 bg-white text-black/60 shadow-2xs hover:bg-slate-100 hover:text-black transition-all cursor-pointer group-data-[collapsible=icon]:hidden"

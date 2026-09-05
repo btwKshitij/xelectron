@@ -80,7 +80,7 @@ export function CreateDiscountDialog() {
             const optionContent = <><Icon className="size-4 shrink-0 text-black/75" /><span className="min-w-0 flex-1"><span className="block text-sm font-medium text-black/80">{discountType.title}</span><span className="mt-1 block text-sm text-black/60">{discountType.description}</span></span><ChevronRight className="size-4 shrink-0 text-black/45" /></>
 
             return route ? (
-              <Link key={discountType.title} href={route} className={optionClass}>
+              <Link prefetch={false} key={discountType.title} href={route} className={optionClass}>
                 {optionContent}
               </Link>
             ) : (

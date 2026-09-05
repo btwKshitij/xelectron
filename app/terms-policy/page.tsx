@@ -126,7 +126,7 @@ export default function TermsPolicyPage() {
               <p className="mt-1 text-sm text-blue-50">Find an authorised center or submit a repair request.</p>
             </div>
             <div className="flex gap-3">
-              <Link href="/service-centers" className="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-bold text-[#0a7ae6] transition hover:bg-blue-50">
+              <Link prefetch={false} href="/service-centers" className="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-bold text-[#0a7ae6] transition hover:bg-blue-50">
                 Service centers <ArrowRight className="size-4" />
               </Link>
             </div>

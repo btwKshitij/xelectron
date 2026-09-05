@@ -778,13 +778,13 @@ function CheckoutContent() {
           </div>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link
+            <Link prefetch={false}
               href="/orders"
               className="flex-1 rounded-xl bg-[#0a7ae6] py-3.5 text-center text-sm font-semibold text-white shadow-md shadow-[#0a7ae6]/20 transition-all hover:bg-[#086ac9] flex items-center justify-center gap-2"
             >
               <Truck className="size-4" /> Track Shipment
             </Link>
-            <Link
+            <Link prefetch={false}
               href="/shop"
               className="flex-1 rounded-xl border border-slate-200 bg-white py-3.5 text-center text-sm font-semibold text-slate-700 hover:bg-slate-50 flex items-center justify-center"
             >
@@ -815,7 +815,7 @@ function CheckoutContent() {
           </div>
           <h2 className="text-2xl font-bold text-slate-900 mb-2">Your Cart is Empty</h2>
           <p className="text-sm text-slate-500 mb-6">Looks like you haven&apos;t added anything yet. Browse our products to find something you love!</p>
-          <Link
+          <Link prefetch={false}
             href="/shop"
             className="inline-flex items-center rounded-xl bg-[#0a7ae6] px-6 py-3 text-sm font-semibold text-white shadow-md shadow-[#0a7ae6]/20 hover:bg-[#086ac9] transition-all"
           >
@@ -1036,7 +1036,7 @@ function CheckoutContent() {
                       />
                       <p className="text-[11px] text-slate-500">
                         Already have an account?{" "}
-                        <Link href="/login?redirectTo=/checkout" className="font-bold text-[#0a7ae6] hover:underline">
+                        <Link prefetch={false} href="/login?redirectTo=/checkout" className="font-bold text-[#0a7ae6] hover:underline">
                           Sign in here
                         </Link>
                       </p>
