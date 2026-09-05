@@ -1,6 +1,6 @@
 import "server-only";
 
-import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
 const maxProductImageSize = 50 * 1024 * 1024; // 50 MB max
 const allowedImageTypes = new Set([
@@ -30,6 +30,42 @@ const allowedExtensions = new Set([
 export function getR2PublicBaseUrl(): string {
   const url = process.env.R2_PUBLIC_URL || process.env.NEXT_PUBLIC_R2_PUBLIC_URL || "https://pub-71e14405ed4a425db543797ffb54d14a.r2.dev";
   return url.replace(/\/+$/, "");
+}
+
+export function extractR2Key(keyOrUrl?: string | null): string | null {
+  if (!keyOrUrl || typeof keyOrUrl !== "string") return null;
+  const trimmed = keyOrUrl.trim();
+  if (!trimmed) return null;
+
+  // If it's a YouTube embed or external URL (not R2), ignore
+  if (trimmed.includes("youtube.com") || trimmed.includes("youtu.be")) return null;
+
+  // Proxied URL format: /api/media/products/...
+  if (trimmed.startsWith("/api/media/")) {
+    return trimmed.replace(/^\/api\/media\//, "");
+  }
+
+  // Public R2 dev / custom domain format: https://pub-xxx.r2.dev/products/...
+  const publicBase = getR2PublicBaseUrl();
+  if (trimmed.startsWith(publicBase)) {
+    return trimmed.slice(publicBase.length).replace(/^\/+/, "");
+  }
+
+  if (trimmed.startsWith("https://") || trimmed.startsWith("http://")) {
+    try {
+      const parsed = new URL(trimmed);
+      if (parsed.hostname.includes("r2.dev") || parsed.hostname.includes("cloudflarestorage.com")) {
+        return parsed.pathname.replace(/^\/+/, "");
+      }
+    } catch {}
+  }
+
+  // Direct key format: products/...
+  if (trimmed.startsWith("products/")) {
+    return trimmed;
+  }
+
+  return null;
 }
 
 function inferMimeType(fileName: string, fallbackType: string): string {
@@ -140,5 +176,42 @@ export async function getProductMedia(key: string, range?: string) {
     Key: key,
     ...(range ? { Range: range } : {}),
   }));
+}
+
+export async function deleteProductMedia(keyOrUrl?: string | null) {
+  const key = extractR2Key(keyOrUrl);
+  if (!key) return false;
+
+  try {
+    await getR2Client().send(new DeleteObjectCommand({
+      Bucket: getR2BucketName(),
+      Key: key,
+    }));
+    return true;
+  } catch (error) {
+    console.error(`Failed to delete R2 object for key "${key}":`, error);
+    return false;
+  }
+}
+
+export async function deleteMultipleProductMedia(keysOrUrls: (string | null | undefined)[]) {
+  const keys = keysOrUrls
+    .map(extractR2Key)
+    .filter((k): k is string => typeof k === "string" && k.length > 0);
+
+  if (keys.length === 0) return;
+
+  await Promise.allSettled(
+    keys.map(async (key) => {
+      try {
+        await getR2Client().send(new DeleteObjectCommand({
+          Bucket: getR2BucketName(),
+          Key: key,
+        }));
+      } catch (err) {
+        console.error(`Failed to batch-delete R2 object "${key}":`, err);
+      }
+    })
+  );
 }
 
