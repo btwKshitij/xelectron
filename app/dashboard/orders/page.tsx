@@ -79,7 +79,7 @@ export default async function OrdersPage() {
                 <h1 className="flex items-center gap-2 text-lg font-semibold"><Package className="size-4" /> Orders</h1>
                 <p className="mt-1 text-xs text-black/55">All orders recorded in your database.</p>
               </div>
-              <Link href="/dashboard/orders/create-order" className="inline-flex h-8 items-center rounded-lg bg-black px-3 text-xs font-medium text-white hover:bg-black/80">
+              <Link prefetch={false} href="/dashboard/orders/create-order" className="inline-flex h-8 items-center rounded-lg bg-black px-3 text-xs font-medium text-white hover:bg-black/80">
                 Create order
               </Link>
             </div>
@@ -122,17 +122,17 @@ export default async function OrdersPage() {
                       return (
                         <tr key={order.id} className="transition-colors hover:bg-black/[0.03] cursor-pointer group">
                           <td className="border-b border-black/10 px-3 py-2.5 font-semibold text-black">
-                            <Link href={`/dashboard/orders/${order.id}`} className="text-black group-hover:underline font-bold block">
+                            <Link prefetch={false} href={`/dashboard/orders/${order.id}`} className="text-black group-hover:underline font-bold block">
                               {orderReference(order.id)}
                             </Link>
                           </td>
-                          <td className="border-b border-black/10 px-3 py-2.5"><Link href={`/dashboard/orders/${order.id}`} className="block text-inherit">{dateFormatter.format(order.createdAt)}</Link></td>
-                          <td className="border-b border-black/10 px-3 py-2.5 font-medium"><Link href={`/dashboard/orders/${order.id}`} className="block text-inherit">{order.user?.name || order.customerName || "Guest Customer"}</Link></td>
-                          <td className="border-b border-black/10 px-3 py-2.5 text-right font-semibold tabular-nums"><Link href={`/dashboard/orders/${order.id}`} className="block text-inherit">{currencyFormatter.format(order.total)}</Link></td>
-                          <td className="border-b border-black/10 px-3 py-2.5"><Link href={`/dashboard/orders/${order.id}`} className="block"><span className={`rounded-md px-2 py-1 font-semibold ${statusClass(order.status)}`}>{formatStatus(order.status)}</span></Link></td>
-                          <td className="border-b border-black/10 px-3 py-2.5"><Link href={`/dashboard/orders/${order.id}`} className="block text-inherit">{itemCount} {itemCount === 1 ? "item" : "items"}</Link></td>
-                          <td className="border-b border-black/10 px-3 py-2.5 font-medium text-black/80"><Link href={`/dashboard/orders/${order.id}`} className="block text-inherit">{extractPaymentMethod(order.shippingAddress)}</Link></td>
-                          <td className="max-w-xs border-b border-black/10 px-3 py-2.5 text-black/80 font-medium leading-normal"><Link href={`/dashboard/orders/${order.id}`} className="block text-inherit">{cleanAddress || "—"}</Link></td>
+                          <td className="border-b border-black/10 px-3 py-2.5"><Link prefetch={false} href={`/dashboard/orders/${order.id}`} className="block text-inherit">{dateFormatter.format(order.createdAt)}</Link></td>
+                          <td className="border-b border-black/10 px-3 py-2.5 font-medium"><Link prefetch={false} href={`/dashboard/orders/${order.id}`} className="block text-inherit">{order.user?.name || order.customerName || "Guest Customer"}</Link></td>
+                          <td className="border-b border-black/10 px-3 py-2.5 text-right font-semibold tabular-nums"><Link prefetch={false} href={`/dashboard/orders/${order.id}`} className="block text-inherit">{currencyFormatter.format(order.total)}</Link></td>
+                          <td className="border-b border-black/10 px-3 py-2.5"><Link prefetch={false} href={`/dashboard/orders/${order.id}`} className="block"><span className={`rounded-md px-2 py-1 font-semibold ${statusClass(order.status)}`}>{formatStatus(order.status)}</span></Link></td>
+                          <td className="border-b border-black/10 px-3 py-2.5"><Link prefetch={false} href={`/dashboard/orders/${order.id}`} className="block text-inherit">{itemCount} {itemCount === 1 ? "item" : "items"}</Link></td>
+                          <td className="border-b border-black/10 px-3 py-2.5 font-medium text-black/80"><Link prefetch={false} href={`/dashboard/orders/${order.id}`} className="block text-inherit">{extractPaymentMethod(order.shippingAddress)}</Link></td>
+                          <td className="max-w-xs border-b border-black/10 px-3 py-2.5 text-black/80 font-medium leading-normal"><Link prefetch={false} href={`/dashboard/orders/${order.id}`} className="block text-inherit">{cleanAddress || "—"}</Link></td>
                         </tr>
                       );
                     })}

@@ -198,7 +198,7 @@ export default function TroubleshootingPage() {
               <h3 className="text-lg font-bold text-white">Still having trouble with your device?</h3>
               <p className="text-xs text-slate-300 mt-1">Contact our Technical Service Center at Vaishali Ghaziabad or raise a repair request.</p>
             </div>
-            <Link
+            <Link prefetch={false}
               href="/repair-replacement"
               className="inline-flex h-11 items-center gap-2 rounded-xl bg-white px-6 text-xs font-bold text-slate-900 hover:bg-slate-100 transition shrink-0"
             >

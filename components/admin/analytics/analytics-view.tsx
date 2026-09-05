@@ -119,7 +119,7 @@ export function AnalyticsView({
             {isExporting ? "Generating CSV..." : "Download Report (CSV)"}
           </button>
 
-          <Link
+          <Link prefetch={false}
             href="/dashboard/orders/create-order"
             className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-black px-3.5 text-xs font-semibold text-white hover:bg-black/80 transition"
           >

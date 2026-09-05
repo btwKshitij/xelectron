@@ -61,7 +61,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
             <div className="mx-auto max-w-6xl space-y-4">
               {/* Top Navigation & Action Header */}
               <div className="flex items-center gap-2">
-                <Link
+                <Link prefetch={false}
                   href="/dashboard/customers"
                   className="inline-flex size-8 items-center justify-center rounded-lg border border-black/10 bg-white text-black/70 hover:bg-black/5 transition-colors"
                   title="Back to customers"
@@ -119,7 +119,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
                         <div className="flex flex-wrap items-start justify-between gap-2">
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
-                              <Link
+                              <Link prefetch={false}
                                 href={`/dashboard/orders/${latestOrder.id}`}
                                 className="text-sm font-bold text-[#005BD3] hover:underline"
                               >
@@ -190,7 +190,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
 
                         {/* Order Actions */}
                         <div className="flex items-center justify-end pt-2">
-                          <Link
+                          <Link prefetch={false}
                             href="/dashboard/orders"
                             className="inline-flex h-8 items-center rounded-lg border border-black/15 bg-white px-3 text-xs font-semibold text-black/80 hover:bg-black/5 transition-colors"
                           >
@@ -215,7 +215,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
                     ) : (
                       <div className="divide-y divide-black/10 text-xs">
                         {customer.orders.map((order: any) => (
-                          <Link
+                          <Link prefetch={false}
                             key={order.id}
                             href={`/dashboard/orders/${order.id}`}
                             className="flex items-center justify-between gap-3 px-5 py-3 transition-colors hover:bg-black/[0.04] cursor-pointer group"

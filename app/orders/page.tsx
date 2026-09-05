@@ -163,14 +163,14 @@ function OrdersContent() {
           </p>
 
           <div className="mt-8 space-y-3">
-            <Link
+            <Link prefetch={false}
               href="/login?redirectTo=/orders"
               className="block w-full rounded-xl bg-[#0a7ae6] py-3.5 text-center text-sm font-semibold text-white shadow-md shadow-[#0a7ae6]/20 transition-all hover:bg-[#086ac9]"
             >
               Sign In to Your Account
             </Link>
 
-            <Link
+            <Link prefetch={false}
               href="/login?mode=signup&redirectTo=/orders"
               className="block w-full rounded-xl border border-slate-200 bg-white py-3.5 text-center text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all"
             >
@@ -193,7 +193,7 @@ function OrdersContent() {
               Track live courier status, view delivery details, and manage your purchases.
             </p>
           </div>
-          <Link
+          <Link prefetch={false}
             href="/shop"
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0a7ae6] hover:underline"
           >
@@ -212,7 +212,7 @@ function OrdersContent() {
               When you purchase products, your orders and live courier tracking links will show up here.
             </p>
             <div className="mt-6 flex justify-center">
-              <Link
+              <Link prefetch={false}
                 href="/shop"
                 className="rounded-xl bg-[#0a7ae6] px-6 py-2.5 text-xs font-semibold text-white transition-all hover:bg-[#086ac9]"
               >
@@ -312,7 +312,7 @@ function OrdersContent() {
                       </div>
 
                       {hasTracking && (
-                        <Link
+                        <Link prefetch={false}
                           href={deliveryStatusUrl}
                           className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#0a7ae6] px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-[#086ac9] transition-all"
                         >
@@ -424,7 +424,7 @@ function OrdersContent() {
 
                           <div className="flex-1 min-w-0">
                             {slug ? (
-                              <Link
+                              <Link prefetch={false}
                                 href={`/product/${slug}`}
                                 className="truncate text-xs font-semibold text-slate-900 hover:text-[#0a7ae6] sm:text-sm block"
                               >

@@ -179,7 +179,7 @@ function ProductCard({
 }) {
   const router = useRouter();
   return (
-    <Link
+    <Link prefetch={false}
       href={`/product/${product.slug}`}
       onClick={() => recordRecentlyViewedProduct(product.id)}
       className="group block h-full"
@@ -249,7 +249,7 @@ function CompactProductCard({ product }: { product: ShopProduct }) {
   const { addItem } = useCart();
 
   return (
-    <Link
+    <Link prefetch={false}
       href={`/product/${product.slug}`}
       onClick={() => recordRecentlyViewedProduct(product.id)}
       className="group block h-full"

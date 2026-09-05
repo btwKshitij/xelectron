@@ -366,7 +366,7 @@ export function CreateOrderClient() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Link
+                <Link prefetch={false}
                   href="/dashboard/orders/drafts"
                   className="inline-flex h-8 items-center rounded-lg bg-black/[0.06] px-3 text-xs font-medium hover:bg-black/10"
                 >

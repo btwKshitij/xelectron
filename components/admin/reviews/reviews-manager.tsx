@@ -199,7 +199,7 @@ export function ReviewsManager({ initialReviews, products }: ReviewsManagerProps
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 pb-5">
         <div>
           <div className="flex items-center gap-2 text-xs text-slate-500 font-medium mb-1">
-            <Link href="/dashboard" className="hover:text-slate-900 transition">
+            <Link prefetch={false} href="/dashboard" className="hover:text-slate-900 transition">
               Dashboard
             </Link>
             <span>/</span>
@@ -366,7 +366,7 @@ export function ReviewsManager({ initialReviews, products }: ReviewsManagerProps
                       <h4 className="text-xs font-bold text-slate-900 truncate">
                         {rev.product?.name || "Product"}
                       </h4>
-                      <Link
+                      <Link prefetch={false}
                         href={`/product/${rev.product?.slug || rev.product?.id || rev.productId}`}
                         target="_blank"
                         className="text-[11px] text-[#0a7ae6] hover:underline inline-flex items-center gap-1 font-medium"

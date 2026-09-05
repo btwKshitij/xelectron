@@ -351,7 +351,7 @@ export function DealOfTheDayEditor({ deal, products }: { deal: EditableDeal | nu
             <h1 className="flex items-center gap-1.5 text-lg font-semibold"><Flame className="size-4" /><ChevronRight className="size-4 text-black/45" /> Deal of the day</h1>
             <p className="mt-1 text-sm text-black/55">Choose the product and limited-time offer customers see on the home page.</p>
           </div>
-          <div className="flex items-center gap-2"><Link href="/dashboard" className="inline-flex h-8 items-center rounded-lg bg-black/[0.06] px-3 text-xs font-medium transition hover:bg-black/10">Discard</Link><button type="submit" disabled={!canSave} className="inline-flex h-8 items-center rounded-lg bg-black px-3 text-xs font-semibold text-white transition hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-black/15">{isSaving ? "Saving…" : "Save deal"}</button></div>
+          <div className="flex items-center gap-2"><Link prefetch={false} href="/dashboard" className="inline-flex h-8 items-center rounded-lg bg-black/[0.06] px-3 text-xs font-medium transition hover:bg-black/10">Discard</Link><button type="submit" disabled={!canSave} className="inline-flex h-8 items-center rounded-lg bg-black px-3 text-xs font-semibold text-white transition hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-black/15">{isSaving ? "Saving…" : "Save deal"}</button></div>
         </header>
 
         <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
@@ -549,7 +549,7 @@ export function DealOfTheDayEditor({ deal, products }: { deal: EditableDeal | nu
                   </div>
                 </div>
               </div> : <div className="rounded-xl border border-dashed border-black/20 bg-black/[0.02] px-4 py-8 text-center"><div className="mx-auto flex size-9 items-center justify-center rounded-lg bg-[#005BD3]/10 text-[#005BD3]"><Sparkles className="size-5" /></div><p className="mt-3 text-sm font-medium">Select a product to preview the deal</p><p className="mt-1 text-xs leading-5 text-black/55">The product image, price, and compare-at price will appear here automatically.</p></div>}
-              <div className="mt-4 flex items-center justify-between border-t border-black/10 pt-3 text-xs"><span className={isActive ? "font-medium text-emerald-700" : "font-medium text-black/50"}>{isActive ? "Will show on storefront" : "Hidden from storefront"}</span><Link href="/" className="inline-flex items-center gap-1 font-medium text-[#005BD3] hover:underline">Open home page <ExternalLink className="size-3" /></Link></div>
+              <div className="mt-4 flex items-center justify-between border-t border-black/10 pt-3 text-xs"><span className={isActive ? "font-medium text-emerald-700" : "font-medium text-black/50"}>{isActive ? "Will show on storefront" : "Hidden from storefront"}</span><Link prefetch={false} href="/" className="inline-flex items-center gap-1 font-medium text-[#005BD3] hover:underline">Open home page <ExternalLink className="size-3" /></Link></div>
             </SectionCard>
           </aside>
         </div>

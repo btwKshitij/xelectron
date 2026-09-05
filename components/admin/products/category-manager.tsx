@@ -150,7 +150,7 @@ export function CategoryManager({ initialCategories = [] }: { initialCategories?
           <FolderTree className="size-4" />
           Categories
         </h1>
-        <Link
+        <Link prefetch={false}
           href="/dashboard/products/categories/new"
           className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-black px-3 text-xs font-medium text-white transition hover:bg-black/80"
         >
@@ -235,7 +235,7 @@ export function CategoryManager({ initialCategories = [] }: { initialCategories?
                 <tr key={category.id} className="hover:bg-black/[0.02]">
                   <td className="border-b border-black/10 px-3 py-2.5"><input type="checkbox" checked={selectedCategoryIds.includes(category.id)} onChange={(event) => toggleCategorySelection(category.id, event.target.checked)} aria-label={`Select ${category.title}`} /></td>
                   <td className="border-b border-black/10 px-3 py-2.5">
-                    <Link href={`/dashboard/products/categories/${category.id}`} className="flex items-center gap-3 font-medium text-[#0c3152] hover:underline">
+                    <Link prefetch={false} href={`/dashboard/products/categories/${category.id}`} className="flex items-center gap-3 font-medium text-[#0c3152] hover:underline">
                       <span className="relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-black/10 bg-black/[0.04] text-xs font-semibold text-black/60">{category.image ? <Image src={category.image} alt="" fill sizes="40px" className="object-contain p-1" /> : category.title.slice(0, 1)}</span>
                       <span><span className="block">{category.title}</span><span className="mt-1 block text-[11px] font-normal text-black/45">/categories/{category.slug}</span></span>
                     </Link>
@@ -246,7 +246,7 @@ export function CategoryManager({ initialCategories = [] }: { initialCategories?
                     <div className="flex items-center gap-2"><Switch checked={category.visible} onCheckedChange={(checked) => void toggleVisibility(category, checked)} aria-label={`Toggle ${category.title} visibility`} /><span className="text-black/60">{category.visible ? "Visible" : "Hidden"}</span></div>
                   </td>
                   <td className="border-b border-black/10 px-3 py-2.5">
-                    <div className="flex items-center gap-1"><Link href={`/dashboard/products/categories/${category.id}`} aria-label={`Edit ${category.title}`} className="rounded-md p-1.5 text-black/50 transition hover:bg-black/[0.06] hover:text-black"><Pencil className="size-3.5" /></Link><button type="button" onClick={() => void deleteCategory(category)} aria-label={`Delete ${category.title}`} className="rounded-md p-1.5 text-black/50 transition hover:bg-red-50 hover:text-red-600"><Trash2 className="size-3.5" /></button></div>
+                    <div className="flex items-center gap-1"><Link prefetch={false} href={`/dashboard/products/categories/${category.id}`} aria-label={`Edit ${category.title}`} className="rounded-md p-1.5 text-black/50 transition hover:bg-black/[0.06] hover:text-black"><Pencil className="size-3.5" /></Link><button type="button" onClick={() => void deleteCategory(category)} aria-label={`Delete ${category.title}`} className="rounded-md p-1.5 text-black/50 transition hover:bg-red-50 hover:text-red-600"><Trash2 className="size-3.5" /></button></div>
                   </td>
                 </tr>
               ))}

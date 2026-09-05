@@ -209,7 +209,7 @@ export function BlogPostEditor({ post }: { post?: BlogPostItem }) {
       <form onSubmit={savePost} className="mx-auto max-w-[1600px]">
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-start gap-3">
-            <Link href="/dashboard/blog" className="mt-0.5 inline-flex size-9 items-center justify-center rounded-xl border border-black/10 bg-white text-black/65 shadow-sm hover:bg-slate-50" aria-label="Back to blog posts"><ArrowLeft className="size-4" /></Link>
+            <Link prefetch={false} href="/dashboard/blog" className="mt-0.5 inline-flex size-9 items-center justify-center rounded-xl border border-black/10 bg-white text-black/65 shadow-sm hover:bg-slate-50" aria-label="Back to blog posts"><ArrowLeft className="size-4" /></Link>
             <div>
               <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#0a7ae6]">Editorial studio</p>
               <h1 className="mt-1 text-xl font-semibold tracking-tight text-slate-950">{isNew ? "Write a new story" : "Edit your story"}</h1>
@@ -218,7 +218,7 @@ export function BlogPostEditor({ post }: { post?: BlogPostItem }) {
           </div>
           <div className="flex items-center gap-2">
             <button type="button" onClick={() => setPreviewOpen(true)} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#0a7ae6]/25 bg-white px-3 text-sm font-semibold text-[#075faf] shadow-sm hover:bg-[#0a7ae6]/5"><Eye className="size-4" />Preview page</button>
-            <Link href="/dashboard/blog" className="inline-flex h-9 items-center rounded-lg px-3 text-sm font-medium text-black/60 hover:bg-black/[0.04]">Discard</Link>
+            <Link prefetch={false} href="/dashboard/blog" className="inline-flex h-9 items-center rounded-lg px-3 text-sm font-medium text-black/60 hover:bg-black/[0.04]">Discard</Link>
             <button type="submit" disabled={isSaving || isUploading} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#0a7ae6] px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#0869c4] disabled:cursor-wait disabled:bg-[#0a7ae6]/40">{isSaving ? <LoaderCircle className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}{isSaving ? "Saving…" : isNew ? "Publish story" : "Save changes"}</button>
           </div>
         </header>

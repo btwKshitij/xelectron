@@ -65,7 +65,7 @@ export default async function AbandonedCheckoutsPage() {
                             </td>
                             <td className="border-b border-black/10 px-4 py-3 font-medium">{money.format(checkout.total)}</td>
                             <td className="border-b border-black/10 px-4 py-3 text-black/65"><span className="inline-flex items-center gap-1"><Clock3 className="size-3" />{timestamp.format(checkout.lastActivityAt)}</span></td>
-                            <td className="border-b border-black/10 px-4 py-3 text-right"><Link href={`/dashboard/orders/abandoned-checkouts/${checkout.id}`} className="font-medium text-[#005BD3] hover:underline">View</Link></td>
+                            <td className="border-b border-black/10 px-4 py-3 text-right"><Link prefetch={false} href={`/dashboard/orders/abandoned-checkouts/${checkout.id}`} className="font-medium text-[#005BD3] hover:underline">View</Link></td>
                           </tr>
                         );
                       })}

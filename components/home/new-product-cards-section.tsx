@@ -27,7 +27,7 @@ export default function NewProductCardsSection({ products = [] }: { products?: S
 
         <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
           {products.map((product) => (
-            <Link key={product.id} href={`/product/${product.slug}`} className="group block h-full" aria-label={`View ${product.name}`}>
+            <Link prefetch={false} key={product.id} href={`/product/${product.slug}`} className="group block h-full" aria-label={`View ${product.name}`}>
               <article className="flex h-full flex-col overflow-hidden rounded-lg border border-slate-200/80 bg-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(15,23,42,0.08)]">
                 <div className="relative flex h-[140px] items-center justify-center bg-slate-50/60 p-2 sm:h-[200px] sm:p-4 lg:h-[220px]">
                   <Image

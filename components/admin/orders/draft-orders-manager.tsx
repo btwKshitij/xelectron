@@ -62,14 +62,14 @@ export function DraftOrdersManager() {
           <h1 className="flex items-center gap-2 text-lg font-semibold"><BadgePlus className="size-4" />Drafts</h1>
           <p className="mt-1 text-xs text-black/55">Saved draft orders on this device.</p>
         </div>
-        <Link href="/dashboard/orders/create-order" className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-black px-3 text-xs font-medium text-white hover:bg-black/80"><ShoppingBag className="size-3.5" />Create draft order</Link>
+        <Link prefetch={false} href="/dashboard/orders/create-order" className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-black px-3 text-xs font-medium text-white hover:bg-black/80"><ShoppingBag className="size-3.5" />Create draft order</Link>
       </div>
 
       {!ready ? <section className="mt-4 rounded-xl border border-black/10 bg-white px-4 py-10 text-center text-sm text-black/55 shadow-sm">Loading drafts…</section> : null}
 
       {ready && sortedDrafts.length === 0 ? (
         <section className="mt-4 flex min-h-[calc(100vh-12rem)] items-center justify-center overflow-hidden rounded-xl border border-black/10 bg-white shadow-sm">
-          <div className="max-w-md px-6 py-16 text-center"><DraftIllustration /><h2 className="mt-8 text-base font-semibold text-black/80">Manually create orders and invoices</h2><p className="mt-2 text-sm leading-5 text-black/65">Use draft orders to take orders over the phone, email invoices to customers, and collect payments.</p><Link href="/dashboard/orders/create-order" className="mt-5 inline-flex items-center gap-1.5 rounded-lg bg-black px-3 py-2 text-xs font-medium text-white hover:bg-black/80"><ShoppingBag className="size-3.5" />Create draft order</Link></div>
+          <div className="max-w-md px-6 py-16 text-center"><DraftIllustration /><h2 className="mt-8 text-base font-semibold text-black/80">Manually create orders and invoices</h2><p className="mt-2 text-sm leading-5 text-black/65">Use draft orders to take orders over the phone, email invoices to customers, and collect payments.</p><Link prefetch={false} href="/dashboard/orders/create-order" className="mt-5 inline-flex items-center gap-1.5 rounded-lg bg-black px-3 py-2 text-xs font-medium text-white hover:bg-black/80"><ShoppingBag className="size-3.5" />Create draft order</Link></div>
         </section>
       ) : null}
 
@@ -131,7 +131,7 @@ export function DraftOrdersManager() {
                     </td>
                     <td className="border-b border-black/10 px-4 py-3">
                       <div className="flex justify-end gap-2">
-                        <Link
+                        <Link prefetch={false}
                           href={`/dashboard/orders/create-order?draft=${encodeURIComponent(draft.id)}`}
                           className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-black/15 px-3 text-xs font-medium hover:bg-black/[0.03]"
                         >

@@ -374,7 +374,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             <Package className="mb-3 size-12 text-black/30" />
             <h2 className="text-xl font-bold text-black">Order Not Found</h2>
             <p className="mt-1 text-sm text-black/60">{error || "The requested order could not be located."}</p>
-            <Link
+            <Link prefetch={false}
               href="/dashboard/orders"
               className="mt-5 inline-flex items-center gap-2 rounded-lg bg-black px-4 py-2 text-xs font-semibold text-white hover:bg-black/80"
             >
@@ -437,7 +437,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             {/* Top Navigation & Actions Bar */}
             <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-black/10 pb-4">
               <div className="flex items-center gap-3">
-                <Link
+                <Link prefetch={false}
                   href="/dashboard/orders"
                   className="inline-flex size-8 items-center justify-center rounded-lg border border-black/15 bg-white text-black/70 hover:bg-black/5 hover:text-black"
                 >
@@ -531,7 +531,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                             </div>
                             <div>
                               {slug ? (
-                                <Link
+                                <Link prefetch={false}
                                   href={`/product/${slug}`}
                                   target="_blank"
                                   className="group inline-flex items-center gap-1 text-sm font-semibold text-black hover:text-[#0a7ae6]"

@@ -215,7 +215,7 @@ export function ProductsTable({ products }: { products: ProductTableItem[] }) {
                 <tr key={product.id} className={`transition-colors hover:bg-black/[0.02] ${isSelected ? "bg-[#0a7ae6]/[0.04]" : ""}`}>
                   <td className="border-b border-black/10 px-3 py-2"><input type="checkbox" checked={isSelected} onChange={() => toggleProduct(product.id)} aria-label={`Select ${product.name}`} /></td>
                   <td className="border-b border-black/10 px-3 py-2">
-                    <Link href={`/dashboard/products/${itemSlugOrId}`} className="flex items-center gap-3 font-medium text-black hover:text-[#0a7ae6] hover:underline">
+                    <Link prefetch={false} href={`/dashboard/products/${itemSlugOrId}`} className="flex items-center gap-3 font-medium text-black hover:text-[#0a7ae6] hover:underline">
                       <div className="relative size-10 shrink-0 overflow-hidden rounded-md border border-black/10 bg-[#fafafa]"><Image src={product.mainImage || "/category-smartphone.png"} alt={product.name} fill className="object-contain p-1" /></div>
                       <span className="max-w-[220px] truncate">{product.name}</span>
                     </Link>
@@ -236,7 +236,7 @@ export function ProductsTable({ products }: { products: ProductTableItem[] }) {
                       {product.quantity === 0 ? "Out of stock" : `${product.quantity} in stock`}
                     </span>
                   </td>
-                  <td className="border-b border-black/10 px-3 py-2"><Link href={`/product/${itemSlugOrId}`} target="_blank" className="rounded border border-black/10 bg-white px-2 py-1 text-[11px] font-medium text-black/70 hover:bg-black/5">Store</Link></td>
+                  <td className="border-b border-black/10 px-3 py-2"><Link prefetch={false} href={`/product/${itemSlugOrId}`} target="_blank" className="rounded border border-black/10 bg-white px-2 py-1 text-[11px] font-medium text-black/70 hover:bg-black/5">Store</Link></td>
                 </tr>
               );
             })}

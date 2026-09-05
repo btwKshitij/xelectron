@@ -446,7 +446,7 @@ export function EditProductForm({ product, categories }: { product: EditableProd
           <p className="mt-1 text-xs text-black/55">Editing {product.name}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Link href={`/product/${product.slug}`} target="_blank" className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-black/[0.06] px-3 text-sm font-medium hover:bg-black/10"><ExternalLink className="size-3.5" /> Store</Link>
+          <Link prefetch={false} href={`/product/${product.slug}`} target="_blank" className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-black/[0.06] px-3 text-sm font-medium hover:bg-black/10"><ExternalLink className="size-3.5" /> Store</Link>
           {isDirty ? <span aria-live="polite" className="hidden text-xs font-medium text-amber-700 sm:inline">Unsaved changes</span> : null}
           <button type="submit" disabled={isSaving || !isDirty} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-black px-4 text-sm font-medium text-white hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-black/15"><Save className="size-3.5" /> {isSaving ? "Saving…" : "Save changes"}</button>
         </div>

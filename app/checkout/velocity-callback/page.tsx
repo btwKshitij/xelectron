@@ -143,13 +143,13 @@ function VelocityCallbackContent() {
           <h2 className="text-xl font-extrabold text-slate-900">Payment Verification Issue</h2>
           <p className="mt-2 text-xs text-slate-600 leading-relaxed">{error}</p>
           <div className="mt-6 flex flex-col gap-2.5">
-            <Link
+            <Link prefetch={false}
               href="/checkout"
               className="w-full rounded-xl bg-[#0a7ae6] py-3 text-xs font-bold uppercase tracking-wider text-white shadow-md hover:bg-[#086ac9] transition"
             >
               Return to Checkout
             </Link>
-            <Link
+            <Link prefetch={false}
               href="/"
               className="w-full py-2.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition"
             >
@@ -217,14 +217,14 @@ function VelocityCallbackContent() {
         )}
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-          <Link
+          <Link prefetch={false}
             href="/orders"
             className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#0a7ae6] py-3.5 text-xs sm:text-sm font-bold uppercase tracking-wider text-white shadow-lg shadow-[#0a7ae6]/25 transition hover:bg-[#086ac9]"
           >
             <span>View Order Status</span>
             <ArrowRight className="size-4" />
           </Link>
-          <Link
+          <Link prefetch={false}
             href="/"
             className="flex flex-1 items-center justify-center rounded-xl border border-slate-200 py-3.5 text-xs sm:text-sm font-bold text-slate-700 hover:bg-slate-50 transition"
           >

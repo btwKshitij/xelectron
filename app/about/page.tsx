@@ -197,13 +197,13 @@ export default function AboutPage() {
 
             {/* Actions */}
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3.5">
-              <Link
+              <Link prefetch={false}
                 href="/shop"
                 className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-7 text-xs font-semibold text-white transition hover:bg-[#0a7ae6] shadow-xs active:scale-95"
               >
                 Explore Product Ecosystem <ArrowRight className="size-3.5" />
               </Link>
-              <Link
+              <Link prefetch={false}
                 href="/contact"
                 className="inline-flex h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-6 text-xs font-semibold text-slate-800 transition hover:bg-slate-50 shadow-2xs"
               >
@@ -431,7 +431,7 @@ export default function AboutPage() {
                 </div>
 
                 <div className="mt-5 pt-3 border-t border-slate-100">
-                  <Link
+                  <Link prefetch={false}
                     href={`/shop?filter=${encodeURIComponent(cat.slug)}`}
                     className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-800 hover:text-[#0a7ae6] transition group/link"
                   >
@@ -704,13 +704,13 @@ export default function AboutPage() {
                 Discover our full lineup of Smart Projectors, Digital Photo Frames, Portable Monitors, and Smart TVs backed by Pan-India warranty and dedicated service support.
               </p>
               <div className="pt-4 flex flex-wrap items-center justify-center gap-3.5">
-                <Link
+                <Link prefetch={false}
                   href="/shop"
                   className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-7 text-xs font-bold text-white transition hover:bg-[#0a7ae6] shadow-xs active:scale-95"
                 >
                   Browse All Products <ArrowRight className="size-3.5" />
                 </Link>
-                <Link
+                <Link prefetch={false}
                   href="/contact"
                   className="inline-flex h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-6 text-xs font-bold text-slate-800 transition hover:bg-slate-50 shadow-2xs"
                 >
