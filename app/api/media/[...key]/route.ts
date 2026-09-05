@@ -10,8 +10,8 @@ export async function GET(request: Request, { params }: RouteParams) {
     const { key } = await params;
     const mediaKey = key.join("/");
 
-    // If R2 Public Domain is configured, redirect directly to Cloudflare R2 CDN ($0 egress, bypasses Vercel Compute)
-    const publicBase = process.env.R2_PUBLIC_URL || process.env.NEXT_PUBLIC_R2_PUBLIC_URL;
+    // Direct 307 redirect to Cloudflare R2 CDN ($0 egress, completely bypasses Vercel Compute)
+    const publicBase = process.env.R2_PUBLIC_URL || process.env.NEXT_PUBLIC_R2_PUBLIC_URL || "https://pub-71e14405ed4a425db543797ffb54d14a.r2.dev";
     if (publicBase) {
       return NextResponse.redirect(`${publicBase.replace(/\/+$/, "")}/${mediaKey}`, 307);
     }
