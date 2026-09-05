@@ -7,7 +7,9 @@ import * as dealOfTheDayController from "@/lib/server/controllers/deal-of-the-da
 export async function GET() {
   try {
     const deal = await dealOfTheDayController.getDealOfTheDay();
-    return NextResponse.json({ success: true, data: deal });
+    return NextResponse.json({ success: true, data: deal }, {
+      headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" },
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Internal server error";
     return NextResponse.json({ success: false, error: message }, { status: 500 });
