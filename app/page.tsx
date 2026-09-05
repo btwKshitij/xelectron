@@ -23,8 +23,7 @@ import * as bannersController from "@/lib/server/controllers/banners.controller"
 import { defaultDealOfTheDay } from "@/lib/shared/default-deal-of-the-day";
 import { resolveCategoryImage } from "@/lib/shared/category-utils";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 60;
 
 export default async function Home() {
   let selectedBestSellers: BestSellerItem[] = [];
