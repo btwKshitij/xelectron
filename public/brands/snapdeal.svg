@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" width="200" height="60">
+  <!-- Snapdeal Logo -->
+  <g transform="translate(10, 14)">
+    <rect x="0" y="2" width="26" height="26" rx="6" fill="#E40046"/>
+    <path d="M 6 15 L 12 21 L 20 9" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="44" y="36" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="24" font-weight="900" fill="#E40046" letter-spacing="-0.5">snapdeal</text>
+</svg>
