@@ -202,6 +202,9 @@ export default function ProductDetail({
   }, [isSliderPlaying, product?.banners]);
 
   useEffect(() => {
+    // If initialProduct is already loaded from server, do not re-fetch
+    if (initialProduct && initialProduct.id) return;
+
     const targetId = productId || searchProductId;
     if (!targetId) return;
 
@@ -216,7 +219,7 @@ export default function ProductDetail({
         }
       })
       .catch(() => {});
-  }, [productId, searchProductId]);
+  }, [productId, searchProductId, initialProduct]);
 
   useEffect(() => {
     if (product?.id) recordRecentlyViewedProduct(product.id);

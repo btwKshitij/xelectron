@@ -46,7 +46,7 @@ function AnnouncementTickerMessages({ items, clone = false }: { items: Announcem
         <div key={`${clone ? "clone-" : ""}repeat-${repeatIndex}`} className="announcement-ticker-sequence" aria-hidden={clone || repeatIndex > 0 || undefined}>
           {items.map((item, idx) => (
             <div key={item.id} className="flex items-center gap-4 lg:gap-7">
-              <Link
+              <Link prefetch={false}
                 href={item.href}
                 tabIndex={clone || repeatIndex > 0 ? -1 : undefined}
                 className="inline-flex items-center gap-1 text-white hover:text-white/90 transition-opacity group"
@@ -120,7 +120,7 @@ function TopAnnouncementBar() {
           <div className="hidden min-h-5 flex-wrap items-center justify-center gap-x-6 gap-y-1.5 text-center md:flex">
             {items.map((item, idx) => (
               <div key={item.id} className="inline-flex items-center gap-2.5">
-                <Link href={item.href} className="inline-flex items-center gap-1 text-white hover:text-white/90 hover:underline">
+                <Link prefetch={false} href={item.href} className="inline-flex items-center gap-1 text-white hover:text-white/90 hover:underline">
                   {item.prefix && <span className="opacity-95">{item.prefix}</span>}
                   <strong className="font-bold underline decoration-white/50 underline-offset-2">{item.action}</strong>
                   {item.discountCode && <span className="rounded border border-white/35 bg-white/10 px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide">CODE: {item.discountCode}</span>}
@@ -133,7 +133,7 @@ function TopAnnouncementBar() {
 
         {/* Mobile View: Rotating single line ticker */}
         <div className="flex md:hidden items-center justify-center text-center">
-          <Link
+          <Link prefetch={false}
             href={currentAnnouncement.href}
             className="inline-flex items-center gap-1 text-white hover:underline transition-all duration-300"
           >
@@ -213,7 +213,7 @@ function FlatNavLink({
 }) {
   return (
     <div className="h-full flex items-center" onMouseEnter={onMouseEnter}>
-      <Link
+      <Link prefetch={false}
         href={href}
         onClick={onClick}
         onMouseEnter={onMouseEnter}
@@ -489,6 +489,10 @@ export default function Navbar() {
   }, [isSearchDrawerOpen]);
 
   useEffect(() => {
+    // Lazy load menu products only when user interacts with the menu
+    if (!openMenu && !mobileOpen) return;
+    if (areMenuProductsLoaded) return;
+
     let isCurrent = true;
 
     async function loadMenuProducts() {
@@ -518,7 +522,7 @@ export default function Navbar() {
     return () => {
       isCurrent = false;
     };
-  }, []);
+  }, [openMenu, mobileOpen, areMenuProductsLoaded]);
 
   useEffect(() => {
     function onPointerDown(event: PointerEvent) {
@@ -618,7 +622,7 @@ export default function Navbar() {
         <div className="w-full relative z-40 bg-white">
           <div className="mx-auto flex h-[64px] sm:h-[80px] max-w-[1600px] items-center justify-between px-3 sm:px-6 lg:px-8 sm:grid sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
           {/* Brand Logo */}
-          <Link
+          <Link prefetch={false}
             href="/"
             aria-label="XElectron home"
             className="inline-flex shrink-0 items-center rounded-lg text-slate-900 transition-opacity duration-200 hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0a7ae6] sm:justify-self-start py-1"
@@ -680,7 +684,7 @@ export default function Navbar() {
                       <p className="text-[11px] text-slate-500 truncate">{currentUser.email}</p>
                     </div>
                     <div className="py-1">
-                      <Link
+                      <Link prefetch={false}
                         href="/orders"
                         onClick={() => setIsUserMenuOpen(false)}
                         className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-900"
@@ -689,7 +693,7 @@ export default function Navbar() {
                         My Orders
                       </Link>
                       {currentUser.role === "ADMIN" && (
-                        <Link
+                        <Link prefetch={false}
                           href="/dashboard"
                           onClick={() => setIsUserMenuOpen(false)}
                           className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-900"
@@ -711,7 +715,7 @@ export default function Navbar() {
                 )}
               </div>
             ) : (
-              <Link href="/login" aria-label="My Account" className="inline-flex items-center">
+              <Link prefetch={false} href="/login" aria-label="My Account" className="inline-flex items-center">
                 <IconButton label="My Account">
                   <User className="size-4 stroke-[1.8] text-slate-700" />
                 </IconButton>
@@ -805,7 +809,7 @@ export default function Navbar() {
                           { name: "All Products", href: "/shop", badge: null },
                         ].map((item) => (
                           <li key={item.name}>
-                            <Link
+                            <Link prefetch={false}
                               href={item.href}
                               onClick={() => setOpenMenu(null)}
                               className="group flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold uppercase tracking-wider text-slate-800 hover:bg-slate-50 hover:text-[#0a7ae6] transition-all duration-200"
@@ -833,7 +837,7 @@ export default function Navbar() {
                       </h4>
                       <div className="grid grid-cols-2 gap-x-5 gap-y-1">
                         {storeCategories.map((category) => (
-                          <Link
+                          <Link prefetch={false}
                             key={category.id}
                             href={`/shop?filter=${encodeURIComponent(category.slug)}`}
                             onClick={() => setOpenMenu(null)}
@@ -856,7 +860,7 @@ export default function Navbar() {
                     {/* Column 3: current dashboard products */}
                     <div className="col-span-5 mx-auto grid w-full max-w-[420px] grid-cols-2 gap-3">
                       {menuFeaturedProducts.map((product) => (
-                        <Link
+                        <Link prefetch={false}
                           key={product.id}
                           href={`/product/${product.slug}`}
                           onClick={() => setOpenMenu(null)}
@@ -907,7 +911,7 @@ export default function Navbar() {
                           { name: "Terms & Policy", href: "/terms-policy" },
                         ].map((item) => (
                           <li key={item.name}>
-                            <Link
+                            <Link prefetch={false}
                               href={item.href}
                               onClick={() => setOpenMenu(null)}
                               className="group flex items-center justify-between rounded-none px-3 py-2 text-xs font-medium uppercase tracking-wider text-slate-800 hover:bg-slate-50 hover:text-[#0a7ae6] transition-all duration-200"
@@ -933,7 +937,7 @@ export default function Navbar() {
                           { name: "Replacement Claims", href: "/repair-replacement" },
                           { name: "Authorized Service Centers", href: "/service-centers" },
                         ].map((srv) => (
-                          <Link
+                          <Link prefetch={false}
                             key={srv.name}
                             href={srv.href}
                             onClick={() => setOpenMenu(null)}
@@ -950,7 +954,7 @@ export default function Navbar() {
                     {/* Column 3: selected navigation products */}
                     <div className="col-span-4 grid grid-cols-2 gap-4 border-l border-slate-100 pl-6">
                       {warrantyMenuProducts.map((product) => (
-                        <Link
+                        <Link prefetch={false}
                           key={product.id}
                           href={`/product/${product.slug}`}
                           onClick={() => setOpenMenu(null)}
@@ -1001,7 +1005,7 @@ export default function Navbar() {
                           { name: "Order Tracking", href: "/support" },
                         ].map((item) => (
                           <li key={item.name}>
-                            <Link
+                            <Link prefetch={false}
                               href={item.href}
                               onClick={() => setOpenMenu(null)}
                               className="group flex items-center justify-between rounded-none px-3 py-2 text-xs font-medium uppercase tracking-wider text-slate-800 hover:bg-slate-50 hover:text-[#0a7ae6] transition-all duration-200"
@@ -1027,7 +1031,7 @@ export default function Navbar() {
                           { name: "Downloads & Manuals", href: "/support" },
                           { name: "Firmware Updates", href: "/support" },
                         ].map((res) => (
-                          <Link
+                          <Link prefetch={false}
                             key={res.name}
                             href={res.href}
                             onClick={() => setOpenMenu(null)}
@@ -1043,7 +1047,7 @@ export default function Navbar() {
 
                     {/* Column 3: Spotlight Image Cards */}
                     <div className="col-span-5 grid grid-cols-2 gap-4">
-                      <Link
+                      <Link prefetch={false}
                         href="/contact"
                         onClick={() => setOpenMenu(null)}
                         className="group flex flex-col items-center justify-between rounded-xl p-2 transition-all duration-300 hover:-translate-y-0.5"
@@ -1061,7 +1065,7 @@ export default function Navbar() {
                         </h5>
                       </Link>
 
-                      <Link
+                      <Link prefetch={false}
                         href="/support"
                         onClick={() => setOpenMenu(null)}
                         className="group flex flex-col items-center justify-between rounded-xl p-2 transition-all duration-300 hover:-translate-y-0.5"
@@ -1105,7 +1109,7 @@ export default function Navbar() {
                 {/* Navigation Items List */}
                 <div className="space-y-1">
                   {/* Home */}
-                  <Link
+                  <Link prefetch={false}
                     href="/"
                     onClick={handleNavigate}
                     className="flex items-center gap-3 rounded-xl px-3.5 py-3 text-[14px] font-semibold text-slate-800 hover:bg-slate-100 hover:text-[#0a7ae6]"
@@ -1174,7 +1178,7 @@ export default function Navbar() {
                         {isExpanded && (
                           <div className="border-t border-slate-200/80 bg-white px-3.5 py-2 space-y-1">
                             {mobileItems.map((item) => (
-                                <Link
+                                <Link prefetch={false}
                                   key={item.key}
                                   href={item.href}
                                   onClick={handleNavigate}
@@ -1195,7 +1199,7 @@ export default function Navbar() {
                   })}
 
                   {/* Flat Nav Items */}
-                  <Link
+                  <Link prefetch={false}
                     href="/about"
                     onClick={handleNavigate}
                     className="flex items-center gap-3 rounded-xl px-3.5 py-3 text-[14px] font-semibold text-slate-800 hover:bg-slate-100 hover:text-[#0a7ae6]"
@@ -1204,7 +1208,7 @@ export default function Navbar() {
                     <span>About Us</span>
                   </Link>
 
-                  <Link
+                  <Link prefetch={false}
                     href="/contact"
                     onClick={handleNavigate}
                     className="flex items-center gap-3 rounded-xl px-3.5 py-3 text-[14px] font-semibold text-slate-800 hover:bg-slate-100 hover:text-[#0a7ae6]"
@@ -1213,7 +1217,7 @@ export default function Navbar() {
                     <span>Contact</span>
                   </Link>
 
-                  <Link
+                  <Link prefetch={false}
                     href={currentUser ? "/orders" : "/login"}
                     onClick={handleNavigate}
                     className="flex items-center gap-3 rounded-xl px-3.5 py-3 text-[14px] font-semibold text-slate-800 hover:bg-slate-100 hover:text-[#0a7ae6]"
@@ -1340,7 +1344,7 @@ export default function Navbar() {
               <div className="flex h-full flex-col items-center justify-center text-center">
                 <ShoppingBag className="size-12 text-slate-200 stroke-[1.5] mb-3" />
                 <p className="text-slate-400 font-medium">Your cart is empty</p>
-                <Link
+                <Link prefetch={false}
                   href="/shop"
                   onClick={() => setIsCartOpen(false)}
                   className="mt-4 rounded-full bg-[#0a7ae6] px-6 py-2.5 text-xs font-medium uppercase tracking-wider text-white shadow-md shadow-[#0a7ae6]/20 transition-all hover:scale-105"
@@ -1364,7 +1368,7 @@ export default function Navbar() {
                 <div className="mb-4 rounded-xl border border-blue-100 bg-blue-50/70 p-3 text-[11px] text-slate-700">
                   <div className="flex items-center justify-between">
                     <span className="font-semibold text-slate-900">📦 Track your order easily</span>
-                    <Link
+                    <Link prefetch={false}
                       href="/login"
                       onClick={() => setIsCartOpen(false)}
                       className="font-bold text-[#0a7ae6] hover:underline"
@@ -1378,7 +1382,7 @@ export default function Navbar() {
                 </div>
               )}
 
-              <Link
+              <Link prefetch={false}
                 href="/checkout"
                 onClick={() => setIsCartOpen(false)}
                 className="block w-full rounded-xl bg-[#0a7ae6] py-3.5 text-center text-sm font-medium uppercase tracking-wider text-white shadow-lg shadow-[#0a7ae6]/25 transition-all hover:opacity-95 hover:scale-[1.02]"
@@ -1480,7 +1484,7 @@ export default function Navbar() {
               <div className="flex h-full flex-col items-center justify-center text-center">
                 <Heart className="size-12 text-slate-200 stroke-[1.5] mb-3" />
                 <p className="text-slate-400 font-medium">Your wishlist is empty</p>
-                <Link
+                <Link prefetch={false}
                   href="/shop"
                   onClick={() => setIsWishlistOpen(false)}
                   className="mt-4 rounded-full bg-[#0a7ae6] px-6 py-2.5 text-xs font-medium uppercase tracking-wider text-white shadow-md shadow-[#0a7ae6]/20 transition-all hover:scale-105"
@@ -1586,7 +1590,7 @@ export default function Navbar() {
 
                 <div className="mb-6 grid grid-cols-2 gap-3">
                   {searchProductCards.map((product) => (
-                    <Link
+                    <Link prefetch={false}
                       key={product.id}
                       href={`/product/${product.slug || product.id}`}
                       onClick={() => setIsSearchDrawerOpen(false)}
@@ -1620,7 +1624,7 @@ export default function Navbar() {
                       {searchTerm ? "More results" : "More popular products"}
                     </p>
                     {searchProductListItems.map((product) => (
-                      <Link
+                      <Link prefetch={false}
                         key={product.id}
                         href={`/product/${product.slug || product.id}`}
                         onClick={() => setIsSearchDrawerOpen(false)}

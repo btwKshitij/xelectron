@@ -108,13 +108,12 @@ export default function HeroShowcase({ initialBanners }: { initialBanners?: Bann
   useEffect(() => {
     if (initialBanners && initialBanners.length > 0) {
       setBannerList(initialBanners);
+      return;
     }
-  }, [initialBanners]);
 
-  useEffect(() => {
     async function syncBanners() {
       try {
-        const res = await fetch("/api/banners", { cache: "no-store" });
+        const res = await fetch("/api/banners");
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data) && data.length > 0) {
@@ -126,7 +125,7 @@ export default function HeroShowcase({ initialBanners }: { initialBanners?: Bann
       }
     }
     syncBanners();
-  }, []);
+  }, [initialBanners]);
 
   const activeBanners = bannerList.length > 0 ? bannerList : defaultBanners;
   const totalBanners = activeBanners.length;
@@ -244,7 +243,7 @@ export default function HeroShowcase({ initialBanners }: { initialBanners?: Bann
                   : "opacity-0 z-0 pointer-events-none"
               }`}
             >
-              <Link
+              <Link prefetch={false}
                 href={banner.linkUrl || "/shop"}
                 className="block relative h-full w-full overflow-hidden"
               >
