@@ -109,6 +109,16 @@ export async function updateBanner(
 }
 
 export async function deleteBanner(id: string) {
+  try {
+    const banner = await (db as any).heroBanner.findUnique({ where: { id } });
+    if (banner) {
+      const { deleteMultipleProductMedia } = await import("@/lib/server/r2");
+      await deleteMultipleProductMedia([banner.src, banner.mobileSrc]);
+    }
+  } catch (err) {
+    console.error("Failed to delete banner media from R2:", err);
+  }
+
   return (db as any).heroBanner.delete({
     where: { id },
   })

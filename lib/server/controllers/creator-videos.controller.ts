@@ -233,6 +233,16 @@ export async function updateCreatorVideo(
 // ─── Delete a creator video ─────────────────────────────────────────────────
 
 export async function deleteCreatorVideo(id: string) {
+  try {
+    const rows: any[] = await db.$queryRawUnsafe(`SELECT "thumbnail_url", "video_url" FROM "creator_videos" WHERE "id" = $1`, id);
+    if (rows && rows.length > 0) {
+      const { deleteMultipleProductMedia } = await import("@/lib/server/r2");
+      await deleteMultipleProductMedia([rows[0].thumbnail_url, rows[0].video_url]);
+    }
+  } catch (err) {
+    console.error("Failed to delete creator video media from R2:", err);
+  }
+
   await db.$executeRawUnsafe(`DELETE FROM "creator_videos" WHERE "id" = $1`, id)
   return { success: true }
 }

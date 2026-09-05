@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { deleteMultipleProductMedia } from "@/lib/server/r2";
 
 // ─── Include Helpers ──────────────────────────────────────────────────────────
 
@@ -651,6 +652,19 @@ export async function updateProduct(
 ) {
   const { categoryId, newMedia, mediaOrder, removeMediaIds, features, specs, faqs, banners, creatorVideos, variants, colors, ...productData } = data;
 
+  if (removeMediaIds && removeMediaIds.length > 0) {
+    try {
+      const mediaRecords = await db.productMedia.findMany({
+        where: { id: { in: removeMediaIds } },
+        select: { key: true, url: true },
+      });
+      const keys = mediaRecords.flatMap((m: any) => [m.key, m.url]);
+      await deleteMultipleProductMedia(keys);
+    } catch (err) {
+      console.error("Failed to delete removed product media from R2:", err);
+    }
+  }
+
   const mediaChanges =
     newMedia?.length || mediaOrder?.length || removeMediaIds?.length
       ? {
@@ -761,6 +775,36 @@ export async function updateProduct(
 }
 
 export async function deleteProduct(id: string) {
+  try {
+    const product = await db.product.findUnique({
+      where: { id },
+      include: {
+        media: true,
+        banners: true,
+        creatorVideos: true,
+      },
+    });
+    if (product) {
+      const keysToDelete: (string | null | undefined)[] = [];
+      if (product.mainImage) keysToDelete.push(product.mainImage);
+      for (const m of product.media) {
+        if (m.key) keysToDelete.push(m.key);
+        if (m.url) keysToDelete.push(m.url);
+      }
+      for (const b of product.banners) {
+        if (b.imageUrl) keysToDelete.push(b.imageUrl);
+        if (b.mobileImageUrl) keysToDelete.push(b.mobileImageUrl);
+      }
+      for (const v of product.creatorVideos) {
+        if (v.thumbnailUrl) keysToDelete.push(v.thumbnailUrl);
+        if (v.videoUrl) keysToDelete.push(v.videoUrl);
+      }
+      await deleteMultipleProductMedia(keysToDelete);
+    }
+  } catch (err) {
+    console.error("Failed to cleanup R2 media for product:", err);
+  }
+
   return db.product.delete({
     where: { id },
   });

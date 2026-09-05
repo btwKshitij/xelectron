@@ -14,3 +14,17 @@ export async function uploadProductImage(file: File): Promise<UploadedProductIma
   }
   return result.data as UploadedProductImage;
 }
+
+export async function deleteProductImage(keyOrUrl: string): Promise<boolean> {
+  try {
+    const response = await fetch("/api/media", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: keyOrUrl, url: keyOrUrl }),
+    });
+    const result = await response.json();
+    return Boolean(response.ok && result.success);
+  } catch {
+    return false;
+  }
+}
