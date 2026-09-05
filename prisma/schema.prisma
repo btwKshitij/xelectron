@@ -1,0 +1,487 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "windows", "debian-openssl-3.0.x", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Users ───────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  ADMIN
+  CUSTOMER
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         UserRole @default(CUSTOMER)
+  phone        String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  orders   Order[]
+  sessions Session[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique @map("token_hash")
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+// ─── Categories ──────────────────────────────────────────────────────────────
+
+model Category {
+  id           String  @id @default(cuid())
+  title        String
+  slug         String  @unique
+  parentId     String? @map("parent_id")
+  description  String?
+  image        String?
+  visible      Boolean @default(true)
+  productCount Int     @default(0) @map("product_count")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryTree")
+
+  products Product[]
+
+  @@map("categories")
+}
+
+// ─── Products ────────────────────────────────────────────────────────────────
+
+model Product {
+  id             String  @id @default(cuid())
+  slug           String  @unique
+  name           String
+  price          String
+  oldPrice       String? @map("old_price")
+  discount       String?
+  rating         Float   @default(0)
+  reviewsCount   String  @default("0") @map("reviews_count")
+  description    String
+  mainImage      String  @map("main_image")
+  shippingNotice String  @map("shipping_notice")
+  quantity       Int     @default(0)
+  sku            String?
+  showInBestSellers Boolean @default(false) @map("show_in_best_sellers")
+  showInNavbar      Boolean @default(false) @map("show_in_navbar")
+  showInWarrantyMenu Boolean @default(false) @map("show_in_warranty_menu")
+
+  categoryId String   @map("category_id")
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  colors   ProductColor[]
+  variants ProductVariant[]
+  features ProductFeature[]
+  specs    ProductSpec[]
+  faqs     ProductFaq[]
+  media    ProductMedia[]
+  banners  ProductBanner[]
+
+  orderItems OrderItem[]
+  dealOfTheDay DealOfTheDay?
+  creatorVideos CreatorVideo[]
+  reviews ProductReview[]
+
+  @@map("products")
+}
+
+model ProductReview {
+  id           String   @id @default(cuid())
+  author       String
+  rating       Int      @default(5)
+  date         String?
+  title        String?
+  content      String
+  image        String?
+  imageCount   Int?     @default(0) @map("image_count")
+  verified     Boolean  @default(true)
+  helpfulCount Int      @default(0) @map("helpful_count")
+  isApproved   Boolean  @default(true) @map("is_approved")
+
+  productId String  @map("product_id")
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([productId, createdAt])
+  @@map("product_reviews")
+}
+
+model DealOfTheDay {
+  id          String   @id @default("default")
+  productId   String   @unique @map("product_id")
+  title       String
+  description String
+  image       String?
+  dealPrice   String?  @map("deal_price")
+  compareAtPrice String? @map("compare_at_price")
+  badge       String?  @default("FLASH OFFER")
+  features    String[] @default([])
+  unitsLeft   Int      @map("units_left")
+  totalUnits  Int      @map("total_units")
+  endsAt      DateTime @map("ends_at")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("deal_of_the_day")
+}
+
+enum AbandonedCheckoutStatus {
+  OPEN
+  RECOVERED
+}
+
+model AbandonedCheckout {
+  id              String                  @id @default(cuid())
+  sessionToken    String                  @unique @map("session_token")
+  customerName    String?                 @map("customer_name")
+  email           String?
+  phone           String?
+  items           Json
+  itemCount       Int                     @map("item_count")
+  subtotal        Float
+  total           Float
+  status          AbandonedCheckoutStatus @default(OPEN)
+  recoveredAt     DateTime?               @map("recovered_at")
+  createdAt       DateTime                @default(now()) @map("created_at")
+  lastActivityAt  DateTime                @updatedAt @map("last_activity_at")
+
+  @@index([status, lastActivityAt])
+  @@map("abandoned_checkouts")
+}
+
+model ProductColor {
+  id        String  @id @default(cuid())
+  name      String
+  bgHex     String  @map("bg_hex")
+  borderHex String? @map("border_hex")
+
+  productId String  @map("product_id")
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_colors")
+}
+
+model ProductVariant {
+  id         String   @id @default(cuid())
+  name       String
+  sku        String?
+  price      String?
+  stock      Int      @default(0)
+  colorHex   String?  @map("color_hex")
+  image      String?
+  sortOrder  Int      @default(0) @map("sort_order")
+  isActive   Boolean  @default(true) @map("is_active")
+
+  productId  String   @map("product_id")
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@map("product_variants")
+}
+
+model ProductFeature {
+  id          String @id @default(cuid())
+  featureText String @map("feature_text")
+
+  productId String  @map("product_id")
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_features")
+}
+
+model ProductSpec {
+  id    String @id @default(cuid())
+  label String
+  value String
+
+  productId String  @map("product_id")
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_specs")
+}
+
+model ProductFaq {
+  id       String @id @default(cuid())
+  question String
+  answer   String
+
+  productId String  @map("product_id")
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_faqs")
+}
+
+model ProductMedia {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  url       String
+  mimeType  String   @map("mime_type")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  productId String  @map("product_id")
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, sortOrder])
+  @@map("product_media")
+}
+
+model ProductBanner {
+  id             String   @id @default(cuid())
+  imageUrl       String   @map("image_url")
+  mobileImageUrl String?  @map("mobile_image_url")
+  title          String?
+  sortOrder      Int      @default(0) @map("sort_order")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  productId      String   @map("product_id")
+  product        Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, sortOrder])
+  @@map("product_banners")
+}
+
+// ─── Orders ──────────────────────────────────────────────────────────────────
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+// ─── Discounts ──────────────────────────────────────────────────────────────
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+model Discount {
+  id                 String       @id @default(cuid())
+  code               String?      @unique
+  type               DiscountType
+  value              Float
+  appliesTo          String       @default("ALL_PRODUCTS") @map("applies_to")
+  eligibleProductIds String?      @map("eligible_product_ids")
+  eligibleCategoryIds String?     @map("eligible_category_ids")
+  startDate          DateTime?    @map("start_date")
+  endDate            DateTime?    @map("end_date")
+  isActive           Boolean      @default(true) @map("is_active")
+  usageCount         Int          @default(0) @map("usage_count")
+  createdAt          DateTime     @default(now()) @map("created_at")
+  updatedAt          DateTime     @updatedAt @map("updated_at")
+
+  @@map("discounts")
+}
+
+model Order {
+  id                String      @id @default(cuid())
+  status            OrderStatus @default(PENDING)
+  total             Float
+  shippingAddress   String?     @map("shipping_address")
+  customerName      String?     @map("customer_name")
+  customerEmail     String?     @map("customer_email")
+  customerPhone     String?     @map("customer_phone")
+  city              String?
+  state             String?
+  pincode           String?
+  country           String?     @default("India")
+  shippingCarrier   String?     @map("shipping_carrier")
+  trackingNumber    String?     @map("tracking_number")
+  trackingUrl       String?     @map("tracking_url")
+  estimatedDelivery String?     @map("estimated_delivery")
+  internalNotes     String?     @map("internal_notes")
+
+  userId            String?     @map("user_id")
+  user              User?       @relation(fields: [userId], references: [id])
+
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt @map("updated_at")
+
+  items             OrderItem[]
+
+  @@map("orders")
+}
+
+model DraftOrder {
+  id              String   @id @default(cuid())
+  orderNumber     String   @unique @map("order_number")
+  customerName    String?  @map("customer_name")
+  customerEmail   String?  @map("customer_email")
+  customerPhone   String?  @map("customer_phone")
+  shippingAddress String?  @map("shipping_address")
+  city            String?
+  state           String?
+  pincode         String?
+  country         String?  @default("India")
+  total           Float    @default(0)
+  items           Json     @default("[]")
+  internalNotes   String?  @map("internal_notes")
+  status          String   @default("DRAFT")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("draft_orders")
+}
+
+model OrderItem {
+  id        String @id @default(cuid())
+  quantity  Int
+  unitPrice Float  @map("unit_price")
+
+  orderId String @map("order_id")
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  productId String  @map("product_id")
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+// ─── Hero Banners ────────────────────────────────────────────────────────────
+
+model HeroBanner {
+  id        String   @id @default(cuid())
+  title     String
+  category  String?
+  caption   String?
+  src       String
+  mobileSrc String?  @map("mobile_src")
+  alt       String
+  cta       String?  @default("Shop now")
+  linkUrl   String?  @map("link_url")
+  sortOrder Int      @default(0) @map("sort_order")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("hero_banners")
+}
+
+// ─── Store Announcement Bar ─────────────────────────────────────────────────
+
+model Announcement {
+  id           String   @id @default(cuid())
+  prefix       String?  @default("")
+  action       String
+  href         String   @default("/")
+  discountCode String?  @map("discount_code")
+  sortOrder    Int      @default(0) @map("sort_order")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive, sortOrder])
+  @@map("announcements")
+}
+
+model AnnouncementSettings {
+  id            String   @id @default("default")
+  tickerEnabled Boolean  @default(true) @map("ticker_enabled")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("announcement_settings")
+}
+
+// ─── Creator Videos ─────────────────────────────────────────────────────────
+
+model CreatorVideo {
+  id             String   @id @default(cuid())
+  title          String?
+  thumbnailUrl   String   @map("thumbnail_url")
+  videoUrl       String?  @map("video_url")
+  productId      String?  @map("product_id")
+  product        Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  isProductVideo Boolean  @default(false) @map("is_product_video")
+  sortOrder      Int      @default(0) @map("sort_order")
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("creator_videos")
+}
+
+// ─── Blog Posts ──────────────────────────────────────────────────────────────
+
+model BlogPost {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  excerpt     String?
+  content     String
+  category    String   @default("Insights")
+  image       String   @default("/blog-1.png")
+  readTime    String   @default("4 min read") @map("read_time")
+  accentColor String   @default("#0a7ae6") @map("accent_color")
+  publishedAt DateTime @default(now()) @map("published_at")
+  isActive    Boolean  @default(true) @map("is_active")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("blog_posts")
+}
+
+// ─── Brand Showcase / Brand Setup ───────────────────────────────────────────
+
+model BrandShowcaseItem {
+  id        String   @id @default(cuid())
+  title     String
+  subtitle  String
+  image     String
+  linkUrl   String?  @map("link_url")
+  sortOrder Int      @default(0) @map("sort_order")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("brand_showcase_items")
+}
+
+// ─── Brand Marquee / Platform Partners ──────────────────────────────────────
+
+model BrandMarqueeItem {
+  id        String   @id @default(cuid())
+  name      String
+  logoUrl   String?  @map("logo_url")
+  color     String   @default("#000000")
+  linkUrl   String?  @map("link_url")
+  sortOrder Int      @default(0) @map("sort_order")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("brand_marquee_items")
+}
