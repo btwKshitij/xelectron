@@ -27,9 +27,8 @@ const allowedExtensions = new Set([
   "mp4", "webm", "mov", "ogg", "mkv", "avi", "m4v", "flv", "3gp", "ts"
 ]);
 
-export function getR2PublicBaseUrl(): string | null {
-  const url = process.env.R2_PUBLIC_URL || process.env.NEXT_PUBLIC_R2_PUBLIC_URL;
-  if (!url) return null;
+export function getR2PublicBaseUrl(): string {
+  const url = process.env.R2_PUBLIC_URL || process.env.NEXT_PUBLIC_R2_PUBLIC_URL || "https://pub-71e14405ed4a425db543797ffb54d14a.r2.dev";
   return url.replace(/\/+$/, "");
 }
 
