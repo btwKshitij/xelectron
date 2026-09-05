@@ -391,7 +391,7 @@ export default function CreatorVideosSection() {
                           </p>
                         </div>
 
-                        <Link
+                        <Link prefetch={false}
                           href="/shop"
                           onClick={(e) => e.stopPropagation()}
                           className="inline-flex h-10 w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-[#0a7ae6] text-xs sm:text-sm font-bold text-white transition-colors hover:bg-[#0866c2] shadow-xs active:scale-[0.98]"

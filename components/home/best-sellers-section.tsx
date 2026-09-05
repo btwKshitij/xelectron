@@ -93,6 +93,7 @@ function MobileBestSellers({ items }: { items: BestSellerItem[] }) {
               <Link
                 key={`mobile-bestseller-${item.id}`}
                 href={`/product/${item.slug || item.id}`}
+                prefetch={false}
                 className="mobile-best-seller-card group w-[calc(50%-6px)] shrink-0 snap-start flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-2.5 sm:p-3 text-center transition-all duration-300 hover:-translate-y-0.5 hover:border-[#0a7ae6] hover:shadow-md select-none"
               >
                 {/* PRODUCT IMAGE CONTAINER */}
@@ -481,6 +482,7 @@ export default function BestSellersSection({ additionalItems = [] }: { additiona
 
                   <Link
                     href={`/product/${item.slug || item.id}`}
+                    prefetch={false}
                     className="mt-3 sm:mt-4 xl:mt-5 inline-flex h-9 sm:h-10 lg:h-11 xl:h-12 w-full items-center justify-center rounded-full bg-[#0a7ae6] px-5 text-[12px] sm:text-[13px] xl:text-[14px] font-medium text-white transition-all hover:bg-[#086ac9] shadow-md shadow-blue-500/15 active:scale-[0.99]"
                   >
                     View Details & Buy

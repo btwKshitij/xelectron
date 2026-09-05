@@ -54,6 +54,7 @@ export default function ProductShowcaseSection({ products }: { products: Storefr
 
           <Link
             href="/shop"
+            prefetch={false}
             className="group inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs font-semibold text-slate-800 shadow-xs transition-all duration-200 hover:border-[#0a7ae6] hover:bg-slate-50 hover:text-[#0a7ae6] active:scale-95 shrink-0"
           >
             <span>View All</span>
@@ -69,6 +70,7 @@ export default function ProductShowcaseSection({ products }: { products: Storefr
               <Link
               key={product.id}
               href={`/product/${product.slug}`}
+              prefetch={false}
               className="group block h-full"
               aria-label={`View ${product.name}`}
             >

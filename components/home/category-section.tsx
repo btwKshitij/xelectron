@@ -105,6 +105,7 @@ export default function CategorySection({ categories }: { categories?: Storefron
               <Link
                 key={category.id}
                 href={`/shop?filter=${encodeURIComponent(category.slug)}`}
+                prefetch={false}
                 className="group flex w-[calc(50%-6px)] shrink-0 snap-start sm:w-auto sm:min-w-[150px] lg:min-w-0 lg:flex-1 flex-col items-center justify-between rounded-2xl border border-slate-200/90 bg-white p-2.5 sm:p-3.5 h-[165px] sm:h-[185px] lg:h-[205px] text-center transition-all duration-300 hover:-translate-y-1 hover:border-[#0a7ae6] hover:shadow-md"
               >
                 {/* CLEAN PRODUCT HERO IMAGE */}

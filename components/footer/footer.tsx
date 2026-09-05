@@ -52,7 +52,7 @@ function FooterColumn({
       <ul className="mt-3.5 space-y-2 text-xs sm:text-sm uppercase leading-5 tracking-[0.01em] text-white/90 font-normal sm:mt-4">
         {links.map((link) => (
           <li key={link.label}>
-            <Link href={link.href} className="transition-colors hover:text-white hover:underline underline-offset-4">
+            <Link prefetch={false} href={link.href} className="transition-colors hover:text-white hover:underline underline-offset-4">
               {link.label}
             </Link>
           </li>
@@ -112,7 +112,7 @@ export default function Footer() {
         <ul className="order-3 mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-center text-[10px] sm:text-[11px] lg:text-[12px] font-medium uppercase tracking-[0.02em] text-white/80 sm:mt-4 sm:gap-x-6 lg:order-2 lg:mt-6 lg:justify-end lg:pr-2">
           {policyLinks.map((link) => (
             <li key={link.label}>
-              <Link href={link.href} className="transition-colors hover:text-white hover:underline underline-offset-2">
+              <Link prefetch={false} href={link.href} className="transition-colors hover:text-white hover:underline underline-offset-2">
                 {link.label}
               </Link>
             </li>

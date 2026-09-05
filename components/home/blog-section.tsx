@@ -81,7 +81,7 @@ export default function BlogSection() {
               Latest Stories & Updates
             </h2>
           </div>
-          <Link
+          <Link prefetch={false}
             href="/dashboard/blog"
             className="group flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm font-bold text-[#0a7ae6] transition-colors hover:text-[#025bb5] shrink-0"
           >

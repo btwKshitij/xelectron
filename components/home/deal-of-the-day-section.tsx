@@ -329,7 +329,7 @@ export default function DealOfTheDaySection({ deal }: { deal: StorefrontDealOfTh
                 </div>
 
                 {/* BRAND BLUE CTA BUTTON */}
-                <Link
+                <Link prefetch={false}
                   href={`/product/${deal.product.slug}`}
                   className="group relative mt-5 inline-flex h-12 sm:h-14 w-full items-center justify-center overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-r from-[#0a7ae6] to-[#025bb5] text-sm sm:text-lg font-semibold tracking-wide text-white shadow-md shadow-blue-500/25 transition-all duration-300 hover:from-[#0869c7] hover:to-[#014993] hover:shadow-blue-500/40 active:scale-[0.99]"
                 >
