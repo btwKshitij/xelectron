@@ -77,7 +77,7 @@ function HeroVideo({
       loop
       muted
       playsInline
-      preload="auto"
+      preload="metadata"
       className={`h-full w-full object-cover object-center transform-gpu ${
         isActive ? "animate-hero-zoom" : "scale-100"
       }`}
