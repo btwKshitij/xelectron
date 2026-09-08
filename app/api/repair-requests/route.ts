@@ -1,3 +1,4 @@
+import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -49,9 +50,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const serviceInbox = (
-      process.env.SERVICE_REQUEST_EMAIL || process.env.SMTP_USER || "info@xelectron.com"
-    ).trim();
+    const saved = await db.supportRequest.create({ data: { kind: "COMPLAINT", details: { name, phone, serialNumber, requestType, address, issueDetails } } });
+
+    const serviceInbox = "kapil@xelectron.com";
 
     const html = `
       <div style="font-family:Arial,sans-serif;color:#172033;line-height:1.5;max-width:620px">
@@ -93,13 +94,10 @@ export async function POST(request: NextRequest) {
 
     if (!emailResult.success) {
       console.error("Repair request email could not be delivered:", emailResult.error);
-      return NextResponse.json(
-        { success: false, error: "The service request could not be sent. Please try again shortly." },
-        { status: 502 }
-      );
+
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, reference: saved.id });
   } catch (error) {
     console.error("Repair request submission failed:", error);
     return NextResponse.json(

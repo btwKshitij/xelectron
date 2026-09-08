@@ -1,10 +1,15 @@
+import { db } from "@/lib/db";
+import { z } from "zod";
 import { NextRequest, NextResponse } from "next/server";
 import { sendEmail, sendInquiryCustomerEmail } from "@/lib/server/mail";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, email, phone, department, message } = body;
+    const parsed = z.object({ name: z.string().trim().min(1).max(120), email: z.string().trim().email().max(254), phone: z.string().trim().max(40).optional(), department: z.string().trim().max(120).optional(), message: z.string().trim().min(1).max(10000) }).safeParse(body);
+    if (!parsed.success) return NextResponse.json({ success: false, error: "Please provide a valid name, email and message." }, { status: 400 });
+    const { name, email, phone, department, message } = parsed.data;
+    const saved = await db.supportRequest.create({ data: { kind: department?.includes("Warranty") ? "WARRANTY" : "INQUIRY", details: parsed.data } });
 
     if (!name || !email || !message) {
       return NextResponse.json(
@@ -13,17 +18,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Determine target recipient based on department
-    let targetEmail = "info@xelectron.com";
-    if (department?.toLowerCase().includes("sales")) {
-      targetEmail = "sales@xelectron.com";
-    } else if (department?.toLowerCase().includes("customer") || department?.toLowerCase().includes("support")) {
-      targetEmail = "customercare@xelectron.com";
-    } else if (department?.toLowerCase().includes("service") || department?.toLowerCase().includes("warranty")) {
-      targetEmail = "kapil@xelectron.com";
-    }
+    const targetEmail = "kapil@xelectron.com";
 
     // 1. Send Notification Email to Internal Team
+    const escapeHtml = (value: string) => value.replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]!);
     const adminNotificationHtml = `
       <!DOCTYPE html>
       <html>
@@ -37,11 +35,11 @@ export async function POST(request: NextRequest) {
               <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px;">
                 <tr style="border-bottom: 1px solid #f1f5f9;">
                   <td style="padding: 6px 0; color: #64748b; font-size: 13px; font-weight: bold; width: 120px;">Department:</td>
-                  <td style="padding: 6px 0; color: #0a7ae6; font-size: 13px; font-weight: bold;">${department || "General Inquiry"}</td>
+                  <td style="padding: 6px 0; color: #0a7ae6; font-size: 13px; font-weight: bold;">${escapeHtml(department || "General Inquiry")}</td>
                 </tr>
                 <tr style="border-bottom: 1px solid #f1f5f9;">
                   <td style="padding: 6px 0; color: #64748b; font-size: 13px; font-weight: bold;">Customer Name:</td>
-                  <td style="padding: 6px 0; color: #0f172a; font-size: 13px; font-weight: bold;">${name}</td>
+                  <td style="padding: 6px 0; color: #0f172a; font-size: 13px; font-weight: bold;">${escapeHtml(name)}</td>
                 </tr>
                 <tr style="border-bottom: 1px solid #f1f5f9;">
                   <td style="padding: 6px 0; color: #64748b; font-size: 13px; font-weight: bold;">Email:</td>
@@ -54,7 +52,7 @@ export async function POST(request: NextRequest) {
               </table>
               <div style="background: #f8fafc; border-left: 3px solid #0a7ae6; padding: 14px 16px; border-radius: 6px;">
                 <p style="margin: 0 0 6px 0; font-weight: bold; font-size: 12px; color: #475569; text-transform: uppercase;">Message:</p>
-                <p style="margin: 0; white-space: pre-wrap; font-size: 13px; color: #1e293b;">${message}</p>
+                <p style="margin: 0; white-space: pre-wrap; font-size: 13px; color: #1e293b;">${escapeHtml(message)}</p>
               </div>
             </div>
           </div>
@@ -62,7 +60,7 @@ export async function POST(request: NextRequest) {
       </html>
     `;
 
-    await sendEmail({
+    const delivery = await sendEmail({
       to: targetEmail,
       subject: `[Website Inquiry] ${name} - ${department || "General Inquiry"}`,
       html: adminNotificationHtml,
@@ -71,7 +69,7 @@ export async function POST(request: NextRequest) {
     });
 
     // 2. Send Premium Branded Confirmation Email to Customer
-    await sendInquiryCustomerEmail({
+    if (delivery.success) await sendInquiryCustomerEmail({
       name,
       email,
       department: department || "Customer Support",
@@ -81,7 +79,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Inquiry sent successfully to ${targetEmail}`,
+      reference: saved.id,
+      message: "Your request has been received and saved for our team.",
     });
   } catch (error) {
     console.error("Contact form submission error:", error);

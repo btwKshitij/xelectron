@@ -3,6 +3,7 @@
 import { useEffect, useState, use } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -23,6 +24,7 @@ import {
   FileText,
   RefreshCw,
   Zap,
+  Trash2,
 } from "lucide-react";
 
 import { AppSidebar } from "@/components/admin/navigation/app-sidebar";
@@ -69,6 +71,7 @@ export type OrderDetailData = {
   estimatedDelivery?: string;
   internalNotes?: string;
   paymentMethod?: string;
+  paymentVerified?: boolean;
   user?: {
     id: string;
     name: string;
@@ -107,6 +110,7 @@ function getPublicDelhiveryTrackingUrl(trackingNumber: string) {
 }
 
 export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const router = useRouter();
   const resolvedParams = use(params);
   const orderId = resolvedParams.id;
 
@@ -292,6 +296,42 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     }
   };
 
+  const handleMarkAsPaid = async () => {
+    if (!window.confirm("Verify and mark this order as PAID? It will be confirmed and included in the active Orders section.")) return;
+    await saveOrderUpdates({ paymentVerified: true, status: "CONFIRMED" });
+  };
+
+  const handleConvertToCod = async () => {
+    if (!window.confirm("Convert this order to Cash on Delivery (COD)? It will be marked as COD and included in the active Orders section.")) return;
+    const currentAddress = (order?.shippingAddress || "").replace(/\[Payment:\s*[A-Z_]+\]/gi, "").trim();
+    const updatedAddress = `${currentAddress} [Payment: COD Verified]`;
+    const updatedNotes = order?.internalNotes
+      ? `${order.internalNotes}\nPayment method: COD (Converted by Admin)`
+      : "Payment method: COD (Converted by Admin)";
+    await saveOrderUpdates({
+      shippingAddress: updatedAddress,
+      internalNotes: updatedNotes,
+    });
+  };
+
+  const handleDeleteOrder = async () => {
+    if (!window.confirm("Permanently delete this unconfirmed checkout attempt? This cannot be undone.")) return;
+    setIsUpdating(true);
+    try {
+      const res = await fetch(`/api/orders/${orderId}`, { method: "DELETE" });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        router.push("/dashboard/orders");
+      } else {
+        alert(json.error || "Failed to delete order");
+        setIsUpdating(false);
+      }
+    } catch {
+      alert("Network error while deleting order");
+      setIsUpdating(false);
+    }
+  };
+
   const handleGenerateAndPublishAwb = async () => {
     setIsUpdating(true);
     setStatusMessage("");
@@ -303,10 +343,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       });
       const json = await res.json();
       if (json.success && json.data) {
-        setCarrier(json.data.shippingCarrier);
-        setTrackingNumber(json.data.trackingNumber);
-        setTrackingUrl(json.data.trackingUrl);
-        setEstimatedDelivery(json.data.estimatedDelivery);
+        setCarrier(json.data.shippingCarrier || "");
+        setTrackingNumber(json.data.trackingNumber || "");
+        setTrackingUrl(json.data.trackingUrl || "");
+        setEstimatedDelivery(json.data.estimatedDelivery || "");
         setOrder((prev) => (prev ? { ...prev, ...json.data } : null));
         setDeliveryOpen(true);
         setDeliveryDetails(null);
@@ -428,6 +468,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     }
   };
 
+  const isPaidOrCod =
+    order.paymentVerified === true ||
+    /\[Payment:\s*COD/i.test(order.shippingAddress || "") ||
+    /Payment method:\s*COD/i.test(order.internalNotes || "") ||
+    /\bCOD\b/i.test(order.internalNotes || "");
+
   return (
     <TooltipProvider>
       <SidebarProvider className="min-h-svh">
@@ -446,8 +492,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 <div>
                   <div className="flex items-center gap-2.5">
                     <h1 className="text-xl font-bold text-black sm:text-2xl">{orderRef}</h1>
-                    <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-800">
-                      <Check className="size-3" /> PAID
+                    <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-bold ${order.paymentVerified ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
+                      {order.paymentVerified === true ? <><Check className="size-3" /> PAID</> : "PAYMENT NOT VERIFIED"}
                     </span>
                     {getFulfillmentBadge(order.status)}
                   </div>
@@ -492,6 +538,47 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
               <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-xs font-semibold text-emerald-900 flex items-center justify-between">
                 <span>{statusMessage}</span>
                 <button onClick={() => setStatusMessage("")} className="text-emerald-700 hover:text-emerald-900">✕</button>
+              </div>
+            ) : null}
+
+            {!isPaidOrCod ? (
+              <div className="mb-6 rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-950 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="size-5 shrink-0 text-amber-600 mt-0.5" />
+                  <div className="flex-1 text-xs">
+                    <h2 className="text-sm font-bold text-amber-900">Unconfirmed Checkout Attempt (Excluded from Orders List)</h2>
+                    <p className="mt-1 text-amber-800 leading-relaxed">
+                      This checkout attempt was started using <strong>{getPaymentLabel(displayPaymentMethod)}</strong>, but payment was never completed or verified, and it is not Cash on Delivery.
+                      It is <strong>hidden from the main Orders section</strong> and store analytics so your revenue and order counts remain accurate.
+                    </p>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={isUpdating}
+                        onClick={handleMarkAsPaid}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-1.5 font-semibold text-white hover:bg-emerald-800 disabled:opacity-50 cursor-pointer shadow-xs"
+                      >
+                        <Check className="size-3.5" /> Verify &amp; Mark as Paid
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isUpdating}
+                        onClick={handleConvertToCod}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-black px-3 py-1.5 font-semibold text-white hover:bg-black/80 disabled:opacity-50 cursor-pointer shadow-xs"
+                      >
+                        Convert to Cash on Delivery (COD)
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isUpdating}
+                        onClick={handleDeleteOrder}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-red-300 bg-white px-3 py-1.5 font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 cursor-pointer shadow-xs"
+                      >
+                        <Trash2 className="size-3.5" /> Delete Attempt
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             ) : null}
 
@@ -577,10 +664,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     </div> : <div className="mb-4 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-center"><Truck className="mx-auto size-5 text-slate-400" /><p className="mt-2 text-sm font-semibold text-slate-700">Delivery has not been created</p><p className="mt-1 text-xs text-slate-500">Create a delivery to reserve and publish a real Delhivery AWB.</p></div>}
 
                     <div className="grid gap-3.5 sm:grid-cols-2">
-                      <label className="grid gap-1 text-xs font-semibold text-black/70">Shipping courier<select value={carrier} onChange={(e) => setCarrier(e.target.value)} className="h-9 rounded-lg border border-black/20 bg-white px-3 text-xs font-medium text-black focus:border-black focus:outline-none"><option value="">Select courier</option>{CARRIERS.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
-                      <label className="grid gap-1 text-xs font-semibold text-black/70">Tracking / AWB number<input type="text" value={trackingNumber} onChange={(e) => setTrackingNumber(e.target.value)} placeholder="Enter a manifested AWB" className="h-9 rounded-lg border border-black/20 bg-white px-3 font-mono text-xs font-medium text-black focus:border-black focus:outline-none" /></label>
-                      <label className="grid gap-1 text-xs font-semibold text-black/70">Tracking link<input type="text" value={trackingUrl} readOnly placeholder="Generated automatically from the AWB" className="h-9 rounded-lg border border-black/15 bg-slate-50 px-3 text-xs text-slate-500 outline-none" /></label>
-                      <label className="grid gap-1 text-xs font-semibold text-black/70">Estimated delivery<input type="text" value={estimatedDelivery} onChange={(e) => setEstimatedDelivery(e.target.value)} placeholder="e.g. 28 Aug 2026" className="h-9 rounded-lg border border-black/20 bg-white px-3 text-xs text-black focus:border-black focus:outline-none" /></label>
+                      <label className="grid gap-1 text-xs font-semibold text-black/70">Shipping courier<select value={carrier ?? ""} onChange={(e) => setCarrier(e.target.value)} className="h-9 rounded-lg border border-black/20 bg-white px-3 text-xs font-medium text-black focus:border-black focus:outline-none"><option value="">Select courier</option>{CARRIERS.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
+                      <label className="grid gap-1 text-xs font-semibold text-black/70">Tracking / AWB number<input type="text" value={trackingNumber ?? ""} onChange={(e) => setTrackingNumber(e.target.value)} placeholder="Enter a manifested AWB" className="h-9 rounded-lg border border-black/20 bg-white px-3 font-mono text-xs font-medium text-black focus:border-black focus:outline-none" /></label>
+                      <label className="grid gap-1 text-xs font-semibold text-black/70">Tracking link<input type="text" value={trackingUrl ?? ""} readOnly placeholder="Generated automatically from the AWB" className="h-9 rounded-lg border border-black/15 bg-slate-50 px-3 text-xs text-slate-500 outline-none" /></label>
+                      <label className="grid gap-1 text-xs font-semibold text-black/70">Estimated delivery<input type="text" value={estimatedDelivery ?? ""} onChange={(e) => setEstimatedDelivery(e.target.value)} placeholder="e.g. 28 Aug 2026" className="h-9 rounded-lg border border-black/20 bg-white px-3 text-xs text-black focus:border-black focus:outline-none" /></label>
                     </div>
                     <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-black/[0.06] pt-4"><p className="text-[11px] text-slate-500">Tracking links are generated automatically from the saved AWB. Courier status refreshes only when you open or refresh this panel.</p><button type="button" onClick={() => saveOrderUpdates()} disabled={isUpdating} className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-black px-3 text-xs font-semibold text-white hover:bg-black/80 disabled:opacity-50"><Save className="size-3.5" />{isUpdating ? "Saving…" : "Save delivery"}</button></div>
                   </div> : null}
@@ -597,7 +684,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
                   <textarea
                     rows={3}
-                    value={internalNotes}
+                    value={internalNotes ?? ""}
                     onChange={(e) => setInternalNotes(e.target.value)}
                     placeholder="Add private internal notes for warehouse, packaging, or customer service team..."
                     className="w-full rounded-lg border border-black/20 bg-white p-3 text-xs text-black focus:border-black focus:outline-none"
@@ -623,8 +710,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                       <CreditCard className="size-4 text-black/60" />
                       <span>Payment Details</span>
                     </div>
-                    <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-800">
-                      Paid
+                    <span className={`rounded-md px-2 py-0.5 text-xs font-bold ${order.paymentVerified ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
+                      {order.paymentVerified === true ? "Paid" : "Payment not verified"}
                     </span>
                   </div>
 
@@ -645,7 +732,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                       <span>₹0.00</span>
                     </div>
                     <div className="flex justify-between pt-2.5 border-t border-black/10 text-sm font-bold text-black">
-                      <span>Total Paid</span>
+                      <span>{order.paymentVerified === true ? "Total Paid" : "Order Total"}</span>
                       <span className="text-[#0a7ae6] text-base">{formatINR(order.total)}</span>
                     </div>
                   </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -20,6 +20,10 @@ import {
   CheckCircle2,
   Smartphone,
   RefreshCw,
+  Trash2,
+  Minus,
+  Plus,
+  ShoppingBag,
 } from "lucide-react";
 import Navbar from "@/components/navbar/navbar";
 import { useSearchParams } from "next/navigation";
@@ -49,71 +53,148 @@ function createCheckoutSessionToken() {
 }
 
 function CheckoutContent() {
-  const { items: orderItems, subtotal, clearCart, addItem } = useCart();
+  const {
+    items: orderItems,
+    subtotal,
+    clearCart,
+    addItem,
+    removeItem,
+    updateQuantity,
+    updateItemPrice,
+    syncLivePrices,
+  } = useCart();
   const searchParams = useSearchParams();
   const [isMounted, setIsMounted] = useState(false);
   const [productParamLoading, setProductParamLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string; email: string } | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
 
+  // Prevent resurrecting products that the user explicitly removed, and ensure ?product= is processed once
+  const processedProductParamRef = useRef<string | null>(null);
+  const removedProductIdsRef = useRef<Set<string>>(new Set());
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  // Auto-resolve product param if passed via URL and not already in cart
-  useEffect(() => {
-    if (!isMounted) return;
-    const productParam = searchParams.get("product");
-    if (!productParam) {
-      setProductParamLoading(false);
-      return;
+  // Remove item handler: deletes from cart, tracks in ref, and strips ?product= from URL
+  const handleRemoveItem = useCallback((itemId: string, itemSlug?: string) => {
+    removedProductIdsRef.current.add(itemId);
+    if (itemSlug) {
+      removedProductIdsRef.current.add(itemSlug);
+    }
+    const currentParam = searchParams.get("product");
+    if (currentParam && (currentParam === itemId || currentParam === itemSlug)) {
+      processedProductParamRef.current = currentParam;
     }
 
-    let isSubscribed = true;
-    setProductParamLoading(true);
+    if (typeof window !== "undefined" && window.location.search.includes("product=")) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("product");
+      window.history.replaceState({}, "", url.pathname + (url.search ? url.search : ""));
+    }
 
-    fetch("/api/products")
+    removeItem(itemId);
+  }, [removeItem, searchParams]);
+
+  // Quantity change handler: decreases/increases quantity, or removes item when quantity reaches 0
+  const handleQuantityChange = useCallback((item: { id: string; slug?: string; quantity: number }, change: number) => {
+    if (item.quantity + change <= 0) {
+      handleRemoveItem(item.id, item.slug);
+    } else {
+      updateQuantity(item.id, change);
+    }
+  }, [handleRemoveItem, updateQuantity]);
+
+  // Auto-resolve product param if passed via URL, and sync all cart items with live database prices
+  useEffect(() => {
+    if (!isMounted) return;
+
+    let isSubscribed = true;
+    const productParam = searchParams.get("product");
+
+    if (
+      productParam &&
+      processedProductParamRef.current !== productParam &&
+      !removedProductIdsRef.current.has(productParam)
+    ) {
+      setProductParamLoading(true);
+    }
+
+    fetch("/api/products", { cache: "no-store" })
       .then((res) => res.json())
       .then((json) => {
         if (!isSubscribed || !json.success || !Array.isArray(json.data)) return;
 
-        const matched = json.data.find(
-          (p: { id: string; slug: string }) =>
-            p.id === productParam || p.slug === productParam
-        );
+        const productsMap = new Map<string, any>();
+        for (const p of json.data) {
+          if (p.id) productsMap.set(p.id, p);
+          if (p.slug) productsMap.set(p.slug, p);
+        }
 
-        if (matched) {
-          const itemPrice =
-            typeof matched.price === "number"
-              ? matched.price
-              : parseFloat(String(matched.price).replace(/,/g, "").replace(/[^0-9.]/g, "")) || 0;
-
-          const existingItem = orderItems.find(
-            (item) => item.id === matched.id || item.slug === matched.slug || item.slug === productParam
-          );
-
-          if (existingItem) {
-            // If item is already in cart but has wrong or 100x inflated price, replace with correct price
-            if (existingItem.price !== itemPrice && itemPrice > 0) {
-              clearCart();
-              addItem({
-                id: matched.id,
-                name: matched.name,
-                price: itemPrice,
-                image: matched.mainImage || "/category-smartphone.png",
-                category: matched.category?.title || "Electronics",
-                slug: matched.slug,
-              });
+        // 1. Sync live prices from DB for all items currently in cart
+        orderItems.forEach((item) => {
+          const matched = productsMap.get(item.id) || (item.slug ? productsMap.get(item.slug) : null);
+          if (matched) {
+            const dbPrice =
+              typeof matched.price === "number"
+                ? matched.price
+                : parseFloat(String(matched.price).replace(/,/g, "").replace(/[^0-9.]/g, "")) || 0;
+            if (dbPrice > 0 && (item.price !== dbPrice || item.name !== matched.name)) {
+              updateItemPrice(item.id, dbPrice, matched.name);
             }
-          } else {
-            addItem({
-              id: matched.id,
-              name: matched.name,
-              price: itemPrice,
-              image: matched.mainImage || "/category-smartphone.png",
-              category: matched.category?.title || "Electronics",
-              slug: matched.slug,
-            });
+          }
+        });
+
+        // 2. Resolve URL ?product= param if provided
+        if (productParam) {
+          if (
+            processedProductParamRef.current === productParam ||
+            removedProductIdsRef.current.has(productParam)
+          ) {
+            return;
+          }
+
+          const matched = productsMap.get(productParam);
+          if (matched) {
+            const itemPrice =
+              typeof matched.price === "number"
+                ? matched.price
+                : parseFloat(String(matched.price).replace(/,/g, "").replace(/[^0-9.]/g, "")) || 0;
+
+            const isRemoved =
+              removedProductIdsRef.current.has(matched.id) ||
+              (matched.slug && removedProductIdsRef.current.has(matched.slug));
+
+            if (!isRemoved) {
+              const existingItem = orderItems.find(
+                (item) => item.id === matched.id || item.slug === matched.slug || item.slug === productParam
+              );
+
+              if (existingItem) {
+                if (existingItem.price !== itemPrice && itemPrice > 0) {
+                  updateItemPrice(existingItem.id, itemPrice, matched.name);
+                }
+              } else {
+                addItem({
+                  id: matched.id,
+                  name: matched.name,
+                  price: itemPrice,
+                  image: matched.mainImage || "/category-smartphone.png",
+                  category: matched.category?.title || "Electronics",
+                  slug: matched.slug,
+                });
+              }
+            }
+          }
+
+          processedProductParamRef.current = productParam;
+
+          // Clean product param from the URL so it doesn't linger and cause re-add on re-render/refresh
+          if (typeof window !== "undefined" && window.location.search.includes("product=")) {
+            const url = new URL(window.location.href);
+            url.searchParams.delete("product");
+            window.history.replaceState({}, "", url.pathname + (url.search ? url.search : ""));
           }
         }
       })
@@ -561,15 +642,6 @@ function CheckoutContent() {
         const velData = await createVelRes.json();
         if (!velData.success || !velData.redirectUrl) {
           throw new Error(velData.error || "Failed to initialize Velocity EMI checkout");
-        }
-
-        if (checkoutSessionToken) {
-          await fetch("/api/abandoned-checkouts/complete", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ sessionToken: checkoutSessionToken }),
-          });
-          window.sessionStorage.removeItem(CHECKOUT_SESSION_KEY);
         }
 
         window.location.href = velData.redirectUrl;
@@ -1154,31 +1226,87 @@ function CheckoutContent() {
 
               {/* Order Items */}
               <div className="divide-y divide-slate-200/80">
-                {orderItems.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between gap-4 py-3.5 first:pt-0">
-                    <div className="flex items-center gap-3">
-                      <div className="relative size-12 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-white p-1">
-                        <Image
-                          src={item.image || "/category-smartphone.png"}
-                          alt={item.name}
-                          fill
-                          className="object-contain"
-                        />
+                {orderItems.map((item) => {
+                  const itemTotal = item.price * item.quantity;
+                  return (
+                    <div key={item.id} className="py-3.5 first:pt-0">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-3 min-w-0">
+                          <div className="relative size-12 sm:size-14 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-white p-1">
+                            <Image
+                              src={item.image || "/category-smartphone.png"}
+                              alt={item.name}
+                              fill
+                              className="object-contain"
+                            />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h4 className="text-xs sm:text-sm font-semibold text-slate-900 line-clamp-2 leading-snug">
+                              {item.name}
+                            </h4>
+                            <div className="mt-0.5 text-[11px] text-slate-500">
+                              ₹{item.price.toLocaleString("en-IN", {
+                                minimumFractionDigits: item.price % 1 !== 0 ? 2 : 0,
+                                maximumFractionDigits: 2,
+                              })}
+                              {item.quantity > 1 ? ` each` : ""}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <span className="text-xs sm:text-sm font-bold text-slate-900">
+                            ₹{itemTotal.toLocaleString("en-IN", {
+                              minimumFractionDigits: itemTotal % 1 !== 0 ? 2 : 0,
+                              maximumFractionDigits: 2,
+                            })}
+                          </span>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="text-xs sm:text-sm font-semibold text-slate-900 line-clamp-1">
-                          {item.name}
-                        </h4>
-                        <span className="text-[11px] font-medium text-slate-500">
-                          Qty: {item.quantity}
-                        </span>
+
+                      {/* Quantity Stepper & Remove Button */}
+                      <div className="mt-2.5 flex items-center justify-between pl-14 sm:pl-[68px]">
+                        <div className="inline-flex items-center rounded-lg border border-slate-200 bg-white shadow-2xs">
+                          <button
+                            type="button"
+                            onClick={() => handleQuantityChange(item, -1)}
+                            className="flex size-6 sm:size-7 items-center justify-center rounded-l-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
+                            aria-label="Decrease quantity"
+                            title={item.quantity === 1 ? "Remove product" : "Decrease quantity"}
+                          >
+                            {item.quantity === 1 ? (
+                              <Trash2 className="size-3 text-rose-500" />
+                            ) : (
+                              <Minus className="size-3" />
+                            )}
+                          </button>
+                          <span className="w-7 sm:w-8 text-center text-xs font-semibold text-slate-800">
+                            {item.quantity}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleQuantityChange(item, 1)}
+                            className="flex size-6 sm:size-7 items-center justify-center rounded-r-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
+                            aria-label="Increase quantity"
+                            title="Increase quantity"
+                          >
+                            <Plus className="size-3" />
+                          </button>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveItem(item.id, item.slug)}
+                          className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-rose-600 transition-colors px-2 py-1 rounded-md hover:bg-rose-50 cursor-pointer"
+                          aria-label={`Remove ${item.name}`}
+                        >
+                          <Trash2 className="size-3 text-rose-500" />
+                          <span>Remove</span>
+                        </button>
                       </div>
                     </div>
-                    <span className="text-xs sm:text-sm font-semibold text-slate-900">
-                      ₹{(item.price * item.quantity).toLocaleString("en-IN")}
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Calculation Summary */}
@@ -1186,14 +1314,22 @@ function CheckoutContent() {
                 <div className="flex justify-between text-slate-600">
                   <span>Subtotal</span>
                   <span className="font-medium text-slate-900">
-                    ₹{subtotal.toLocaleString("en-IN")}
+                    ₹{subtotal.toLocaleString("en-IN", {
+                      minimumFractionDigits: subtotal % 1 !== 0 ? 2 : 0,
+                      maximumFractionDigits: 2,
+                    })}
                   </span>
                 </div>
 
                 {appliedCoupon && (
                   <div className="flex justify-between text-emerald-600 font-medium">
                     <span>Discount ({couponDiscount}%)</span>
-                    <span>-₹{discountAmount.toLocaleString("en-IN")}</span>
+                    <span>
+                      -₹{discountAmount.toLocaleString("en-IN", {
+                        minimumFractionDigits: discountAmount % 1 !== 0 ? 2 : 0,
+                        maximumFractionDigits: 2,
+                      })}
+                    </span>
                   </div>
                 )}
 
@@ -1210,7 +1346,10 @@ function CheckoutContent() {
                 <div className="flex justify-between border-t border-slate-200/80 pt-3 text-base sm:text-lg font-bold text-slate-900">
                   <span>Total</span>
                   <span className="text-[#0a7ae6]">
-                    ₹{total.toLocaleString("en-IN")}
+                    ₹{total.toLocaleString("en-IN", {
+                      minimumFractionDigits: total % 1 !== 0 ? 2 : 0,
+                      maximumFractionDigits: 2,
+                    })}
                   </span>
                 </div>
               </div>
@@ -1393,7 +1532,7 @@ function CheckoutContent() {
               {/* Submit CTA */}
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || orderItems.length === 0}
                 className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#0a7ae6] py-3.5 text-center text-sm font-bold uppercase tracking-wider text-white shadow-lg shadow-[#0a7ae6]/25 transition-all hover:bg-[#086ac9] hover:shadow-xl active:scale-98 disabled:opacity-75 disabled:cursor-not-allowed cursor-pointer"
               >
                 {isSubmitting ? (
@@ -1403,10 +1542,19 @@ function CheckoutContent() {
                     <Lock className="size-4" />
                     <span>
                       {paymentMethod === "razorpay"
-                        ? `Pay with Razorpay • ₹${total.toLocaleString("en-IN")}`
+                        ? `Pay with Razorpay • ₹${total.toLocaleString("en-IN", {
+                            minimumFractionDigits: total % 1 !== 0 ? 2 : 0,
+                            maximumFractionDigits: 2,
+                          })}`
                         : paymentMethod === "velocity"
-                        ? `Proceed to No-Cost EMI • ₹${total.toLocaleString("en-IN")}`
-                        : `Confirm COD Order • ₹${total.toLocaleString("en-IN")}`}
+                        ? `Proceed to No-Cost EMI • ₹${total.toLocaleString("en-IN", {
+                            minimumFractionDigits: total % 1 !== 0 ? 2 : 0,
+                            maximumFractionDigits: 2,
+                          })}`
+                        : `Confirm COD Order • ₹${total.toLocaleString("en-IN", {
+                            minimumFractionDigits: total % 1 !== 0 ? 2 : 0,
+                            maximumFractionDigits: 2,
+                          })}`}
                     </span>
                   </>
                 )}

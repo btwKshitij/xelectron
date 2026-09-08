@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { isOrderPaidOrCod, paidOrCodOrderPrismaFilter } from "@/lib/server/orders-filter";
 
 const orderInclude = {
   user: { select: { id: true, name: true, email: true } },
@@ -10,10 +11,12 @@ const orderInclude = {
 } as const;
 
 export async function getOrdersForDashboard() {
-  return db.order.findMany({
+  const orders = await db.order.findMany({
+    where: paidOrCodOrderPrismaFilter,
     include: orderInclude,
     orderBy: { createdAt: "desc" },
   });
+  return orders.filter(isOrderPaidOrCod);
 }
 
 function parseRangeDates(rangeParam: string = "last30"): {
@@ -311,7 +314,9 @@ export async function getAnalyticsData(range: string = "all") {
     startDate.setDate(startDate.getDate() - 30);
   }
 
-  const whereClause = startDate ? { createdAt: { gte: startDate } } : {};
+  const whereClause = startDate
+    ? { AND: [paidOrCodOrderPrismaFilter, { createdAt: { gte: startDate } }] }
+    : paidOrCodOrderPrismaFilter;
 
   const [orders, customers, orderItems] = await Promise.all([
     db.order.findMany({
@@ -330,7 +335,14 @@ export async function getAnalyticsData(range: string = "all") {
       select: { id: true, _count: { select: { orders: true } } },
     }),
     db.orderItem.findMany({
-      where: startDate ? { order: { createdAt: { gte: startDate } } } : {},
+      where: startDate
+        ? {
+            AND: [
+              { order: paidOrCodOrderPrismaFilter },
+              { order: { createdAt: { gte: startDate } } },
+            ],
+          }
+        : { order: paidOrCodOrderPrismaFilter },
       include: {
         product: { select: { id: true, name: true, price: true } },
         order: { select: { status: true } },
@@ -338,7 +350,7 @@ export async function getAnalyticsData(range: string = "all") {
     }),
   ]);
 
-  const activeOrders = orders.filter((o: any) => o.status !== "CANCELLED");
+  const activeOrders = orders.filter((o: any) => o.status !== "CANCELLED" && isOrderPaidOrCod(o));
   const grossSales = activeOrders.reduce((sum: number, o: any) => sum + o.total, 0);
   const totalOrders = activeOrders.length;
   const ordersFulfilled = activeOrders.filter((o: any) => ["SHIPPED", "DELIVERED"].includes(o.status)).length;

@@ -1,8 +1,10 @@
 "use client";
 
+import { orderedTopics, getCategoryOrder } from "@/lib/shared/category-order";
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { categories as defaultCategories } from "@/components/home/content";
 import { resolveCategoryImage, getCategoryFallbackImage } from "@/lib/shared/category-utils";
 
@@ -36,10 +38,7 @@ function CategoryCardImage({ category }: { category: StorefrontCategory }) {
 }
 
 export default function CategorySection({ categories }: { categories?: StorefrontCategory[] }) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [activePage, setActivePage] = useState(0);
-
-  const displayCategories =
+  const sourceCategories =
     categories && categories.length > 0
       ? categories
       : defaultCategories.map((cat) => ({
@@ -49,33 +48,10 @@ export default function CategorySection({ categories }: { categories?: Storefron
           image: resolveCategoryImage(cat.src, cat.title, cat.title),
         }));
 
-  // In phone view, exactly 2 cards per view
-  const totalPages = Math.ceil(displayCategories.length / 2);
-
-  const handleScroll = useCallback(() => {
-    if (!scrollRef.current) return;
-    const { scrollLeft, clientWidth } = scrollRef.current;
-    if (clientWidth === 0) return;
-    const page = Math.round(scrollLeft / clientWidth);
-    setActivePage(Math.min(Math.max(page, 0), totalPages - 1));
-  }, [totalPages]);
-
-  const scrollToPage = (pageIndex: number) => {
-    if (!scrollRef.current) return;
-    const targetLeft = pageIndex * scrollRef.current.clientWidth;
-    scrollRef.current.scrollTo({
-      left: targetLeft,
-      behavior: "smooth",
-    });
-    setActivePage(pageIndex);
-  };
-
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    el.addEventListener("scroll", handleScroll, { passive: true });
-    return () => el.removeEventListener("scroll", handleScroll);
-  }, [handleScroll]);
+  const displayCategories = sourceCategories.map(category => {
+    const index = getCategoryOrder(category);
+    return { ...category, title: orderedTopics[index]?.title ?? category.title, order: index };
+  }).sort((a, b) => a.order - b.order);
 
   if (!displayCategories || displayCategories.length === 0) return null;
 
@@ -95,56 +71,25 @@ export default function CategorySection({ categories }: { categories?: Storefron
           </div>
         </div>
 
-        {/* CATEGORIES STRIP (EXACTLY 2 CARDS PER VIEW ON MOBILE, FULL ROW ON DESKTOP) */}
-        <div
-          ref={scrollRef}
-          className="no-scrollbar flex w-full items-center justify-start gap-3 sm:gap-4 overflow-x-auto pt-2 pb-4 snap-x snap-mandatory lg:justify-between"
-        >
-          {displayCategories.map((category) => {
-            return (
-              <Link
-                key={category.id}
-                href={`/shop?filter=${encodeURIComponent(category.slug)}`}
-                prefetch={false}
-                className="group flex w-[calc(50%-6px)] shrink-0 snap-start sm:w-auto sm:min-w-[150px] lg:min-w-0 lg:flex-1 flex-col items-center justify-between rounded-2xl border border-slate-200/90 bg-white p-2.5 sm:p-3.5 h-[165px] sm:h-[185px] lg:h-[205px] text-center transition-all duration-300 hover:-translate-y-1 hover:border-[#0a7ae6] hover:shadow-md"
-              >
-                {/* CLEAN PRODUCT HERO IMAGE */}
-                <div className="relative h-[110px] sm:h-[125px] lg:h-[140px] w-full flex items-center justify-center p-1">
-                  <div className="relative h-full w-full transition-transform duration-300 ease-out group-hover:scale-105">
+        <Carousel opts={{ align: "start", slidesToScroll: 1, breakpoints: { "(min-width: 640px)": { active: false } } }} aria-label="Shop by category">
+          <CarouselContent className="-ml-3 py-2 sm:-ml-4 sm:flex-wrap">
+            {displayCategories.map(category => (
+              <CarouselItem key={category.id} className="basis-1/2 pl-3 sm:basis-1/4 sm:pl-4">
+                <Link href={`/shop?filter=${encodeURIComponent(category.slug)}`} prefetch={false} className="group flex h-[190px] flex-col items-center justify-between rounded-2xl border border-slate-200 bg-white p-3 text-center transition-colors hover:border-[#0a7ae6] sm:h-[230px] sm:p-5">
+                  <div className="relative h-[120px] w-full sm:h-[155px]">
                     <CategoryCardImage category={category} />
                   </div>
-                </div>
-
-                {/* CATEGORY TITLE */}
-                <h3 className="mt-1 text-xs sm:text-sm font-semibold text-slate-800 transition-colors duration-200 group-hover:text-[#0a7ae6] line-clamp-1 leading-tight w-full px-1">
-                  {category.title}
-                </h3>
-              </Link>
-            );
-          })}
-        </div>
-
-        {/* MOBILE PAGINATION DASHES (MATCHING BANNER SECTION DESIGN) */}
-        {totalPages > 1 && (
-          <div className="flex sm:hidden items-center justify-center gap-1.5 mt-3">
-            {Array.from({ length: totalPages }).map((_, index) => {
-              const isActive = index === activePage;
-              return (
-                <button
-                  key={`cat-page-${index}`}
-                  type="button"
-                  aria-label={`Go to category page ${index + 1}`}
-                  onClick={() => scrollToPage(index)}
-                  className={`transition-all duration-300 cursor-pointer rounded-full ${
-                    isActive
-                      ? "w-6 h-1 bg-[#0a7ae6] shadow-[0_0_8px_rgba(10,122,230,0.7)]"
-                      : "w-2.5 h-1 bg-slate-300 hover:bg-slate-400 hover:w-3.5"
-                  }`}
-                />
-              );
-            })}
+                  <h3 className="mt-2 text-xs font-semibold leading-snug text-slate-800 group-hover:text-[#0a7ae6] sm:text-sm">{category.title}</h3>
+                </Link>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <div className="mt-4 flex items-center justify-center gap-3 sm:hidden">
+            <CarouselPrevious className="static size-11 translate-y-0" />
+            <span className="text-xs text-slate-500">Explore categories</span>
+            <CarouselNext className="static size-11 translate-y-0" />
           </div>
-        )}
+        </Carousel>
       </div>
     </section>
   );

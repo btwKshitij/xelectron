@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
         trackingNumber: liveAwb,
         shippingCarrier: carrier,
         trackingUrl: trackingUrl,
-        estimatedDelivery: updatedOrder.estimatedDelivery,
+        estimatedDelivery: updatedOrder.estimatedDelivery || "",
         status: updatedOrder.status,
       },
     });

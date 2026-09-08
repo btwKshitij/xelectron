@@ -36,8 +36,10 @@ type CartContextValue = {
   addItem: (product: CartProduct) => void;
   addItems: (products: CartProduct[]) => void;
   updateQuantity: (id: string, change: number) => void;
+  updateItemPrice: (id: string, price: number, name?: string) => void;
   removeItem: (id: string) => void;
   clearCart: () => void;
+  syncLivePrices: () => Promise<void>;
   wishlistItems: WishlistItem[];
   wishlistCount: number;
   toggleWishlistItem: (product: WishlistItem) => void;
@@ -52,8 +54,10 @@ const defaultCartContext: CartContextValue = {
   addItem: () => {},
   addItems: () => {},
   updateQuantity: () => {},
+  updateItemPrice: () => {},
   removeItem: () => {},
   clearCart: () => {},
+  syncLivePrices: async () => {},
   wishlistItems: [],
   wishlistCount: 0,
   toggleWishlistItem: () => {},
@@ -189,13 +193,78 @@ export default function CartProvider({ children }: { children: ReactNode }) {
 
   const updateQuantity = useCallback((id: string, change: number) => {
     setItems((currentItems) =>
-      currentItems.map((item) =>
-        item.id === id
-          ? { ...item, quantity: Math.max(1, item.quantity + change) }
-          : item,
-      ),
+      currentItems
+        .map((item) => {
+          if (item.id !== id) return item;
+          const nextQty = item.quantity + change;
+          return nextQty <= 0 ? null : { ...item, quantity: nextQty };
+        })
+        .filter((item): item is CartItem => item !== null),
     );
   }, []);
+
+  const updateItemPrice = useCallback((id: string, price: number, name?: string) => {
+    setItems((currentItems) =>
+      currentItems.map((item) => {
+        if (item.id === id || item.slug === id) {
+          return {
+            ...item,
+            price,
+            ...(name ? { name } : {}),
+          };
+        }
+        return item;
+      }),
+    );
+  }, []);
+
+  const syncLivePrices = useCallback(async () => {
+    try {
+      const res = await fetch("/api/products", { cache: "no-store" });
+      const json = await res.json();
+      if (!json.success || !Array.isArray(json.data) || json.data.length === 0) return;
+
+      const productsMap = new Map<string, any>();
+      for (const p of json.data) {
+        if (p.id) productsMap.set(p.id, p);
+        if (p.slug) productsMap.set(p.slug, p);
+      }
+
+      setItems((currentItems) => {
+        let changed = false;
+        const nextItems = currentItems.map((item) => {
+          const matched = productsMap.get(item.id) || (item.slug ? productsMap.get(item.slug) : null);
+          if (!matched) return item;
+
+          const livePrice = priceToNumber(matched.price);
+          const liveName = matched.name || item.name;
+          const liveImage = matched.mainImage || item.image;
+          const liveSlug = matched.slug || item.slug;
+
+          if (livePrice > 0 && (item.price !== livePrice || item.name !== liveName || item.image !== liveImage)) {
+            changed = true;
+            return {
+              ...item,
+              price: livePrice,
+              name: liveName,
+              image: liveImage,
+              slug: liveSlug,
+            };
+          }
+          return item;
+        });
+
+        return changed ? nextItems : currentItems;
+      });
+    } catch {
+      // Ignore network errors
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hasLoadedCart) return;
+    syncLivePrices();
+  }, [hasLoadedCart, syncLivePrices]);
 
   const removeItem = useCallback((id: string) => {
     setItems((currentItems) => currentItems.filter((item) => item.id !== id));
@@ -230,7 +299,9 @@ export default function CartProvider({ children }: { children: ReactNode }) {
       addItems,
       clearCart,
       updateQuantity,
+      updateItemPrice,
       removeItem,
+      syncLivePrices,
       wishlistItems,
       wishlistCount: wishlistItems.length,
       toggleWishlistItem,
@@ -245,7 +316,9 @@ export default function CartProvider({ children }: { children: ReactNode }) {
       items,
       removeItem,
       removeWishlistItem,
+      syncLivePrices,
       toggleWishlistItem,
+      updateItemPrice,
       updateQuantity,
       wishlistItems,
     ],

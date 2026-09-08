@@ -10,16 +10,13 @@ import {
   Clock,
   Send,
   ChevronDown,
-  Building2,
-  Store,
-  Wrench,
   CheckCircle2,
   User,
-  MessageCircle,
   ExternalLink,
   ShieldCheck,
   Headphones,
 } from "lucide-react";
+import { LOCATIONS } from "@/lib/shared/locations";
 import { toast } from "sonner";
 
 const QUICK_CONTACTS = [
@@ -55,47 +52,6 @@ const QUICK_CONTACTS = [
   },
 ];
 
-const LOCATIONS = [
-  {
-    icon: Building2,
-    badge: "Corporate Office",
-    name: "XElectron Technologies Pvt. Ltd.",
-    address: "2417, Tower A, The Corenthum, Sector – 62, Noida – 201301, UP.",
-    landmark: "The Corenthum IT Hub, Sec-62",
-    phones: ["+91 0120-4550655", "+91 8527312304"],
-    timing: "Mon – Sat: 10:00 AM – 6:00 PM",
-    email: "info@xelectron.com",
-    mapUrl: "https://www.google.com/maps/place/XElectron+Technologies+Pvt+Ltd/@28.6270372,77.3689222,17z/data=!3m2!4b1!5s0x390ce55763f582bf:0x16d32f448de111e8!4m6!3m5!1s0x390cfad7e2c0b2b7:0xa963d077ab3281b6!8m2!3d28.6270373!4d77.3737931!16s%2Fg%2F11bxg5y7ws?entry=ttu&g_ep=EgoyMDI2MDgxMS4wIKXMDSoASAFQAw%3D%3D",
-    badgeStyle: "bg-blue-50 text-[#0a7ae6] border-blue-200/80",
-    iconBg: "bg-blue-50 text-[#0a7ae6]",
-  },
-  {
-    icon: Store,
-    badge: "Retail Store",
-    name: "XElectron Experience Center",
-    address: "LGF-22, Spectrum Metro Mall, Sector-75, Noida, UP – 201307.",
-    landmark: "Lower Ground Floor, Spectrum Metro",
-    phones: ["+91 9870293008"],
-    timing: "Open daily: 01:00 PM – 09:00 PM",
-    email: "sales@xelectron.com",
-    mapUrl: "https://www.google.com/maps/search/?api=1&query=Spectrum%20Metro%20Mall%20Sector%2075%20Noida",
-    badgeStyle: "bg-purple-50 text-purple-700 border-purple-200/80",
-    iconBg: "bg-purple-50 text-purple-600",
-  },
-  {
-    icon: Wrench,
-    badge: "Authorized Service Center",
-    name: "XElectron Service Center",
-    address: "Plot No.626, Ground Floor, Sector - 5, Vaishali, Ghaziabad, UP – 201010.",
-    landmark: "Opp. Ram Prashtha Green Colony",
-    phones: ["0120-4213337", "+91 9650836754"],
-    timing: "Mon – Sat: 10:00 AM – 06:00 PM",
-    email: "kapil@xelectron.com",
-    mapUrl: "https://www.google.com/maps/place/@28.6466486,77.3479808,17z/data=!3m1!4b1!4m3!3m2!1s0x390cfacf66414da5:0xc2a2a28ae60610c8!12e1?entry=ttu&g_ep=EgoyMDI2MDgxMS4wIKXMDSoASAFQAw%3D%3D",
-    badgeStyle: "bg-amber-50 text-amber-800 border-amber-200/80",
-    iconBg: "bg-amber-50 text-amber-700",
-  },
-];
 
 const DEPARTMENTS = [
   {
@@ -139,7 +95,7 @@ const FAQS = [
   {
     question: "Where can I get technical service for my XElectron Projector or TV?",
     answer:
-      "Visit our authorized Service Center at Sector-5, Vaishali, Ghaziabad (Opp. Ram Prashtha Green Colony, Near Mohan Dhaba). Call 0120-4213337 or 9650836754, or email kapil@xelectron.com for repair assistance.",
+      "Visit our authorized Service Center at Sector-5, Vaishali, Ghaziabad (Opp. Ram Prashtha Green Colony, Near Mohan Dhaba). Call 0120-4213337 or 9311136520, or email kapil@xelectron.com for repair assistance.",
   },
   {
     question: "Can I test Projectors & Smart TVs live before buying?",
@@ -184,9 +140,9 @@ export default function ContactPage() {
       });
 
       const json = await res.json();
-      if (json.success) {
+      if (res.ok && json.success) {
         setSubmitted(true);
-        toast.success(`Thank you! Your message has been sent to ${selectedDepartmentInfo.email}.`);
+        toast.success("Thank you! Your inquiry has been received.");
       } else {
         toast.error(json.error || "Failed to send message. Please try again.");
       }
@@ -237,18 +193,18 @@ export default function ContactPage() {
               return (
                 <div
                   key={dept.id}
-                  className="flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-6 sm:p-7 shadow-xs hover:shadow-md hover:border-slate-300 transition-all duration-200"
+                  className="flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-7 shadow-xs hover:shadow-md hover:border-slate-300 transition-all duration-200"
                 >
                   {/* Card Header & Contact Details */}
                   <div>
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="flex flex-col items-start gap-3">
                       <div className="flex items-center gap-3.5 min-w-0">
                         <div className={`flex size-11 shrink-0 items-center justify-center rounded-xl ${dept.iconBg} shadow-2xs`}>
                           <Icon className="size-5" />
                         </div>
                         <div className="min-w-0">
-                          <h2 className="text-base sm:text-lg font-bold text-slate-900 leading-snug whitespace-nowrap truncate">{dept.title}</h2>
-                          <p className="text-xs text-slate-500 font-medium mt-0.5 whitespace-nowrap">{dept.hours}</p>
+                          <h2 className="text-base sm:text-lg font-bold text-slate-900 leading-snug break-words">{dept.title}</h2>
+                          <p className="text-xs text-slate-500 font-medium mt-1 leading-5">{dept.hours}</p>
                         </div>
                       </div>
                       <span className={`shrink-0 inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider border whitespace-nowrap ${dept.tagColor}`}>
@@ -257,32 +213,30 @@ export default function ContactPage() {
                     </div>
 
                     {/* Direct Contact Channels */}
-                    <div className="mt-6 pt-5 border-t border-slate-100 space-y-3 text-xs">
+                    <div className="mt-5 pt-4 border-t border-slate-100 space-y-4 text-sm">
                       {/* Call Row */}
-                      <div className="flex items-center justify-between py-1 whitespace-nowrap">
+                      <div className="flex flex-col items-start gap-2 py-1">
                         <span className="text-slate-500 font-medium flex items-center gap-2">
                           <Phone className="size-4 text-slate-400 shrink-0" /> Call
                         </span>
-                        <div className="flex items-center gap-2 font-semibold text-slate-800">
-                          {dept.phones.map((phone, idx) => (
-                            <span key={phone.value} className="flex items-center gap-2">
-                              {idx > 0 && <span className="text-slate-300 font-normal">/</span>}
-                              <a href={phone.href} className="hover:text-[#0a7ae6] transition">
-                                {phone.value}
-                              </a>
-                            </span>
+                        <div className="grid w-full grid-cols-1 gap-2 min-[380px]:grid-cols-2">
+                          {dept.phones.map(phone => (
+                            <a key={phone.value} href={phone.href} className="flex min-h-16 min-w-0 flex-col justify-center rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 transition hover:border-blue-200 hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-blue-500">
+                              <span className="mb-1 text-[11px] font-medium text-slate-500">{phone.label}</span>
+                              <span className="whitespace-nowrap text-[13px] font-semibold text-slate-900">{phone.value}</span>
+                            </a>
                           ))}
                         </div>
                       </div>
 
                       {/* Email Row */}
-                      <div className="flex items-center justify-between py-1 border-t border-slate-100/70 whitespace-nowrap">
+                      <div className="flex flex-col items-start gap-1">
                         <span className="text-slate-500 font-medium flex items-center gap-2">
                           <Mail className="size-4 text-slate-400 shrink-0" /> Email
                         </span>
                         <a
                           href={`mailto:${dept.email}`}
-                          className="font-semibold text-slate-800 hover:text-[#0a7ae6] transition"
+                          className="flex min-h-11 max-w-full items-center break-all text-sm font-semibold text-[#0a7ae6] hover:underline underline-offset-4 transition"
                         >
                           {dept.email}
                         </a>
@@ -291,15 +245,17 @@ export default function ContactPage() {
                   </div>
 
                   {/* WhatsApp Action Button */}
-                  <div className="mt-6 pt-4 border-t border-slate-100">
+                  <div className="mt-4">
                     <a
                       href={`https://wa.me/91${dept.whatsapp}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-50/70 hover:bg-emerald-100/80 border border-emerald-200/80 py-2.5 px-4 text-xs font-bold text-emerald-700 hover:text-emerald-800 transition group cursor-pointer shadow-2xs whitespace-nowrap"
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-50/70 hover:bg-emerald-100/80 border border-emerald-200/80 min-h-12 py-3 px-4 text-sm font-semibold text-emerald-700 hover:text-emerald-800 transition group cursor-pointer shadow-2xs text-center leading-5"
                     >
-                      <MessageCircle className="size-4 text-emerald-600 fill-emerald-600 transition-transform group-hover:scale-110 shrink-0" />
-                      <span>Chat on WhatsApp (+91 {dept.whatsapp})</span>
+                      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="size-5 shrink-0 text-emerald-600">
+                        <path d="M20.52 3.48A11.9 11.9 0 0 0 12.05 0C5.47 0 .11 5.35.1 11.94c0 2.1.55 4.16 1.6 5.97L0 24l6.25-1.64a11.93 11.93 0 0 0 5.79 1.48h.01c6.58 0 11.94-5.35 11.95-11.94a11.87 11.87 0 0 0-3.48-8.42ZM12.05 21.82a9.9 9.9 0 0 1-5.04-1.38l-.36-.21-3.71.97.99-3.62-.24-.37a9.88 9.88 0 0 1-1.52-5.27c0-5.47 4.45-9.92 9.93-9.92a9.86 9.86 0 0 1 7.02 2.91 9.85 9.85 0 0 1 2.9 7.02c0 5.47-4.45 9.92-9.97 9.87Zm5.45-7.42c-.3-.15-1.77-.87-2.04-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.88-.78-1.48-1.75-1.65-2.05-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.18.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.68-1.62-.92-2.22-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.49s1.07 2.89 1.22 3.09c.15.2 2.1 3.2 5.08 4.49.71.31 1.27.49 1.7.63.71.23 1.36.2 1.87.12.57-.09 1.77-.72 2.02-1.42.25-.7.25-1.3.17-1.42-.07-.12-.27-.2-.57-.35Z" />
+                      </svg>
+                      <span>Chat on WhatsApp<span className="sr-only"> with {dept.title} at +91 {dept.whatsapp}</span></span>
                     </a>
                   </div>
                 </div>
@@ -326,7 +282,7 @@ export default function ContactPage() {
           </div>
 
           {/* 3-Column Location Cards Grid */}
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             {LOCATIONS.map((loc) => {
               const Icon = loc.icon;
               return (
@@ -362,23 +318,23 @@ export default function ContactPage() {
 
                     {/* Contact, Timings & Email */}
                     <div className="pt-4 border-t border-slate-100 space-y-2.5 text-xs">
-                      <div className="flex items-center justify-between text-slate-800 font-medium">
+                      <div className="flex flex-col items-start gap-1.5 text-slate-800 font-medium">
                         <span className="text-slate-400 flex items-center gap-1.5 text-[11px]">
                           <Phone className="size-3.5 text-slate-400" /> Contact
                         </span>
                         <span className="font-semibold text-slate-900">{loc.phones.join(" / ")}</span>
                       </div>
-                      <div className="flex items-center justify-between text-slate-500">
+                      <div className="flex flex-col items-start gap-1.5 text-slate-500">
                         <span className="text-slate-400 flex items-center gap-1.5 text-[11px]">
                           <Clock className="size-3.5 text-slate-400" /> Hours
                         </span>
                         <span className="font-medium text-slate-700">{loc.timing}</span>
                       </div>
-                      <div className="flex items-center justify-between text-slate-500">
+                      <div className="flex flex-col items-start gap-1.5 text-slate-500">
                         <span className="text-slate-400 flex items-center gap-1.5 text-[11px]">
                           <Mail className="size-3.5 text-slate-400" /> Email
                         </span>
-                        <a href={`mailto:${loc.email}`} className="font-semibold text-[#0a7ae6] hover:underline">
+                        <a href={`mailto:${loc.email}`} className="max-w-full break-all font-semibold text-[#0a7ae6] hover:underline">
                           {loc.email}
                         </a>
                       </div>
@@ -423,10 +379,10 @@ export default function ContactPage() {
               {submitted ? (
                 <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50/70 p-6 text-center text-emerald-900 space-y-3 animate-in fade-in">
                   <CheckCircle2 className="mx-auto size-12 text-emerald-600" />
-                  <h3 className="text-base font-bold">Inquiry Sent Successfully</h3>
+                  <h3 className="text-base font-bold">Inquiry Received</h3>
                   <p className="text-xs text-emerald-700 max-w-md mx-auto leading-relaxed">
-                    Thank you, <span className="font-bold">{formData.name}</span>. Your inquiry has been routed to{" "}
-                    <span className="font-semibold text-emerald-900 underline">{selectedDepartmentInfo.email}</span>. Our team will reach out within 24 hours.
+                    Thank you, <span className="font-bold">{formData.name}</span>. Your inquiry has been saved for{" "}
+                    <span className="font-semibold text-emerald-900 underline">{selectedDepartmentInfo.label}</span>. Our team will review your request.
                   </p>
                   <button
                     type="button"

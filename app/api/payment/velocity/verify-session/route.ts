@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getVelocityOrderSessions, parseVelocityStateToken } from "@/lib/server/velocity";
+import { confirmVelocityOrder } from "@/lib/server/velocity-orders";
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,8 +27,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // A browser redirect is not proof of an approved payment. Velocity's
-    // signed webhook is the only code path allowed to confirm an order.
     if (order.status === "PENDING") {
       const velocityOrderId = order.internalNotes
         ?.split("\n")
@@ -45,13 +44,34 @@ export async function POST(request: NextRequest) {
       const successfulSession = sessions.find((session) => session.status === "success");
       const latestSession = sessions.at(-1);
 
+      if (successfulSession) {
+        await confirmVelocityOrder(order.id, successfulSession.session_uuid);
+        const updated = await db.order.findUnique({ where: { id: order.id } });
+        if (updated && updated.paymentVerified) {
+          return NextResponse.json({
+            success: true,
+            data: {
+              id: updated.id,
+              orderNumber: `XE-${updated.id.slice(-6).toUpperCase()}`,
+              total: updated.total,
+              shippingCarrier: updated.shippingCarrier,
+              trackingNumber: updated.trackingNumber,
+              trackingUrl: updated.trackingUrl,
+              estimatedDelivery: updated.estimatedDelivery,
+              customerName: updated.customerName,
+              customerEmail: updated.customerEmail,
+            },
+          });
+        }
+      }
+
       return NextResponse.json(
         {
           success: false,
           pending: true,
           paymentStatus: successfulSession?.status || latestSession?.status || "created",
           error:
-            "Payment is awaiting the signed confirmation from Velocity. Your order has not been confirmed.",
+            "Payment is awaiting confirmation from Velocity. Your order has not been confirmed.",
         },
         { status: 202 }
       );
@@ -65,6 +85,10 @@ export async function POST(request: NextRequest) {
         },
         { status: 402 }
       );
+    }
+
+    if (!order.paymentVerified) {
+      return NextResponse.json({ success: false, pending: true, error: "Payment is not verified yet." }, { status: 202 });
     }
 
     return NextResponse.json({

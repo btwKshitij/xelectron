@@ -7,10 +7,10 @@ export type FooterLink = {
 
 // Easily add, modify, or remove links as per your convenience
 export const productLinks: FooterLink[] = [
-  { label: "Speaker", href: "/shop" },
-  { label: "Home Speaker", href: "/shop" },
-  { label: "Sound Bar", href: "/shop" },
-  { label: "Portable PA", href: "/shop" },
+  { label: "Projectors", href: "/shop?filter=projectors" },
+  { label: "Digital Photo Frame", href: "/shop?filter=digital-photo-frames" },
+  { label: "Portable Monitors", href: "/shop?filter=portable-monitors" },
+  { label: "Smart TVs", href: "/shop?filter=tv" },
 ];
 
 export const customerServiceLinks: FooterLink[] = [

@@ -18,7 +18,11 @@ export async function POST(request: NextRequest) {
     const signature = request.headers.get("x-razorpay-signature");
     const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
 
-    // Verify webhook HMAC signature if webhook secret is configured
+    if (!webhookSecret) {
+      return NextResponse.json({ success: false, error: "Webhook verification is not configured" }, { status: 503 });
+    }
+
+    // Payment notifications must have a valid signature.
     if (webhookSecret) {
       const isValid = verifyRazorpayWebhook(rawBody, signature, webhookSecret);
       if (!isValid) {
@@ -79,6 +83,15 @@ export async function POST(request: NextRequest) {
         if (orders.length > 0) {
           order = orders[0];
         }
+      }
+
+      if (order) {
+        const amount = Number(paymentEntity?.amount ?? orderEntity?.amount_paid);
+        const currency = paymentEntity?.currency ?? orderEntity?.currency;
+        if (currency !== "INR" || amount !== Math.round(order.total * 100)) {
+          return NextResponse.json({ success: false, error: "Payment amount mismatch" }, { status: 400 });
+        }
+        await db.order.update({ where: { id: order.id }, data: { paymentVerified: true } });
       }
 
       if (order && order.status !== "CONFIRMED" && order.status !== "PROCESSING" && order.status !== "SHIPPED") {

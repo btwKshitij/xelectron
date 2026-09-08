@@ -120,7 +120,7 @@ export default function RepairReplacementPage() {
                   <CheckCircle2 className="mx-auto size-12 text-emerald-600" />
                   <h3 className="text-base font-bold">Request Logged Successfully!</h3>
                   <p className="text-xs text-emerald-700 max-w-md mx-auto">
-                    Your request for serial <span className="font-mono font-bold">{formData.serialNumber}</span> has been assigned to our Vaishali Service Team.
+                    Your request for serial <span className="font-mono font-bold">{formData.serialNumber}</span> has been saved for review by our Vaishali Service Team.
                   </p>
                   <button
                     type="button"
@@ -241,7 +241,7 @@ export default function RepairReplacementPage() {
                   <div className="pt-3 border-t border-white/10 space-y-2">
                     <p className="flex items-center gap-2 text-white font-bold">
                       <Phone className="size-4 text-[#38bdf8]" />
-                      <span>0120-4213337 / 9650836754</span>
+                      <span>0120-4213337 / 9311136520</span>
                     </p>
                     <p className="flex items-center gap-2 text-slate-400">
                       <Clock className="size-4" />

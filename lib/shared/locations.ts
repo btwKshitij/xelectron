@@ -1,0 +1,43 @@
+import { Building2, Store, Wrench } from "lucide-react";
+
+export const LOCATIONS = [
+  {
+    icon: Building2,
+    badge: "Corporate Office",
+    name: "XElectron Technologies Pvt. Ltd.",
+    address: "2417, Tower A, The Corenthum, Sector – 62, Noida – 201301, UP.",
+    landmark: "The Corenthum IT Hub, Sec-62",
+    phones: ["+91 0120-4550655", "+91 8527312304"],
+    timing: "Mon – Sat: 10:00 AM – 6:00 PM",
+    email: "info@xelectron.com",
+    mapUrl: "https://www.google.com/maps/place/XElectron+Technologies+Pvt+Ltd/@28.6270372,77.3689222,17z/data=!3m2!4b1!5s0x390ce55763f582bf:0x16d32f448de111e8!4m6!3m5!1s0x390cfad7e2c0b2b7:0xa963d077ab3281b6!8m2!3d28.6270373!4d77.3737931!16s%2Fg%2F11bxg5y7ws?entry=ttu&g_ep=EgoyMDI2MDgxMS4wIKXMDSoASAFQAw%3D%3D",
+    badgeStyle: "bg-blue-50 text-[#0a7ae6] border-blue-200/80",
+    iconBg: "bg-blue-50 text-[#0a7ae6]",
+  },
+  {
+    icon: Store,
+    badge: "Retail Store",
+    name: "XElectron Experience Center",
+    address: "LGF-22, Spectrum Metro Mall, Sector-75, Noida, UP – 201307.",
+    landmark: "Lower Ground Floor, Spectrum Metro",
+    phones: ["+91 9870293008"],
+    timing: "Open daily: 01:00 PM – 09:00 PM",
+    email: "sales@xelectron.com",
+    mapUrl: "https://www.google.com/maps/search/?api=1&query=Spectrum%20Metro%20Mall%20Sector%2075%20Noida",
+    badgeStyle: "bg-purple-50 text-purple-700 border-purple-200/80",
+    iconBg: "bg-purple-50 text-purple-600",
+  },
+  {
+    icon: Wrench,
+    badge: "Authorized Service Center",
+    name: "XElectron Service Center",
+    address: "Plot No.626, Ground Floor, Sector - 5, Vaishali, Ghaziabad, UP – 201010.",
+    landmark: "Opp. Ram Prashtha Green Colony",
+    phones: ["0120-4213337", "+91 9311136520"],
+    timing: "Mon – Sat: 10:00 AM – 06:00 PM",
+    email: "kapil@xelectron.com",
+    mapUrl: "https://www.google.com/maps/place/@28.6466486,77.3479808,17z/data=!3m1!4b1!4m3!3m2!1s0x390cfacf66414da5:0xc2a2a28ae60610c8!12e1?entry=ttu&g_ep=EgoyMDI2MDgxMS4wIKXMDSoASAFQAw%3D%3D",
+    badgeStyle: "bg-amber-50 text-amber-800 border-amber-200/80",
+    iconBg: "bg-amber-50 text-amber-700",
+  },
+];

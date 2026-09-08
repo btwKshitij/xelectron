@@ -43,8 +43,16 @@ export async function POST(request: NextRequest) {
     const user = await getCurrentUser();
     const body = await request.json();
 
+    const isCod = body.paymentMethod === "COD" || /\[Payment:\s*COD/i.test(body.shippingAddress || "");
+    const internalNotes = isCod
+      ? "Payment method: COD\nStatus: Cash on Delivery Verified"
+      : (body.internalNotes || undefined);
+
     const order = await ordersController.createOrder({
       ...body,
+      status: "PENDING",
+      paymentVerified: false,
+      internalNotes,
       userId: user?.id || body.userId || null,
       customerName: body.customerName || (body.firstName ? `${body.firstName} ${body.lastName || ""}`.trim() : user?.name),
       customerEmail: body.customerEmail || body.email || user?.email,

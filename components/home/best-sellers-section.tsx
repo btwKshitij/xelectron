@@ -1,7 +1,5 @@
 "use client";
 
-import gsap from "gsap";
-import ScrollTrigger from "gsap/ScrollTrigger";
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -10,6 +8,9 @@ import { formatINR } from "@/lib/format-price";
 import { Plus } from "lucide-react";
 import { useCart } from "@/components/providers/cart-provider";
 import { toast } from "sonner";
+
+import gsap from "gsap";
+import ScrollTrigger from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -27,14 +28,14 @@ function MobileBestSellers({ items }: { items: BestSellerItem[] }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activePageIndex, setActivePageIndex] = useState(0);
 
-  // In phone view, 2 cards per view
-  const totalPages = Math.ceil(items.length / 2);
+  // In phone view, one product per view
+  const totalPages = items.length;
 
   const handleScroll = useCallback(() => {
     if (!scrollRef.current) return;
     const container = scrollRef.current;
     if (container.clientWidth === 0) return;
-    const idx = Math.round(container.scrollLeft / container.clientWidth);
+    const idx = Math.round(container.scrollLeft / (container.clientWidth + 12));
     setActivePageIndex(Math.min(Math.max(idx, 0), totalPages - 1));
   }, [totalPages]);
 
@@ -42,7 +43,7 @@ function MobileBestSellers({ items }: { items: BestSellerItem[] }) {
     if (!scrollRef.current) return;
     const container = scrollRef.current;
     container.scrollTo({
-      left: index * container.clientWidth,
+      left: index * (container.clientWidth + 12),
       behavior: "smooth",
     });
     setActivePageIndex(index);
@@ -73,7 +74,7 @@ function MobileBestSellers({ items }: { items: BestSellerItem[] }) {
           </div>
         </div>
 
-        {/* 2 CARDS PER VIEW SWIPABLE TRACK */}
+        {/* ONE PRODUCT PER VIEW SWIPABLE TRACK */}
         <div
           ref={scrollRef}
           className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto pb-3 pt-1 scroll-smooth"
@@ -94,14 +95,14 @@ function MobileBestSellers({ items }: { items: BestSellerItem[] }) {
                 key={`mobile-bestseller-${item.id}`}
                 href={`/product/${item.slug || item.id}`}
                 prefetch={false}
-                className="mobile-best-seller-card group w-[calc(50%-6px)] shrink-0 snap-start flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-2.5 sm:p-3 text-center transition-all duration-300 hover:-translate-y-0.5 hover:border-[#0a7ae6] hover:shadow-md select-none"
+                className="mobile-best-seller-card group w-full shrink-0 snap-start flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-2.5 sm:p-3 text-center transition-all duration-300 hover:-translate-y-0.5 hover:border-[#0a7ae6] hover:shadow-md select-none"
               >
                 {/* PRODUCT IMAGE CONTAINER */}
                 <div className="relative w-full aspect-square rounded-xl bg-slate-50/70 border border-slate-100 flex items-center justify-center p-2 mb-2 overflow-hidden">
                   {/* TOP LEFT: ONLY DISCOUNT (IF ANY) */}
                   {calculatedDiscount && (
                     <div className="absolute top-2 left-2 z-10">
-                      <span className="rounded-full bg-[#0a7ae6] px-2 py-0.5 text-[9.5px] font-bold text-white shadow-xs tracking-wide">
+                      <span className="rounded-full bg-[#0a7ae6] px-2.5 py-1 text-[11px] font-bold text-white shadow-xs tracking-wide">
                         {calculatedDiscount}
                       </span>
                     </div>
@@ -125,9 +126,9 @@ function MobileBestSellers({ items }: { items: BestSellerItem[] }) {
                         });
                         toast.success(`${item.name} added to cart!`);
                       }}
-                      className="flex size-6 sm:size-7 items-center justify-center rounded-full bg-[#0a7ae6] text-white shadow-xs hover:bg-[#086ac9] transition-transform active:scale-90 cursor-pointer"
+                      className="flex size-9 sm:size-10 items-center justify-center rounded-full bg-[#0a7ae6] text-white shadow-xs hover:bg-[#086ac9] transition-transform active:scale-90 cursor-pointer"
                     >
-                      <Plus className="size-3.5 stroke-[2.5]" />
+                      <Plus className="size-4 stroke-[2.5]" />
                     </button>
                   </div>
 
@@ -138,7 +139,7 @@ function MobileBestSellers({ items }: { items: BestSellerItem[] }) {
                       alt={item.imageAlt}
                       fill
                       className="object-contain p-1.5 group-hover:scale-105 transition-transform duration-300"
-                      sizes="(max-width: 768px) 50vw, 200px"
+                      sizes="(max-width: 640px) calc(100vw - 32px), 576px"
                     />
                   </div>
                 </div>

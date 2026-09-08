@@ -3,6 +3,8 @@ import { revalidatePath } from "next/cache";
 import * as productsController from "@/lib/server/controllers/products.controller";
 import { requireAdmin, AuthError } from "@/lib/server/dal/auth";
 
+export const dynamic = "force-dynamic";
+
 // GET /api/products?search=&category=
 export async function GET(request: NextRequest) {
   try {
@@ -11,7 +13,16 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get("category") || undefined;
 
     const products = await productsController.listProducts(search, category);
-    return NextResponse.json({ success: true, data: products });
+    return NextResponse.json(
+      { success: true, data: products },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      }
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Internal server error";
     return NextResponse.json({ success: false, error: message }, { status: 500 });

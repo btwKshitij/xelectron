@@ -47,6 +47,8 @@ export function createPrismaClient(): PrismaClient {
 function getDbInstance(): PrismaClient {
   if (process.env.NODE_ENV !== "production" && globalForPrisma.prisma) {
     if (
+      typeof (globalForPrisma.prisma as any).supportRequest === "undefined" ||
+      typeof (globalForPrisma.prisma as any).troubleshootingPage === "undefined" ||
       typeof (globalForPrisma.prisma as any).heroBanner === "undefined" ||
       typeof (globalForPrisma.prisma as any).announcement === "undefined" ||
       typeof (globalForPrisma.prisma as any).announcementSettings === "undefined" ||

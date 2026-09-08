@@ -40,6 +40,7 @@ export async function confirmVelocityOrder(orderId: string, paymentId?: string) 
       where: { id: orderId },
       data: {
         status: "CONFIRMED",
+        paymentVerified: true,
         internalNotes: appendPaymentNote(order.internalNotes, note),
       },
     });

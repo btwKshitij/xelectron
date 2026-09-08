@@ -1,5 +1,7 @@
 "use client";
 
+import { ProductGallery } from "@/components/product/product-gallery";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -248,45 +250,6 @@ export default function ProductDetail({
   );
 
   const heroImage = productImages[0] || "/category-projector.png";
-  const additionalImages = productImages.slice(1);
-
-  const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
-
-  const minSwipeDistance = 40;
-
-  const handlePrevImage = () => {
-    if (productImages.length <= 1) return;
-    setActiveImageIndex((prev) => (prev > 0 ? prev - 1 : productImages.length - 1));
-  };
-
-  const handleNextImage = () => {
-    if (productImages.length <= 1) return;
-    setActiveImageIndex((prev) => (prev < productImages.length - 1 ? prev + 1 : 0));
-  };
-
-  const onTouchStart = (e: React.TouchEvent) => {
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
-  };
-
-  const onTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX);
-  };
-
-  const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
-    if (isLeftSwipe) {
-      handleNextImage();
-    } else if (isRightSwipe) {
-      handlePrevImage();
-    }
-  };
-
   const numericPrice = useMemo(() => priceToNumber(product.price), [product.price]);
   const emiAmount = useMemo(() => Math.round(numericPrice / 3), [numericPrice]);
   // Only an explicit stored quantity of zero marks the product as unavailable.
@@ -365,102 +328,7 @@ export default function ProductDetail({
           
           {/* LEFT COLUMN: MULTI-IMAGE SHOWCASE / GALLERY */}
           <div className="lg:col-span-7">
-            {/* DESKTOP VIEW: ORIGINAL MULTI-IMAGE SHOWCASE */}
-            <div className="hidden lg:block space-y-4 sm:space-y-6">
-              {/* Primary Hero Feature Image */}
-              <div className="relative aspect-square sm:aspect-[4/3] w-full overflow-hidden rounded-lg sm:rounded-xl flex items-center justify-center">
-                <Image
-                  src={heroImage}
-                  alt={product.name}
-                  fill
-                  priority
-                  className="object-contain transition-transform duration-500 hover:scale-[1.02]"
-                  sizes="(min-width: 1024px) 55vw, 100vw"
-                />
-              </div>
-
-              {/* Gallery Grid Below Hero Image */}
-              {additionalImages.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                  {additionalImages.map((image, idx) => (
-                    <div
-                      key={`${image}-${idx}`}
-                      className="relative aspect-square w-full overflow-hidden rounded-lg sm:rounded-xl flex items-center justify-center group"
-                    >
-                      <Image
-                        src={image}
-                        alt={`${product.name} feature ${idx + 1}`}
-                        fill
-                        className="object-contain transition-transform duration-500 hover:scale-[1.02]"
-                        sizes="(min-width: 1024px) 28vw, 50vw"
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* MOBILE / PHONE VIEW: CAROUSEL WITH SWIPE, ARROWS & EXTENDED PILL INDICATOR */}
-            <div className="lg:hidden flex flex-col items-center">
-              {/* Primary Product Image with Touch Swipe Support */}
-              <div
-                onTouchStart={onTouchStart}
-                onTouchMove={onTouchMove}
-                onTouchEnd={onTouchEnd}
-                className="relative aspect-square w-full overflow-hidden rounded-2xl bg-white flex items-center justify-center select-none shadow-xs border border-slate-100"
-              >
-                <Image
-                  src={productImages[activeImageIndex] || heroImage}
-                  alt={`${product.name} image ${activeImageIndex + 1}`}
-                  fill
-                  priority
-                  className="object-contain rounded-2xl transition-transform duration-300"
-                  sizes="100vw"
-                />
-              </div>
-
-              {/* GALLERY CONTROLS ROW: END-TO-END ARROWS WITH CENTERED PAGINATION */}
-              {productImages.length > 1 && (
-                <div className="flex items-center justify-between w-full px-2 pt-5 pb-2.5 select-none">
-                  {/* PREV ARROW (FAR LEFT) */}
-                  <button
-                    type="button"
-                    onClick={handlePrevImage}
-                    aria-label="Previous image"
-                    className="p-2 text-slate-700 hover:text-slate-950 transition-colors cursor-pointer active:scale-90"
-                  >
-                    <ArrowLeft className="size-5 stroke-[1.75]" />
-                  </button>
-
-                  {/* PAGINATION: EXTENDED ACTIVE PILL & ROUND DOTS (CENTERED) */}
-                  <div className="flex items-center justify-center gap-2 mx-auto">
-                    {productImages.map((_, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => setActiveImageIndex(idx)}
-                        aria-label={`Go to slide ${idx + 1}`}
-                        className={`transition-all duration-300 rounded-full cursor-pointer ${
-                          activeImageIndex === idx
-                            ? "w-8 h-2 bg-[#0a7ae6]"
-                            : "size-2 bg-slate-300 hover:bg-slate-400"
-                        }`}
-                      />
-                    ))}
-                  </div>
-
-                  {/* NEXT ARROW (FAR RIGHT) */}
-                  <button
-                    type="button"
-                    onClick={handleNextImage}
-                    aria-label="Next image"
-                    className="p-2 text-slate-700 hover:text-slate-950 transition-colors cursor-pointer active:scale-90"
-                  >
-                    <ArrowRight className="size-5 stroke-[1.75]" />
-                  </button>
-                </div>
-              )}
-            </div>
+            <ProductGallery key={product.id} images={productImages.length ? productImages : [heroImage]} name={product.name} />
           </div>
 
           {/* RIGHT COLUMN: PRODUCT PURCHASE CARD (STICKY AS LEFT GALLERY SCROLLS) */}

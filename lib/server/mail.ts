@@ -1,31 +1,25 @@
 import nodemailer from "nodemailer";
 
 export function getMailTransporter() {
-  const host = (process.env.SMTP_HOST || "").trim().replace(/^["']|["']$/g, "");
-  const port = parseInt(process.env.SMTP_PORT || "465", 10);
-  const secure = process.env.SMTP_SECURE !== "false" && port === 465;
-
-  let user = (process.env.SMTP_USER || "").trim().replace(/^["']|["']$/g, "");
-  let pass = (process.env.SMTP_PASS || "").trim().replace(/^["']|["']$/g, "");
-
-  if (pass === "@Gohype" || !pass) {
-    pass = "REMOVED_EXPOSED_SMTP_PASSWORD";
+  const host = process.env.SMTP_HOST?.trim();
+  const user = process.env.SMTP_USER?.trim();
+  const pass = process.env.SMTP_PASS;
+  const port = Number(process.env.SMTP_PORT || "587");
+  if (!host || !user || !pass) {
+    throw new Error("SMTP_HOST, SMTP_USER and SMTP_PASS must be configured.");
   }
-  if (!user) {
-    user = "info@xelectron.com";
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error("SMTP_PORT must be a valid port number.");
   }
-
   return nodemailer.createTransport({
     host,
     port,
-    secure,
-    auth: {
-      user,
-      pass,
-    },
-    tls: {
-      rejectUnauthorized: false,
-    },
+    secure: port === 465,
+    requireTLS: port !== 465,
+    auth: { user, pass },
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 20000,
   });
 }
 
@@ -38,13 +32,24 @@ export interface SendMailOptions {
   replyTo?: string;
 }
 
-export async function sendEmail(options: SendMailOptions) {
+// Keep the queue across development hot reloads. Each server process sends one
+// message at a time; the provider may also enforce limits across server instances.
+const mailState = globalThis as typeof globalThis & { smtpQueue?: Promise<void> };
+
+export function sendEmail(options: SendMailOptions) {
+  const result = (mailState.smtpQueue ?? Promise.resolve()).then(() => sendEmailNow(options));
+  mailState.smtpQueue = result.then(() => undefined, () => undefined);
+  return result;
+}
+
+async function sendEmailNow(options: SendMailOptions) {
+  let transporter: ReturnType<typeof getMailTransporter> | undefined;
   try {
-    const transporter = getMailTransporter();
+    transporter = getMailTransporter();
     const fromAddress =
       options.from ||
       process.env.SMTP_FROM ||
-      `"XElectron Technologies" <${process.env.SMTP_USER || ""}>`;
+      `"XElectron Technologies" <${process.env.SMTP_USER}>`;
 
     const info = await transporter.sendMail({
       from: fromAddress,
@@ -52,7 +57,7 @@ export async function sendEmail(options: SendMailOptions) {
       subject: options.subject,
       text: options.text || options.html?.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(),
       html: options.html,
-      replyTo: options.replyTo || (process.env.SMTP_USER || ""),
+      replyTo: options.replyTo || (process.env.SMTP_USER),
       headers: {
         "X-Mailer": "XElectron Mailer v2.0",
       },
@@ -66,6 +71,8 @@ export async function sendEmail(options: SendMailOptions) {
       success: false,
       error: error instanceof Error ? error.message : "SMTP sending failed",
     };
+  } finally {
+    transporter?.close();
   }
 }
 

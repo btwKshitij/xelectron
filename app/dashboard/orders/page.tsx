@@ -77,11 +77,16 @@ export default async function OrdersPage() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h1 className="flex items-center gap-2 text-lg font-semibold"><Package className="size-4" /> Orders</h1>
-                <p className="mt-1 text-xs text-black/55">All orders recorded in your database.</p>
+                <p className="mt-1 text-xs text-black/55">Confirmed orders (Paid &amp; Cash on Delivery). Unpaid checkouts are tracked under Abandoned checkouts.</p>
               </div>
-              <Link prefetch={false} href="/dashboard/orders/create-order" className="inline-flex h-8 items-center rounded-lg bg-black px-3 text-xs font-medium text-white hover:bg-black/80">
-                Create order
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link prefetch={false} href="/dashboard/orders/abandoned-checkouts" className="inline-flex h-8 items-center rounded-lg border border-black/15 bg-white px-3 text-xs font-medium text-black hover:bg-black/5">
+                  Abandoned checkouts
+                </Link>
+                <Link prefetch={false} href="/dashboard/orders/create-order" className="inline-flex h-8 items-center rounded-lg bg-black px-3 text-xs font-medium text-white hover:bg-black/80">
+                  Create order
+                </Link>
+              </div>
             </div>
 
             <section className="mt-3 overflow-hidden rounded-xl border border-black/10 bg-white shadow-sm">
@@ -98,7 +103,10 @@ export default async function OrdersPage() {
 
             <section className="mt-4 overflow-hidden rounded-xl border border-black/10 bg-white shadow-sm">
               <div className="flex items-center justify-between border-b border-black/10 px-4 py-3">
-                <h2 className="text-sm font-semibold">Orders</h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm font-semibold">Orders</h2>
+                  <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700">Paid &amp; COD</span>
+                </div>
                 <span className="text-xs text-black/55">{orders.length.toLocaleString("en-IN")} total</span>
               </div>
 
@@ -114,7 +122,7 @@ export default async function OrdersPage() {
                   <tbody>
                     {orders.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="px-4 py-10 text-center text-sm text-black/55">No orders yet. Create your first order to see it here.</td>
+                        <td colSpan={8} className="px-4 py-10 text-center text-sm text-black/55">No paid or Cash on Delivery orders found. Unfinished checkouts appear under Abandoned checkouts.</td>
                       </tr>
                     ) : orders.map((order: any) => {
                       const itemCount = order.items.reduce((sum: number, item: any) => sum + item.quantity, 0);
@@ -131,7 +139,22 @@ export default async function OrdersPage() {
                           <td className="border-b border-black/10 px-3 py-2.5 text-right font-semibold tabular-nums"><Link prefetch={false} href={`/dashboard/orders/${order.id}`} className="block text-inherit">{currencyFormatter.format(order.total)}</Link></td>
                           <td className="border-b border-black/10 px-3 py-2.5"><Link prefetch={false} href={`/dashboard/orders/${order.id}`} className="block"><span className={`rounded-md px-2 py-1 font-semibold ${statusClass(order.status)}`}>{formatStatus(order.status)}</span></Link></td>
                           <td className="border-b border-black/10 px-3 py-2.5"><Link prefetch={false} href={`/dashboard/orders/${order.id}`} className="block text-inherit">{itemCount} {itemCount === 1 ? "item" : "items"}</Link></td>
-                          <td className="border-b border-black/10 px-3 py-2.5 font-medium text-black/80"><Link prefetch={false} href={`/dashboard/orders/${order.id}`} className="block text-inherit">{extractPaymentMethod(order.shippingAddress)}</Link></td>
+                          <td className="border-b border-black/10 px-3 py-2.5 font-medium text-black/80">
+                            <Link prefetch={false} href={`/dashboard/orders/${order.id}`} className="block text-inherit">
+                              <span className="inline-flex items-center gap-1.5">
+                                {order.paymentVerified ? (
+                                  <span className="inline-flex items-center rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800">
+                                    PAID
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800">
+                                    COD
+                                  </span>
+                                )}
+                                {extractPaymentMethod(order.shippingAddress)}
+                              </span>
+                            </Link>
+                          </td>
                           <td className="max-w-xs border-b border-black/10 px-3 py-2.5 text-black/80 font-medium leading-normal"><Link prefetch={false} href={`/dashboard/orders/${order.id}`} className="block text-inherit">{cleanAddress || "—"}</Link></td>
                         </tr>
                       );

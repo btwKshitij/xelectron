@@ -1001,8 +1001,8 @@ export default function Navbar() {
                       <ul className="space-y-0.5">
                         {[
                           { name: "Contact Support", href: "/contact" },
-                          { name: "Troubleshooting Guide", href: "/support" },
-                          { name: "Order Tracking", href: "/support" },
+                          { name: "Troubleshooting Guide", href: "/troubleshooting" },
+                          { name: "Order Tracking", href: "/orders" },
                         ].map((item) => (
                           <li key={item.name}>
                             <Link prefetch={false}
@@ -1027,9 +1027,9 @@ export default function Navbar() {
                       </h4>
                       <div className="space-y-0.5">
                         {[
-                          { name: "Repair Center Locations", href: "/support" },
-                          { name: "Downloads & Manuals", href: "/support" },
-                          { name: "Firmware Updates", href: "/support" },
+                          { name: "Repair Center Locations", href: "/service-centers" },
+                          { name: "Downloads & Manuals", href: "/downloads" },
+                          { name: "Firmware Updates", href: "/firmware-updates" },
                         ].map((res) => (
                           <Link prefetch={false}
                             key={res.name}
@@ -1066,7 +1066,7 @@ export default function Navbar() {
                       </Link>
 
                       <Link prefetch={false}
-                        href="/support"
+                        href="/downloads"
                         onClick={() => setOpenMenu(null)}
                         className="group flex flex-col items-center justify-between rounded-xl p-2 transition-all duration-300 hover:-translate-y-0.5"
                       >
@@ -1152,6 +1152,9 @@ export default function Navbar() {
                             { key: "repair-request", label: "Repair & Replacement", href: "/repair-replacement" },
                             { key: "service-centers", label: "Service Center Locations", href: "/service-centers" },
                             { key: "troubleshooting", label: "Troubleshooting Guide", href: "/troubleshooting" },
+                            { key: "order-tracking", label: "Order Tracking", href: "/orders" },
+                            { key: "downloads", label: "Downloads & Manuals", href: "/downloads" },
+                            { key: "firmware", label: "Firmware Updates", href: "/firmware-updates" },
                           ]
                           : group.items.map((item) => ({ key: item, label: item, href: "/" }));
 

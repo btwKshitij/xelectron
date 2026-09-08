@@ -1,5 +1,6 @@
 "use client"
 
+import { getCategoryOrder } from "@/lib/shared/category-order"
 import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
@@ -43,7 +44,7 @@ export function CategoryManager({ initialCategories = [] }: { initialCategories?
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
   const [isBulkDeleting, setIsBulkDeleting] = useState(false)
   const selectAllRef = useRef<HTMLInputElement>(null)
-  const categoryList = categories ?? []
+  const categoryList = [...(categories ?? [])].sort((a, b) => getCategoryOrder(a) - getCategoryOrder(b))
   const visibleCategories = categoryList.filter((category) =>
     category.title.toLowerCase().includes(query.trim().toLowerCase())
   )

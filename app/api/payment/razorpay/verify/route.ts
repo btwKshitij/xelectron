@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import crypto from "crypto";
+import { getRazorpayInstance } from "@/lib/server/razorpay";
 import * as ordersController from "@/lib/server/controllers/orders.controller";
 import { getCurrentUser } from "@/lib/server/dal/auth";
 import { setSessionCookie } from "@/lib/server/auth/session-utils";
@@ -43,13 +44,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Signature is authentic - Proceed to persist order
+    const payment = await getRazorpayInstance().payments.fetch(razorpay_payment_id);
+    const expectedAmount = Math.round(Number(orderDetails?.total) * 100);
+    if (payment.order_id !== razorpay_order_id || payment.status !== "captured" || payment.currency !== "INR" || !Number.isFinite(expectedAmount) || Number(payment.amount) !== expectedAmount) {
+      return NextResponse.json({ success: false, error: "Payment has not been captured for this order amount." }, { status: 400 });
+    }
+
+    // Only a captured payment can mark an order paid.
     const user = await getCurrentUser();
     const internalNotes = `Paid via Razorpay. Payment ID: ${razorpay_payment_id} | Order ID: ${razorpay_order_id}`;
 
     const order = await ordersController.createOrder({
       ...orderDetails,
       status: "CONFIRMED",
+      paymentVerified: true,
       userId: user?.id || orderDetails?.userId || null,
       customerName:
         orderDetails?.customerName ||

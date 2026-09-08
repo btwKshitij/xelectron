@@ -307,6 +307,7 @@ model Discount {
 }
 
 model Order {
+  paymentVerified Boolean @default(false) @map("payment_verified")
   id                String      @id @default(cuid())
   status            OrderStatus @default(PENDING)
   total             Float
@@ -484,4 +485,21 @@ model BrandMarqueeItem {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("brand_marquee_items")
+}
+
+// Editable troubleshooting page, stored as one atomic document.
+model TroubleshootingPage {
+  id        String   @id @default("default")
+  content   Json
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("troubleshooting_pages")
+}
+
+model SupportRequest {
+  id        String   @id @default(cuid())
+  kind      String
+  details   Json
+  createdAt DateTime @default(now()) @map("created_at")
+  @@map("support_requests")
 }

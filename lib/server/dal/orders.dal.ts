@@ -1,9 +1,11 @@
 import { db } from "@/lib/db";
+import { isOrderPaidOrCod, paidOrCodOrderPrismaFilter } from "@/lib/server/orders-filter";
 
 // ─── Queries ─────────────────────────────────────────────────────────────────
 
 export async function getAllOrders() {
-  return db.order.findMany({
+  const orders = await db.order.findMany({
+    where: paidOrCodOrderPrismaFilter,
     include: {
       user: { select: { id: true, name: true, email: true } },
       items: {
@@ -14,6 +16,7 @@ export async function getAllOrders() {
     },
     orderBy: { createdAt: "desc" },
   });
+  return orders.filter(isOrderPaidOrCod);
 }
 
 export async function getOrderById(id: string) {
@@ -62,28 +65,11 @@ export async function getOrdersByUserId(userId: string, email?: string, phone?: 
     conditions.push({ customerPhone: { contains: cleanPhone } });
   }
 
-  return db.order.findMany({
+  const orders = await db.order.findMany({
     where: {
-      OR: conditions,
-    },
-    include: {
-      items: {
-        include: {
-          product: { select: { id: true, name: true, mainImage: true, slug: true } },
-        },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-}
-
-export async function getOrdersByEmailOrPhone(contact: string) {
-  const clean = contact.trim().toLowerCase();
-  return db.order.findMany({
-    where: {
-      OR: [
-        { customerEmail: { equals: clean, mode: "insensitive" } },
-        { customerPhone: { contains: clean.replace(/[^0-9]/g, "") } },
+      AND: [
+        paidOrCodOrderPrismaFilter,
+        { OR: conditions },
       ],
     },
     include: {
@@ -95,6 +81,33 @@ export async function getOrdersByEmailOrPhone(contact: string) {
     },
     orderBy: { createdAt: "desc" },
   });
+  return orders.filter(isOrderPaidOrCod);
+}
+
+export async function getOrdersByEmailOrPhone(contact: string) {
+  const clean = contact.trim().toLowerCase();
+  const orders = await db.order.findMany({
+    where: {
+      AND: [
+        paidOrCodOrderPrismaFilter,
+        {
+          OR: [
+            { customerEmail: { equals: clean, mode: "insensitive" } },
+            { customerPhone: { contains: clean.replace(/[^0-9]/g, "") } },
+          ],
+        },
+      ],
+    },
+    include: {
+      items: {
+        include: {
+          product: { select: { id: true, name: true, mainImage: true, slug: true } },
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+  return orders.filter(isOrderPaidOrCod);
 }
 
 // ─── Mutations ───────────────────────────────────────────────────────────────
@@ -115,6 +128,7 @@ export type CreateOrderInput = {
   trackingUrl?: string;
   estimatedDelivery?: string;
   internalNotes?: string;
+  paymentVerified?: boolean;
   phone?: string;
   discountCode?: string;
   items: {
@@ -144,6 +158,7 @@ export async function createOrder(data: CreateOrderInput) {
       trackingUrl: data.trackingUrl,
       estimatedDelivery: data.estimatedDelivery,
       internalNotes: data.internalNotes,
+      paymentVerified: data.paymentVerified === true,
       items: {
         create: data.items.map((item) => ({
           productId: item.productId,
@@ -174,6 +189,7 @@ export async function updateOrderStatus(
 
 export type UpdateOrderInput = {
   status?: "PENDING" | "CONFIRMED" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED";
+  paymentVerified?: boolean;
   shippingAddress?: string;
   customerName?: string;
   customerEmail?: string;
@@ -193,6 +209,7 @@ export async function updateOrder(id: string, data: UpdateOrderInput) {
     where: { id },
     data: {
       ...(data.status ? { status: data.status } : {}),
+      ...(data.paymentVerified !== undefined ? { paymentVerified: data.paymentVerified } : {}),
       ...(data.shippingAddress !== undefined ? { shippingAddress: data.shippingAddress } : {}),
       ...(data.customerName !== undefined ? { customerName: data.customerName } : {}),
       ...(data.customerEmail !== undefined ? { customerEmail: data.customerEmail } : {}),
@@ -222,5 +239,7 @@ export async function deleteOrder(id: string) {
 }
 
 export async function countOrders() {
-  return db.order.count();
+  return db.order.count({
+    where: paidOrCodOrderPrismaFilter,
+  });
 }
