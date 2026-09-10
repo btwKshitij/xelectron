@@ -26,10 +26,12 @@ export default function RepairReplacementPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [confirmationSent, setConfirmationSent] = useState(false);
+  const [reference, setReference] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.phone || !formData.serialNumber || !formData.issueDetails) {
+    if (!formData.name || !formData.email || !formData.phone || !formData.serialNumber || !formData.issueDetails) {
       toast.error("Please fill in all required fields.");
       return;
     }
@@ -48,6 +50,8 @@ export default function RepairReplacementPage() {
       }
 
       setSubmitted(true);
+      setConfirmationSent(result.confirmationSent === true);
+      setReference(result.reference);
       toast.success("Service request submitted successfully!");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "The service request could not be sent.");
@@ -122,6 +126,12 @@ export default function RepairReplacementPage() {
                   <p className="text-xs text-emerald-700 max-w-md mx-auto">
                     Your request for serial <span className="font-mono font-bold">{formData.serialNumber}</span> has been saved for review by our Vaishali Service Team.
                   </p>
+                  <p className="text-xs text-emerald-700">Reference: <span className="font-mono font-bold">{reference}</span></p>
+                  <p className="text-xs text-emerald-700">
+                    {confirmationSent
+                      ? `A confirmation email has been sent to ${formData.email}.`
+                      : "Your request is saved, but we could not send your confirmation email. Please keep your reference number."}
+                  </p>
                   <button
                     type="button"
                     onClick={() => {
@@ -135,6 +145,22 @@ export default function RepairReplacementPage() {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+                  <div>
+                    <label htmlFor="repair-email" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Email Address *</label>
+                    <input
+                      id="repair-email"
+                      name="email"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      maxLength={254}
+                      placeholder="you@example.com"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs outline-none focus:border-[#0a7ae6] transition"
+                    />
+                    <p className="mt-1 text-xs text-slate-500">We will send your request confirmation to this address.</p>
+                  </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Your Name *</label>
@@ -223,33 +249,39 @@ export default function RepairReplacementPage() {
 
             {/* AUTHORIZED SERVICE CENTER SIDEBAR */}
             <div className="space-y-6 lg:col-span-5">
-              <div className="space-y-4 rounded-2xl border border-slate-200/90 bg-slate-900 p-6 text-white shadow-sm sm:p-7">
-                <span className="rounded-full bg-[#0a7ae6] text-white text-[10px] font-extrabold uppercase tracking-wider px-3 py-1">
-                  Main Service Hub
-                </span>
-                <h3 className="text-xl font-bold text-white">XElectron Service Center</h3>
+              <aside aria-labelledby="service-center-title" className="overflow-hidden rounded-2xl border border-[#dbe4f0] bg-[#ffffff] shadow-[0_8px_28px_-16px_rgba(7,26,56,0.15)]">
+                <div className="border-t-4 border-[#0a7ae6] p-6 sm:p-7">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#0a7ae6]">Main service hub</span>
+                    <span className="rounded-full border border-[#dbeafe] bg-[#edf7ff] px-2.5 py-1 text-[10px] font-semibold text-[#0a7ae6]">Vaishali</span>
+                  </div>
+                  <h3 id="service-center-title" className="mt-3 text-xl font-bold tracking-tight text-[#071a38] sm:text-2xl">XElectron Service Center</h3>
 
-                <div className="space-y-3 text-xs text-slate-300">
-                  <p className="flex items-start gap-2.5 leading-relaxed">
-                    <MapPin className="size-4 shrink-0 text-[#38bdf8] mt-0.5" />
-                    <span>Plot No.626, Ground Floor, Sector - 5, Vaishali, Ghaziabad, UP. PIN - 201010</span>
-                  </p>
-                  <p className="text-[11px] text-slate-400 italic pl-6">
-                    Landmark: In front of Ram Prashtha Green Colony, Near Mohan Dhaba.
-                  </p>
+                  <div className="mt-6 flex items-start gap-3">
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#edf7ff] text-[#0a7ae6]"><MapPin aria-hidden="true" className="size-4" /></div>
+                    <div className="space-y-2">
+                      <p className="text-sm leading-6 text-[#475569]">Plot No.626, Ground Floor, Sector - 5,<br />Vaishali, Ghaziabad, UP. PIN - 201010</p>
+                      <p className="text-xs leading-5 text-[#64748b]">In front of Ram Prashtha Green Colony, near Mohan Dhaba.</p>
+                    </div>
+                  </div>
 
-                  <div className="pt-3 border-t border-white/10 space-y-2">
-                    <p className="flex items-center gap-2 text-white font-bold">
-                      <Phone className="size-4 text-[#38bdf8]" />
-                      <span>0120-4213337 / 9311136520</span>
-                    </p>
-                    <p className="flex items-center gap-2 text-slate-400">
-                      <Clock className="size-4" />
-                      <span>Timing: 10:00 AM to 06:00 PM (Mon-Sat)</span>
-                    </p>
+                  <div className="mt-6 flex items-start gap-3 border-t border-[#dbe4f0] pt-5">
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#edf7ff] text-[#0a7ae6]"><Phone aria-hidden="true" className="size-4" /></div>
+                    <div>
+                      <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-[#64748b]">Call our service team</p>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-bold text-[#071a38]">
+                        <a href="tel:01204213337" className="rounded-sm underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0a7ae6]">0120-4213337</a>
+                        <span aria-hidden="true" className="text-[#94a3b8]">/</span>
+                        <a href="tel:+919311136520" className="rounded-sm underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0a7ae6]">9311136520</a>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+                <div className="flex items-center gap-3 border-t border-[#dbe4f0] bg-[#f0f7ff] px-6 py-4 text-xs text-[#475569] sm:px-7">
+                  <Clock aria-hidden="true" className="size-4 shrink-0 text-[#0a7ae6]" />
+                  <p><span className="font-semibold">Mon–Sat</span><span className="mx-2 text-[#94a3b8]">·</span>10:00 AM – 6:00 PM</p>
+                </div>
+              </aside>
             </div>
           </div>
         </div>

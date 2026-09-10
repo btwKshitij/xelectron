@@ -5,42 +5,13 @@ import Navbar from "@/components/navbar/navbar";
 import Footer from "@/components/footer/footer";
 import {
   Briefcase,
-  Users,
-  Sparkles,
   Send,
   CheckCircle2,
   MapPin,
-  Clock,
-  ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
 
-const OPENINGS = [
-  {
-    title: "Senior Hardware Service Engineer",
-    department: "Technical Operations",
-    location: "Vaishali, Ghaziabad",
-    type: "Full-Time",
-    experience: "2-4 Years",
-    description: "Responsible for chip-level repair, motherboard diagnostics, and optics assembly for Smart Projectors and LED TVs.",
-  },
-  {
-    title: "Retail Sales Executive (Showroom)",
-    department: "Sales & Retail",
-    location: "Spectrum Metro Mall, Noida Sec-75",
-    type: "Full-Time",
-    experience: "1-3 Years",
-    description: "Engage with customers, demonstrate 4K projectors & home theater audio systems, and manage showroom inquiries.",
-  },
-  {
-    title: "Customer Support & Escalations Lead",
-    department: "Customer Success",
-    location: "Sector 62, Noida (Corporate Office)",
-    type: "Full-Time",
-    experience: "2+ Years",
-    description: "Manage inbound phone & WhatsApp customer support, track warranty tickets, and ensure high customer satisfaction.",
-  },
-];
+import { OPENINGS } from "@/lib/careers";
 
 export default function CareersPage() {
   const [formData, setFormData] = useState({
@@ -53,8 +24,10 @@ export default function CareersPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [reference, setReference] = useState("");
+  const [confirmationSent, setConfirmationSent] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.email || !formData.phone) {
       toast.error("Please fill in all required fields.");
@@ -62,11 +35,25 @@ export default function CareersPage() {
     }
 
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      const response = await fetch("/api/careers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...formData, name: formData.name.trim(), email: formData.email.trim(), portfolioUrl: formData.portfolioUrl.trim() }),
+      });
+      const result = await response.json().catch(() => null);
+      if (!response.ok || !result?.success) {
+        throw new Error(result?.error || "Your application could not be submitted. Please try again.");
+      }
+      setReference(result.reference);
+      setConfirmationSent(result.confirmationSent === true);
       setSubmitted(true);
       toast.success("Job application submitted successfully!");
-    }, 1000);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Your application could not be submitted. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -129,7 +116,11 @@ export default function CareersPage() {
                   <CheckCircle2 className="mx-auto size-12 text-emerald-600" />
                   <h3 className="text-base font-bold">Application Received!</h3>
                   <p className="text-xs text-emerald-700">
-                    Thank you, {formData.name}. Our HR team will review your profile and contact you soon.
+                    Thank you, {formData.name}. Our team will review your profile and contact you if there is a suitable match.
+                  </p>
+                  <p className="text-xs text-emerald-700">Reference: <span className="font-mono font-bold">{reference}</span></p>
+                  <p className="text-xs text-emerald-700">
+                    {confirmationSent ? `A confirmation email has been sent to ${formData.email}.` : "Your application is saved, but we could not send your confirmation email. Please keep your reference number."}
                   </p>
                 </div>
               ) : (

@@ -9,8 +9,9 @@ import {
   CheckCircle2,
   MapPin,
   RefreshCw,
-  ShieldCheck,
-  Truck,
+  Package,
+  ArrowUpRight,
+  Check,
 } from "lucide-react";
 import Navbar from "@/components/navbar/navbar";
 import Footer from "@/components/footer/footer";
@@ -39,7 +40,22 @@ function formatDateTime(value: string | null) {
   const date = new Date(value);
   return Number.isNaN(date.getTime())
     ? value
-    : date.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
+    : date.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata" });
+}
+
+function deliveryStage(status: string | null) {
+  const value = (status || "").toLowerCase();
+  if (value === "cancelled") return { step: -1, title: "Shipment cancelled", description: "This shipment was cancelled in Delhivery. Contact the store for the next steps for your order." };
+  if (/rto|return|cancel|fail|undeliver|exception|lost/.test(value)) return { step: -1, title: status || "Delivery update", description: "There is an update to your delivery. See the latest courier activity below." };
+  if (value === "delivered") return { step: 3, title: "Your parcel has arrived", description: "Delhivery has marked your shipment as delivered." };
+  if (value.includes("out for delivery") || value === "dispatched") return { step: 2, title: "Out for delivery", description: "Your parcel is with the delivery agent for the final part of its journey." };
+  if (/in transit|in-transit|picked up/.test(value)) return { step: 1, title: "Your parcel is on its way", description: "Your parcel is travelling through the Delhivery network." };
+  if (value === "manifested") return { step: 0, title: "Getting your parcel ready", description: "Your shipment is registered with Delhivery and is awaiting collection. We will show the next update when the courier scans it." };
+  return { step: -1, title: status || "Waiting for a courier update", description: "Follow the latest updates from Delhivery below." };
+}
+
+function cleanLocation(location: string | null) {
+  return location?.replace(/_/g, " ").replace(/\bGW\b/g, "Gateway") || "";
 }
 
 function TrackingContent({ orderId }: { orderId: string }) {
@@ -75,120 +91,67 @@ function TrackingContent({ orderId }: { orderId: string }) {
     return () => window.clearTimeout(initialRequest);
   }, [fetchTracking]);
 
+  const stage = deliveryStage(data?.status || null);
+  const steps = ["Preparing", "In transit", "Out for delivery", "Delivered"];
+  const scans = [...(data?.scans || [])].sort((a, b) => {
+    const first = Date.parse(a.occurredAt || "");
+    const second = Date.parse(b.occurredAt || "");
+    return Number.isFinite(first) && Number.isFinite(second) ? second - first : 0;
+  });
+
   return (
-    <div className="min-h-[70vh] bg-slate-50/60 py-8 sm:py-12">
-      <div className="mx-auto max-w-3xl px-4 sm:px-6">
-        <Link prefetch={false}
-          href="/orders"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0a7ae6] hover:underline"
-        >
-          <ArrowLeft className="size-3.5" /> Back to My Orders
-        </Link>
-
-        <div className="mt-5 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-100 bg-gradient-to-br from-[#f4f9ff] to-white px-6 py-7 sm:px-8">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <div className="flex items-center gap-2 text-[#0a7ae6]">
-                  <Truck className="size-5" />
-                  <span className="text-xs font-bold uppercase tracking-[0.16em]">Secure shipment tracking</span>
-                </div>
-                <h1 className="mt-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Track your delivery</h1>
-                <p className="mt-1 text-sm text-slate-600">Live updates are retrieved securely from your courier.</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => fetchTracking(true)}
-                disabled={loading || refreshing}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <RefreshCw className={`size-3.5 ${refreshing ? "animate-spin" : ""}`} /> Refresh status
-              </button>
-            </div>
+    <div className="min-h-[75vh] bg-[#f6f8fb] py-8 sm:py-14">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <Link prefetch={false} href="/orders" className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-blue-600"><ArrowLeft className="size-4" />My orders</Link>
+          <button type="button" onClick={() => fetchTracking(true)} disabled={loading || refreshing} className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-white focus-visible:outline-2 focus-visible:outline-blue-600 disabled:opacity-50"><RefreshCw className={`size-3.5 ${refreshing ? "motion-safe:animate-spin" : ""}`} />{refreshing ? "Updating..." : "Refresh tracking"}</button>
+        </div>
+        <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+          <div className="border-b border-slate-100 px-6 py-5 sm:px-8">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-600">Your delivery</p>
+            <h1 className="mt-1 text-xl font-semibold tracking-tight text-slate-900">Track your order</h1>
           </div>
-
-          <div className="p-6 sm:p-8">
-            {loading ? (
-              <div className="flex min-h-56 items-center justify-center">
-                <div className="size-8 animate-spin rounded-full border-4 border-[#0a7ae6] border-t-transparent" />
-              </div>
-            ) : error ? (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-center">
-                <AlertCircle className="mx-auto size-7 text-amber-600" />
-                <h2 className="mt-3 font-semibold text-slate-900">Tracking is not ready yet</h2>
-                <p className="mt-1 text-sm leading-6 text-slate-600">{error}</p>
-                <Link prefetch={false} href="/orders" className="mt-5 inline-flex text-sm font-semibold text-[#0a7ae6] hover:underline">Return to My Orders</Link>
-              </div>
-            ) : data && !data.found ? (
-              <div className="rounded-2xl border border-blue-100 bg-blue-50/60 p-6 text-center sm:p-8">
-                <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-white text-[#0a7ae6] shadow-sm ring-8 ring-blue-100/50">
-                  <Truck className="size-6" />
-                </div>
-                <span className="mt-5 inline-flex rounded-full border border-blue-200 bg-white px-3 py-1 text-xs font-bold uppercase tracking-wide text-[#0a7ae6]">
-                  AWB generated
-                </span>
-                <h2 className="mt-3 text-xl font-bold text-slate-900">Your parcel is being handed to {data.carrier}</h2>
-                <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-600">
-                  Tracking number <span className="font-mono font-semibold text-slate-900">{data.trackingNumber}</span> is ready. The courier will show its first live update after the parcel is manifested and scanned.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => fetchTracking(true)}
-                  disabled={refreshing}
-                  className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#0a7ae6] px-4 py-2.5 text-xs font-bold text-white transition hover:bg-[#086ac9] disabled:opacity-60"
-                >
-                  <RefreshCw className={`size-3.5 ${refreshing ? "animate-spin" : ""}`} /> Check for courier update
-                </button>
-              </div>
-            ) : data ? (
-              <div className="space-y-6">
-                <section className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-5 sm:p-6">
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                      <div className="flex items-center gap-2 text-emerald-700">
-                        <CheckCircle2 className="size-5" />
-                        <span className="text-xs font-bold uppercase tracking-wider">Current courier update</span>
-                      </div>
-                      <h2 className="mt-2 text-xl font-bold text-slate-900">{data.status || "Shipment update received"}</h2>
-                      {data.statusType && <p className="mt-1 text-sm text-slate-600">{data.statusType}</p>}
-                    </div>
-                    <div className="rounded-lg border border-emerald-100 bg-white px-3 py-2 font-mono text-xs font-bold text-slate-700">
-                      {data.trackingNumber}
-                    </div>
+          {loading ? <div role="status" className="flex min-h-80 flex-col items-center justify-center gap-4 text-sm text-slate-500"><RefreshCw className="size-6 motion-safe:animate-spin text-blue-600" />Loading your delivery updates...</div> : <>
+            {error && <div role="alert" className="mx-6 mt-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"><AlertCircle className="mt-0.5 size-5 shrink-0" /><div><p className="font-semibold">We could not refresh your tracking</p><p className="mt-1">{error}</p>{data && <p className="mt-1 text-xs">Showing the last available update.</p>}</div></div>}
+            {data && <>
+              <div className="grid lg:grid-cols-[1fr_280px]">
+                <section className="px-6 py-8 sm:p-8">
+                  <div className="mb-5 flex items-center gap-3">
+                    <span className={`flex size-12 items-center justify-center rounded-2xl ${stage.step === 3 ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600"}`}>{stage.step === 3 ? <CheckCircle2 className="size-6" /> : <Package className="size-6" />}</span>
+                    <span className="text-xs font-medium text-slate-500">{data.carrier || "Delhivery"}</span>
                   </div>
-                  <div className="mt-5 grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
-                    {data.location && <div className="flex items-center gap-2"><MapPin className="size-4 text-emerald-600" />{data.location}</div>}
-                    {formatDateTime(data.updatedAt) && <div className="flex items-center gap-2"><CalendarClock className="size-4 text-emerald-600" />Updated {formatDateTime(data.updatedAt)}</div>}
-                    {data.estimatedDelivery && <div className="flex items-center gap-2"><Truck className="size-4 text-emerald-600" />Estimated delivery: {data.estimatedDelivery}</div>}
-                  </div>
+                  <h2 className="max-w-md text-3xl font-semibold leading-tight tracking-tight text-slate-900 sm:text-4xl">{data.found ? stage.title : "Waiting for tracking to begin"}</h2>
+                  <p className="mt-3 max-w-lg text-sm leading-6 text-slate-500">{data.found ? stage.description : "A tracking number has been assigned. We will show your parcel's progress once Delhivery confirms its status."}</p>
+                  {data.found && stage.step >= 0 && <ol aria-label="Delivery progress" className="mt-8 grid grid-cols-4">
+                    {steps.map((label, index) => <li key={label} aria-current={index === stage.step ? "step" : undefined} className="relative">
+                      <div className="flex items-center"><span className={`relative z-10 flex size-7 shrink-0 items-center justify-center rounded-full border-2 ${index <= stage.step ? "border-blue-600 bg-blue-600 text-white" : "border-slate-200 bg-white text-slate-300"}`}>{index < stage.step ? <Check className="size-3.5" /> : <span className={`size-2 rounded-full ${index === stage.step ? "bg-white" : "bg-slate-200"}`} />}</span>{index < steps.length - 1 && <span className={`h-0.5 w-full ${index < stage.step ? "bg-blue-600" : "bg-slate-100"}`} />}</div>
+                      <p className={`mt-3 pr-2 text-[11px] leading-4 sm:text-xs ${index === stage.step ? "font-semibold text-blue-700" : index < stage.step ? "text-slate-700" : "text-slate-400"}`}>{label}</p>
+                    </li>)}
+                  </ol>}
                 </section>
-
-                <section>
-                  <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900">Shipment journey</h2>
-                  {data.scans.length > 0 ? (
-                    <ol className="mt-4 space-y-4 border-l-2 border-slate-100 pl-5">
-                      {data.scans.map((scan, index) => (
-                        <li key={`${scan.status}-${scan.occurredAt || index}`} className="relative">
-                          <span className="absolute -left-[1.82rem] top-1.5 size-3 rounded-full border-2 border-white bg-[#0a7ae6] shadow-sm" />
-                          <p className="text-sm font-semibold text-slate-900">{scan.status}</p>
-                          <p className="mt-0.5 text-xs text-slate-500">
-                            {[scan.location, formatDateTime(scan.occurredAt)].filter(Boolean).join(" · ")}
-                          </p>
-                          {scan.instructions && <p className="mt-1 text-xs text-slate-600">{scan.instructions}</p>}
-                        </li>
-                      ))}
-                    </ol>
-                  ) : (
-                    <p className="mt-3 text-sm text-slate-500">The courier has received the shipment status but has not provided scan history yet.</p>
-                  )}
-                </section>
+                <aside className="border-t border-slate-100 bg-slate-50/60 p-6 sm:p-8 lg:border-l lg:border-t-0">
+                  <p className="flex items-center gap-2 text-xs font-medium text-slate-500"><CalendarClock className="size-4" />{stage.step === 3 ? "Delivery update" : "Estimated arrival"}</p>
+                  <p className="mt-3 text-lg font-semibold text-slate-900">{stage.step === 3 ? "Delivered" : data.estimatedDelivery || "Not available yet"}</p>
+                  {!data.estimatedDelivery && stage.step !== 3 && <p className="mt-2 text-xs leading-5 text-slate-500">An estimate will appear when provided by the courier.</p>}
+                  <div className="mt-6 border-t border-slate-200/70 pt-5"><p className="text-xs text-slate-500">Tracking number</p><p className="mt-2 break-all font-mono text-sm font-medium text-slate-800">{data.trackingNumber}</p></div>
+                  <a href={`https://www.delhivery.com/tracking?uniqueIdentifier=${encodeURIComponent(data.trackingNumber)}`} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline">Track on Delhivery <ArrowUpRight className="size-3.5" /></a>
+                </aside>
               </div>
-            ) : null}
-          </div>
-
-          <div className="flex items-center gap-2 border-t border-slate-100 bg-slate-50 px-6 py-4 text-xs text-slate-500 sm:px-8">
-            <ShieldCheck className="size-4 text-emerald-600" /> Courier information is fetched securely without exposing your shipment account details.
-          </div>
+              <section className="border-t border-slate-100 px-6 py-7 sm:px-8">
+                <div className="flex flex-wrap items-baseline justify-between gap-2"><h2 className="text-sm font-semibold text-slate-900">Delivery activity</h2><p className="text-[11px] text-slate-400">All times in IST</p></div>
+                {scans.length ? <ol className="mt-6">
+                  {scans.map((scan, index) => <li key={`${scan.status}-${scan.occurredAt}-${index}`} className="relative ml-2 border-l border-slate-200 pb-6 pl-6 last:border-transparent last:pb-0">
+                    <span className={`absolute -left-[5px] top-1 size-[9px] rounded-full ring-4 ring-white ${index === 0 ? "bg-blue-600" : "bg-slate-300"}`} />
+                    <div className="flex flex-col justify-between gap-1 sm:flex-row sm:gap-4"><p className={`text-sm font-medium ${index === 0 ? "text-slate-900" : "text-slate-600"}`}>{scan.status.toLowerCase() === "manifested" ? "Shipment registered with Delhivery" : scan.status}</p><p className="shrink-0 text-xs text-slate-400">{formatDateTime(scan.occurredAt)}</p></div>
+                    {scan.location && <p className="mt-2 flex items-start gap-1 text-xs leading-5 text-slate-500"><MapPin className="mt-0.5 size-3.5 shrink-0" />{cleanLocation(scan.location)}</p>}
+                    {scan.instructions && scan.status.toLowerCase() !== "manifested" && <p className="mt-1 text-xs leading-5 text-slate-500">{scan.instructions}</p>}
+                  </li>)}
+                </ol> : <p className="mt-4 text-sm text-slate-500">No courier activity yet. Check back after the next scan.</p>}
+              </section>
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 bg-slate-50/60 px-6 py-4 sm:px-8"><p className="text-xs text-slate-500">{data.updatedAt ? `Last courier update: ${formatDateTime(data.updatedAt)} IST` : "Updates appear as your parcel is scanned."}</p><Link href="/orders" className="text-xs font-semibold text-blue-600 hover:underline">View my orders</Link></div>
+            </>}
+            {!data && <div className="px-6 py-8"><Link href="/orders" className="text-sm font-semibold text-blue-600">Return to my orders</Link></div>}
+          </>}
         </div>
       </div>
     </div>

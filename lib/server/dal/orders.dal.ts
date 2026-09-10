@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import type { Prisma } from "@prisma/client";
 import { isOrderPaidOrCod, paidOrCodOrderPrismaFilter } from "@/lib/server/orders-filter";
 
 // ─── Queries ─────────────────────────────────────────────────────────────────
@@ -57,7 +58,7 @@ export async function getOrdersByUserId(userId: string, email?: string, phone?: 
     } catch {}
   }
 
-  const conditions: any[] = [{ userId }];
+  const conditions: Prisma.OrderWhereInput[] = [{ userId }];
   if (cleanEmail) {
     conditions.push({ customerEmail: { equals: cleanEmail, mode: "insensitive" as const } });
   }
@@ -205,6 +206,13 @@ export type UpdateOrderInput = {
 };
 
 export async function updateOrder(id: string, data: UpdateOrderInput) {
+  if (data.trackingNumber !== undefined || data.shippingCarrier !== undefined) {
+    const current = await db.order.findUnique({ where: { id }, select: { deliveryBooking: true, trackingNumber: true, shippingCarrier: true } });
+    if (current?.deliveryBooking && (
+      (data.trackingNumber !== undefined && data.trackingNumber !== (current.trackingNumber || "")) ||
+      (data.shippingCarrier !== undefined && data.shippingCarrier !== (current.shippingCarrier || ""))
+    )) throw new Error("This order has a Delhivery booking. Its courier and AWB cannot be replaced manually.");
+  }
   return db.order.update({
     where: { id },
     data: {

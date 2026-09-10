@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { z } from "zod";
 
 import { sendEmail } from "@/lib/server/mail";
 
@@ -30,6 +31,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const name = cleanText(body?.name, 120);
+    const emailInput = z.email().max(254).safeParse(typeof body?.email === "string" ? body.email.trim() : "");
     const phone = cleanText(body?.phone, 40);
     const serialNumber = cleanText(body?.serialNumber, 120);
     const requestType = cleanText(body?.requestType, 80);
@@ -50,7 +52,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const saved = await db.supportRequest.create({ data: { kind: "COMPLAINT", details: { name, phone, serialNumber, requestType, address, issueDetails } } });
+    if (!emailInput.success) {
+      return NextResponse.json(
+        { success: false, error: "Enter a valid email address for your confirmation." },
+        { status: 400 }
+      );
+    }
+    const email = emailInput.data;
+    const saved = await db.supportRequest.create({ data: { kind: "COMPLAINT", details: { name, email, phone, serialNumber, requestType, address, issueDetails } } });
 
     const serviceInbox = "kapil@xelectron.com";
 
@@ -77,11 +86,14 @@ export async function POST(request: NextRequest) {
 
     const emailResult = await sendEmail({
       to: serviceInbox,
+      replyTo: email,
       subject: `[Service Request] ${serialNumber} — ${requestType}`,
       html,
       text: [
         "New repair / replacement request",
         `Customer: ${name}`,
+        `Email: ${email}`,
+        `Reference: ${saved.id}`,
         `Phone: ${phone}`,
         `Serial number: ${serialNumber}`,
         `Request type: ${requestType}`,
@@ -97,7 +109,31 @@ export async function POST(request: NextRequest) {
 
     }
 
-    return NextResponse.json({ success: true, reference: saved.id });
+    const customerEmailResult = await sendEmail({
+      to: email,
+      replyTo: serviceInbox,
+      subject: `Your XElectron service request [${saved.id}]`,
+      text: [
+        `Hi ${name},`,
+        "",
+        "We have received your repair / replacement request. Our service team will review it and contact you about the next steps.",
+        `Reference: ${saved.id}`,
+        `Serial number: ${serialNumber}`,
+        `Request type: ${requestType}`,
+        `Pickup address: ${address || "Not provided"}`,
+        "",
+        "Issue description:",
+        issueDetails,
+        "",
+        "You can reply to this email to contact our service team.",
+        "XElectron Service Team",
+      ].join("\n"),
+    });
+    if (!customerEmailResult.success) {
+      console.error("Repair request confirmation could not be delivered:", customerEmailResult.error);
+    }
+
+    return NextResponse.json({ success: true, reference: saved.id, confirmationSent: customerEmailResult.success });
   } catch (error) {
     console.error("Repair request submission failed:", error);
     return NextResponse.json(

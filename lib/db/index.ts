@@ -48,6 +48,7 @@ function getDbInstance(): PrismaClient {
   if (process.env.NODE_ENV !== "production" && globalForPrisma.prisma) {
     if (
       typeof (globalForPrisma.prisma as any).supportRequest === "undefined" ||
+      !(globalForPrisma.prisma as unknown as { _runtimeDataModel?: { models?: Record<string, RuntimeModel> } })._runtimeDataModel?.models?.Order?.fields?.some((field) => field.name === "deliveryBooking") ||
       typeof (globalForPrisma.prisma as any).troubleshootingPage === "undefined" ||
       typeof (globalForPrisma.prisma as any).heroBanner === "undefined" ||
       typeof (globalForPrisma.prisma as any).announcement === "undefined" ||

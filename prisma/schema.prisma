@@ -322,6 +322,7 @@ model Order {
   shippingCarrier   String?     @map("shipping_carrier")
   trackingNumber    String?     @map("tracking_number")
   trackingUrl       String?     @map("tracking_url")
+  deliveryBooking   Json?       @map("delivery_booking")
   estimatedDelivery String?     @map("estimated_delivery")
   internalNotes     String?     @map("internal_notes")
 

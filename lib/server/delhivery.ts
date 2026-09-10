@@ -15,9 +15,10 @@ export type DelhiveryTrackingResult = {
   location: string | null;
   updatedAt: string | null;
   scans: DelhiveryScan[];
+  instructions?: string | null;
 };
 
-function getDelhiveryToken() {
+export function getDelhiveryToken() {
   const token = process.env.DELHIVERY_API_TOKEN?.trim();
   if (!token) {
     throw new Error("Delhivery is not configured. Add DELHIVERY_API_TOKEN to enable AWB generation.");
@@ -25,7 +26,7 @@ function getDelhiveryToken() {
   return token;
 }
 
-function getTrackingApiOrigin() {
+export function getTrackingApiOrigin() {
   return process.env.DELHIVERY_ENVIRONMENT?.toLowerCase() === "staging"
     ? "https://staging-express.delhivery.com"
     : "https://track.delhivery.com";
@@ -48,7 +49,7 @@ function valueAt(source: unknown, key: string): string | null {
 export async function fetchDelhiveryWaybill(): Promise<string> {
   const token = getDelhiveryToken();
   const res = await fetch(
-    `https://track.delhivery.com/waybill/api/fetch/json/?token=${encodeURIComponent(token)}&count=1`,
+    `${getTrackingApiOrigin()}/waybill/api/fetch/json/?token=${encodeURIComponent(token)}&count=1`,
     {
       method: "GET",
       headers: { Accept: "application/json" },
@@ -146,7 +147,10 @@ export async function getDelhiveryTracking(waybill: string): Promise<DelhiveryTr
   return {
     found: true,
     trackingNumber,
-    status: valueAt(statusRecord, "Status"),
+    status: /\b(cancelled|canceled)\b/i.test(valueAt(statusRecord, "Instructions") || "")
+      ? "Cancelled"
+      : valueAt(statusRecord, "Status"),
+    instructions: valueAt(statusRecord, "Instructions"),
     statusType: valueAt(statusRecord, "StatusType"),
     location: valueAt(statusRecord, "StatusLocation"),
     updatedAt: valueAt(statusRecord, "StatusDateTime"),

@@ -22,7 +22,6 @@ import {
   Check,
   Save,
   FileText,
-  RefreshCw,
   Zap,
   Trash2,
 } from "lucide-react";
@@ -31,6 +30,9 @@ import { AppSidebar } from "@/components/admin/navigation/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { formatINR } from "@/lib/format-price";
+import { CourierStatus } from "@/components/admin/courier-status";
+import { DeliveryBookingForm } from "@/components/admin/delivery-booking-form";
+import type { DeliveryBooking } from "@/lib/delivery-booking";
 
 type OrderDetailItem = {
   id: string;
@@ -67,6 +69,7 @@ export type OrderDetailData = {
   country?: string;
   shippingCarrier?: string;
   trackingNumber?: string;
+  deliveryBooking?: DeliveryBooking | null;
   trackingUrl?: string;
   estimatedDelivery?: string;
   internalNotes?: string;
@@ -82,6 +85,7 @@ export type OrderDetailData = {
 };
 
 type DeliveryTrackingDetails = {
+  instructions?: string | null;
   found: boolean;
   trackingNumber: string;
   status: string | null;
@@ -97,10 +101,7 @@ type DeliveryTrackingDetails = {
   }>;
 };
 
-const CARRIERS = [
-  "Delhivery Express",
-  "Delhivery Surface",
-];
+
 
 function getPublicDelhiveryTrackingUrl(trackingNumber: string) {
   const awb = trackingNumber.replace(/[^0-9A-Za-z-]/g, "").trim();
@@ -126,12 +127,15 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const [trackingUrl, setTrackingUrl] = useState("");
   const [estimatedDelivery, setEstimatedDelivery] = useState("");
   const [deliveryOpen, setDeliveryOpen] = useState(false);
+  const [replacingDelivery, setReplacingDelivery] = useState(false);
   const [deliveryDetails, setDeliveryDetails] = useState<DeliveryTrackingDetails | null>(null);
   const [deliveryError, setDeliveryError] = useState("");
   const [isLoadingDelivery, setIsLoadingDelivery] = useState(false);
 
   // Internal team notes state
   const [internalNotes, setInternalNotes] = useState("");
+  const [noteMessage, setNoteMessage] = useState("");
+  const [savingNote, setSavingNote] = useState(false);
 
   // Notification toggle
   const [notifyCustomer, setNotifyCustomer] = useState(true);
@@ -172,6 +176,26 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       isMounted = false;
     };
   }, [orderId]);
+
+  useEffect(() => {
+    if (!deliveryOpen || !order?.trackingNumber) return;
+    let active = true;
+    async function refresh() {
+      if (document.visibilityState === "hidden") return;
+      try {
+        const response = await fetch(`/api/orders/${orderId}/tracking`, { cache: "no-store" });
+        const result = await response.json();
+        if (!response.ok || !result.success) throw new Error(result.error || "Unable to refresh courier status.");
+        if (active) { setDeliveryDetails(result.data); setDeliveryError(""); }
+      } catch (error) {
+        if (active) setDeliveryError(error instanceof Error ? error.message : "Unable to refresh courier status.");
+      }
+    }
+    void refresh();
+    const timer = window.setInterval(() => void refresh(), 30000);
+    window.addEventListener("focus", refresh);
+    return () => { active = false; window.clearInterval(timer); window.removeEventListener("focus", refresh); };
+  }, [deliveryOpen, order?.trackingNumber, orderId]);
 
   const loadDeliveryDetails = async () => {
     if (!order?.trackingNumber) {
@@ -232,6 +256,24 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     } finally {
       setIsUpdating(false);
     }
+  };
+
+  const saveNote = async () => {
+    setSavingNote(true);
+    setNoteMessage("");
+    const submittedNotes = internalNotes.trim();
+    try {
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ internalNotes: submittedNotes, notifyCustomer: false }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.error || "Unable to save the note.");
+      setOrder((current) => current ? { ...current, internalNotes: submittedNotes } : current);
+      setNoteMessage("Note saved.");
+    } catch (error) {
+      setNoteMessage(error instanceof Error ? error.message : "Unable to save the note.");
+    } finally { setSavingNote(false); }
   };
 
   const saveOrderUpdates = async (overrideData?: Partial<OrderDetailData>) => {
@@ -328,37 +370,6 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       }
     } catch {
       alert("Network error while deleting order");
-      setIsUpdating(false);
-    }
-  };
-
-  const handleGenerateAndPublishAwb = async () => {
-    setIsUpdating(true);
-    setStatusMessage("");
-    try {
-      const res = await fetch("/api/shipping/delhivery/ship", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId }),
-      });
-      const json = await res.json();
-      if (json.success && json.data) {
-        setCarrier(json.data.shippingCarrier || "");
-        setTrackingNumber(json.data.trackingNumber || "");
-        setTrackingUrl(json.data.trackingUrl || "");
-        setEstimatedDelivery(json.data.estimatedDelivery || "");
-        setOrder((prev) => (prev ? { ...prev, ...json.data } : null));
-        setDeliveryOpen(true);
-        setDeliveryDetails(null);
-        setDeliveryError("");
-        setStatusMessage(`AWB ${json.data.trackingNumber} generated and published to the customer. Courier updates start after the first scan.`);
-        setTimeout(() => setStatusMessage(""), 6000);
-      } else {
-        setStatusMessage(json.error || "Failed to generate a Delhivery AWB");
-      }
-    } catch {
-      setStatusMessage("Network error while communicating with Delhivery API");
-    } finally {
       setIsUpdating(false);
     }
   };
@@ -649,59 +660,54 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                   <div className="flex flex-wrap items-center justify-between gap-3 p-5">
                     <button type="button" onClick={toggleDeliveryDetails} className="flex min-w-0 flex-1 items-center gap-3 text-left">
                       <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600"><Truck className="size-5" /></span>
-                      <span className="min-w-0"><span className="flex items-center gap-2 text-sm font-semibold text-slate-900">Delivery & fulfillment <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">DELHIVERY</span></span><span className="mt-1 block truncate text-xs text-slate-500">{order.trackingNumber ? (hasLiveDelivery ? `AWB ${order.trackingNumber} — live courier updates available` : "Saved AWB needs verification — click to view delivery details") : "No shipment created yet — click to set up delivery"}</span></span>
+                      <span className="min-w-0"><span className="flex items-center gap-2 text-sm font-semibold text-slate-900">Delivery & fulfillment <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">DELHIVERY</span></span><span className="mt-1 block truncate text-xs text-slate-500">{replacingDelivery ? "Preparing replacement shipment" : order.trackingNumber ? (hasLiveDelivery ? `AWB ${order.trackingNumber} — live courier updates available` : "Saved AWB needs verification — click to view delivery details") : "No shipment created yet — click to set up delivery"}</span></span>
                     </button>
                     <div className="flex items-center gap-2">
-                      {!order.trackingNumber ? <button type="button" onClick={handleGenerateAndPublishAwb} disabled={isUpdating} className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#0a7ae6] px-3 text-xs font-bold text-white hover:bg-[#086ac9] disabled:opacity-50"><Zap className="size-3.5 fill-current" />{isUpdating ? "Creating…" : "Create delivery"}</button> : null}
+                      {!order.trackingNumber ? <button type="button" onClick={() => setDeliveryOpen(true)} disabled={isUpdating} className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#0a7ae6] px-3 text-xs font-bold text-white hover:bg-[#086ac9] disabled:opacity-50"><Zap className="size-3.5 fill-current" />{isUpdating ? "Creating…" : "Create delivery"}</button> : null}
                       <button type="button" onClick={toggleDeliveryDetails} className="inline-flex size-8 items-center justify-center rounded-lg border border-black/10 text-slate-500 hover:bg-slate-50" aria-label={deliveryOpen ? "Hide delivery details" : "Show delivery details"}>{deliveryOpen ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}</button>
                     </div>
                   </div>
 
                   {deliveryOpen ? <div className="border-t border-black/[0.08] px-5 pb-5 pt-4">
-                    {order.trackingNumber ? <div className="mb-4 rounded-xl border border-[#0a7ae6]/15 bg-[#f7fbff] p-4">
-                      <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-wider text-[#075faf]">Live courier status</p><p className="mt-1 text-sm font-semibold text-slate-900">{isLoadingDelivery ? "Checking Delhivery…" : hasLiveDelivery ? (deliveryDetails?.status || "Shipment update received") : deliveryDetails ? "Delhivery could not verify this AWB" : "Waiting for the first Delhivery scan"}</p><p className="mt-1 text-xs text-slate-500">{deliveryDetails?.location || deliveryError || (deliveryDetails ? "This number is not linked to an active Delhivery shipment. Remove it and add a verified AWB." : "A reserved AWB becomes trackable after the parcel is handed to Delhivery.")}</p></div><div className="flex gap-2"><button type="button" onClick={() => void loadDeliveryDetails()} disabled={isLoadingDelivery} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#0a7ae6]/20 bg-white px-2.5 text-xs font-semibold text-[#075faf] hover:bg-[#0a7ae6]/5 disabled:opacity-50"><RefreshCw className={`size-3.5 ${isLoadingDelivery ? "animate-spin" : ""}`} />Refresh</button>{hasLiveDelivery ? <a href={getPublicDelhiveryTrackingUrl(order.trackingNumber)} target="_blank" rel="noreferrer" className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-white px-2.5 text-xs font-semibold text-[#075faf] ring-1 ring-[#0a7ae6]/20 hover:bg-[#0a7ae6]/5"><ExternalLink className="size-3.5" />Open Delhivery</a> : null}{deliveryDetails && !deliveryDetails.found && !isLoadingDelivery ? <button type="button" onClick={() => void removeInvalidTracking()} disabled={isUpdating} className="inline-flex h-8 items-center rounded-lg border border-red-200 bg-white px-2.5 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50">Remove invalid AWB</button> : null}</div></div>
-                      {deliveryDetails?.scans?.length ? <ol className="mt-4 space-y-2 border-l border-[#0a7ae6]/20 pl-4">{deliveryDetails.scans.map((scan, index) => <li key={`${scan.status}-${index}`} className="text-xs text-slate-600"><span className="font-semibold text-slate-800">{scan.status}</span>{scan.location ? ` · ${scan.location}` : ""}{scan.occurredAt ? ` · ${scan.occurredAt}` : ""}</li>)}</ol> : null}
-                    </div> : <div className="mb-4 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-center"><Truck className="mx-auto size-5 text-slate-400" /><p className="mt-2 text-sm font-semibold text-slate-700">Delivery has not been created</p><p className="mt-1 text-xs text-slate-500">Create a delivery to reserve and publish a real Delhivery AWB.</p></div>}
+                    <DeliveryBookingForm paymentOrder={order} onReplacementChange={setReplacingDelivery} courierStatus={deliveryDetails?.status} courierVerified={Boolean(deliveryDetails?.found) && !isLoadingDelivery && !deliveryError} onBusyChange={setIsUpdating} orderId={orderId} booking={order.deliveryBooking} disabled={isUpdating || ["SHIPPED", "DELIVERED", "CANCELLED"].includes(order.status)} onUpdated={(data) => { if (typeof data.trackingNumber === "string" && data.trackingNumber !== order.trackingNumber) { setDeliveryDetails(null); setDeliveryError(""); } setOrder((current) => current ? { ...current, ...data } as OrderDetailData : current); if (typeof data.trackingNumber === "string") setTrackingNumber(data.trackingNumber); if (typeof data.shippingCarrier === "string") setCarrier(data.shippingCarrier); if (typeof data.trackingUrl === "string") setTrackingUrl(data.trackingUrl); if ("estimatedDelivery" in data) setEstimatedDelivery(typeof data.estimatedDelivery === "string" ? data.estimatedDelivery : ""); }} />
+                    {replacingDelivery ? <div className="rounded-xl border border-dashed border-blue-200 bg-blue-50/40 p-5">
+                      <p className="text-sm font-semibold text-slate-900">New tracking details pending</p>
+                      <p className="mt-1 text-xs text-slate-500">The new AWB, tracking link and courier updates will appear after you create the replacement shipment.</p>
+                      <details className="mt-3 text-xs text-slate-500"><summary className="cursor-pointer">Previous cancelled shipment</summary><p className="mt-2 font-mono">{order.trackingNumber}</p></details>
+                    </div> : <>
+                    {order.trackingNumber && <CourierStatus trackingNumber={order.trackingNumber} trackingUrl={getPublicDelhiveryTrackingUrl(order.trackingNumber)} details={deliveryDetails} loading={isLoadingDelivery} error={deliveryError} onRefresh={() => void loadDeliveryDetails()} onRemove={!order.deliveryBooking ? () => void removeInvalidTracking() : undefined} removing={isUpdating} />}
 
                     <div className="grid gap-3.5 sm:grid-cols-2">
-                      <label className="grid gap-1 text-xs font-semibold text-black/70">Shipping courier<select value={carrier ?? ""} onChange={(e) => setCarrier(e.target.value)} className="h-9 rounded-lg border border-black/20 bg-white px-3 text-xs font-medium text-black focus:border-black focus:outline-none"><option value="">Select courier</option>{CARRIERS.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
-                      <label className="grid gap-1 text-xs font-semibold text-black/70">Tracking / AWB number<input type="text" value={trackingNumber ?? ""} onChange={(e) => setTrackingNumber(e.target.value)} placeholder="Enter a manifested AWB" className="h-9 rounded-lg border border-black/20 bg-white px-3 font-mono text-xs font-medium text-black focus:border-black focus:outline-none" /></label>
-                      <label className="grid gap-1 text-xs font-semibold text-black/70">Tracking link<input type="text" value={trackingUrl ?? ""} readOnly placeholder="Generated automatically from the AWB" className="h-9 rounded-lg border border-black/15 bg-slate-50 px-3 text-xs text-slate-500 outline-none" /></label>
-                      <label className="grid gap-1 text-xs font-semibold text-black/70">Estimated delivery<input type="text" value={estimatedDelivery ?? ""} onChange={(e) => setEstimatedDelivery(e.target.value)} placeholder="e.g. 28 Aug 2026" className="h-9 rounded-lg border border-black/20 bg-white px-3 text-xs text-black focus:border-black focus:outline-none" /></label>
+                      {([
+                        ["Shipping courier", carrier],
+                        ["Tracking / AWB number", trackingNumber],
+                        ["Tracking link", trackingUrl],
+                        ["Estimated delivery", estimatedDelivery],
+                      ] as const).map(([label, value]) => <label key={label} className="grid gap-1 text-xs font-semibold text-black/70">{label}<input type="text" readOnly value={deliveryDetails?.status === "Cancelled" || order.status === "CANCELLED" ? "" : value || ""} placeholder="" className="h-9 rounded-lg border border-black/15 bg-slate-50 px-3 text-xs font-normal text-slate-600 outline-none" /></label>)}
                     </div>
-                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-black/[0.06] pt-4"><p className="text-[11px] text-slate-500">Tracking links are generated automatically from the saved AWB. Courier status refreshes only when you open or refresh this panel.</p><button type="button" onClick={() => saveOrderUpdates()} disabled={isUpdating} className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-black px-3 text-xs font-semibold text-white hover:bg-black/80 disabled:opacity-50"><Save className="size-3.5" />{isUpdating ? "Saving…" : "Save delivery"}</button></div>
+                    <p className="mt-4 border-t border-black/[0.06] pt-4 text-[11px] text-slate-500">Delivery details are filled automatically when a shipment is created. Cancelled shipments leave these fields empty.</p>
+                    </>}
                   </div> : null}
                 </section>
 
                 {/* Internal Team Notes Card */}
-                <div className="overflow-hidden rounded-xl border border-black/10 bg-white shadow-sm p-5 space-y-3">
-                  <div className="flex items-center justify-between border-b border-black/10 pb-3">
-                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-black/75">
-                      <FileText className="size-4 text-black/60" />
-                      <span>Internal Team Notes (Not visible to customer)</span>
+                <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                  <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+                    <div className="flex items-center gap-3">
+                      <span className="flex size-9 items-center justify-center rounded-lg bg-slate-100 text-slate-500"><FileText className="size-4" /></span>
+                      <div><h2 className="text-sm font-semibold text-slate-900">Team notes</h2><p className="mt-0.5 text-xs text-slate-500">Payment references and instructions for your team.</p></div>
+                    </div>
+                    <span className="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-500">Staff use</span>
+                  </div>
+                  <div className="p-5">
+                    <label htmlFor="order-team-notes" className="sr-only">Order notes</label>
+                    <textarea id="order-team-notes" rows={4} spellCheck={false} disabled={savingNote} value={internalNotes ?? ""} onChange={(event) => { setInternalNotes(event.target.value); setNoteMessage(""); }} placeholder="Add packing instructions, customer requests or a follow-up for your team..." className="min-h-28 w-full resize-y rounded-lg border border-slate-200 bg-slate-50/50 p-3 text-sm leading-6 text-slate-700 outline-none placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100 disabled:opacity-60" />
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                      <p role="status" className="text-xs text-slate-500">{noteMessage || (internalNotes.trim() !== (order.internalNotes || "").trim() ? "Unsaved changes" : "No unsaved changes")}</p>
+                      <button type="button" onClick={() => void saveNote()} disabled={savingNote || isUpdating || internalNotes.trim() === (order.internalNotes || "").trim()} className="inline-flex h-9 items-center gap-2 rounded-lg bg-slate-900 px-4 text-xs font-semibold text-white hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-40"><Save className="size-3.5" />{savingNote ? "Saving..." : "Save note"}</button>
                     </div>
                   </div>
-
-                  <textarea
-                    rows={3}
-                    value={internalNotes ?? ""}
-                    onChange={(e) => setInternalNotes(e.target.value)}
-                    placeholder="Add private internal notes for warehouse, packaging, or customer service team..."
-                    className="w-full rounded-lg border border-black/20 bg-white p-3 text-xs text-black focus:border-black focus:outline-none"
-                  />
-
-                  <div className="flex justify-end">
-                    <button
-                      type="button"
-                      onClick={() => saveOrderUpdates()}
-                      disabled={isUpdating}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-black/20 bg-white px-3.5 py-1.5 text-xs font-semibold text-black/80 hover:bg-black/5 transition cursor-pointer"
-                    >
-                      <Save className="size-3.5" />
-                      <span>Save Note</span>
-                    </button>
-                  </div>
-                </div>
+                </section>
 
                 {/* Payment Breakdown Card */}
                 <div className="overflow-hidden rounded-xl border border-black/10 bg-white shadow-sm p-5 space-y-4">
