@@ -1057,7 +1057,7 @@ export default function ProductDetail({
         };
 
         return (
-          <div id="product-features" className="w-full space-y-0 my-8 sm:my-16 leading-none m-0 p-0 block scroll-mt-24">
+          <div id="product-features" className="w-full space-y-0 mt-4 sm:mt-12 mb-0 sm:mb-6 leading-none m-0 p-0 block scroll-mt-24">
             {renderShowcaseSlice(topShowcase, 0)}
             {renderSliderSection()}
             {renderShowcaseSlice(bottomShowcase, splitIdx)}
@@ -1065,8 +1065,8 @@ export default function ProductDetail({
         );
       })()}
 
-      {/* BOTTOM SECTIONS CONTAINER WITH DISTINCT GAP BEFORE VIDEO SECTION */}
-      <div className="mx-auto max-w-[1440px] px-3 sm:px-6 lg:px-8 mt-8 sm:mt-12 pt-6 border-t border-black/5">
+      {/* BOTTOM SECTIONS CONTAINER */}
+      <div className="mx-auto max-w-[1440px] px-3 sm:px-6 lg:px-8">
         {/* CREATOR & HANDS-ON VIDEOS SECTION (MATCHING USER IMAGES) */}
         {(() => {
           const videos = ((product as any)?.creatorVideos || []).filter((v: any) => v && (v.isProductVideo !== false) && Boolean(v.videoUrl?.trim() || v.thumbnailUrl?.trim()));
@@ -1197,7 +1197,7 @@ export default function ProductDetail({
           const connectivitySpecs = rawSpecs.filter((s: any) => isConnectivityKey(s.label));
 
           return (
-            <section id="product-specifications" className="mt-16 sm:mt-24 pt-12 sm:pt-16 border-t border-slate-200 scroll-mt-24">
+            <section id="product-specifications" className="mt-6 sm:mt-16 pt-5 sm:pt-12 border-t border-slate-200 scroll-mt-24">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 xl:gap-20">
                 {/* Column 1: Design, Display & Performance */}
                 <div className="space-y-3">
@@ -1293,7 +1293,7 @@ export default function ProductDetail({
               ];
 
           return (
-            <section id="product-faqs" className="mt-16 sm:mt-24 pt-12 sm:pt-16 border-t border-slate-200 scroll-mt-24">
+            <section id="product-faqs" className="mt-8 sm:mt-20 pt-6 sm:pt-14 border-t border-slate-200 scroll-mt-24">
               <div className="max-w-4xl mx-auto">
                 <h2 className="text-2xl sm:text-3xl md:text-4xl font-normal text-slate-800 tracking-tight text-center mb-8 sm:mb-12">
                   Frequently Asked Questions
@@ -1337,12 +1337,12 @@ export default function ProductDetail({
 
         {/* BOTTOM FLOATING STICKY PURCHASE BAR */}
         {showBottomSticky && !isBottomStickyDismissed && (
-          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-[96%] max-w-6xl animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <div className="rounded-xl border border-slate-200/90 bg-white/95 px-4 sm:px-7 py-2.5 sm:py-3.5 shadow-2xl backdrop-blur-md flex items-center justify-between gap-4 sm:gap-6">
+          <div className="fixed bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-1rem)] sm:w-[96%] max-w-5xl animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div className="rounded-xl border border-slate-200/90 bg-white/95 px-3 py-2 sm:px-6 sm:py-3.5 shadow-2xl backdrop-blur-md flex items-center justify-between gap-2.5 sm:gap-6">
               {/* Product Info */}
-              <div className="flex items-center gap-3.5 sm:gap-5 min-w-0">
-                {/* Borderless Large Product Image */}
-                <div className="relative size-14 sm:size-16 md:size-18 shrink-0 overflow-hidden bg-transparent">
+              <div className="flex items-center gap-2.5 sm:gap-4 min-w-0 flex-1">
+                {/* Product Thumbnail */}
+                <div className="relative size-11 sm:size-14 md:size-16 shrink-0 overflow-hidden bg-slate-50/50 rounded-lg">
                   <Image
                     src={heroImage}
                     alt={product.name}
@@ -1350,21 +1350,21 @@ export default function ProductDetail({
                     className="object-contain"
                   />
                 </div>
-                <div className="min-w-0">
-                  <h4 className="text-xs sm:text-[13px] font-semibold text-slate-800 truncate max-w-[220px] sm:max-w-[420px] md:max-w-[620px] leading-tight">
+                <div className="min-w-0 flex-1">
+                  <h4 className="text-xs sm:text-[13px] font-semibold text-slate-800 truncate leading-tight">
                     {product.name}
                   </h4>
-                  <div className="flex items-baseline gap-2 mt-1">
-                    <span className="text-xs sm:text-sm font-bold text-slate-900">
+                  <div className="flex items-center gap-1.5 sm:gap-2 mt-0.5 whitespace-nowrap overflow-hidden">
+                    <span className="text-xs sm:text-sm font-bold text-slate-900 shrink-0">
                       {formatINR(product.price)}
                     </span>
                     {product.oldPrice && (
-                      <span className="text-[10px] sm:text-xs text-slate-400 line-through">
+                      <span className="hidden sm:inline text-[10px] sm:text-xs text-slate-400 line-through shrink-0">
                         {formatINR(product.oldPrice)}
                       </span>
                     )}
                     {product.discount && (
-                      <span className="text-[10px] sm:text-xs font-semibold text-emerald-600">
+                      <span className="text-[10px] sm:text-xs font-semibold text-emerald-600 shrink-0">
                         {product.discount}
                       </span>
                     )}
@@ -1373,7 +1373,7 @@ export default function ProductDetail({
               </div>
 
               {/* Actions */}
-              <div className="flex items-center gap-3 shrink-0">
+              <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
                 {/* Mini Quantity Stepper */}
                 <div className="hidden sm:flex items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5">
                   <button
@@ -1398,12 +1398,14 @@ export default function ProductDetail({
                 </div>
 
                 {isOutOfStock ? (
-                  <span className="rounded-lg bg-slate-300 px-6 py-2 text-xs font-bold text-slate-600 sm:py-2.5 sm:text-sm">Out of Stock</span>
+                  <span className="rounded-lg bg-slate-300 px-3.5 py-2 text-xs font-bold text-slate-600 sm:px-6 sm:py-2.5 sm:text-sm whitespace-nowrap">
+                    Out of Stock
+                  </span>
                 ) : (
                   <Link prefetch={false}
                     href={`/checkout?product=${encodeURIComponent(product.slug || product.id)}`}
                     onClick={addProductToCart}
-                    className="rounded-lg bg-[#0a7ae6] px-6 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#086ac9] active:scale-95 sm:py-2.5 sm:text-sm"
+                    className="rounded-lg bg-[#0a7ae6] px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#086ac9] active:scale-95 sm:px-6 sm:py-2.5 sm:text-sm whitespace-nowrap"
                   >
                     Buy Now
                   </Link>
@@ -1413,7 +1415,7 @@ export default function ProductDetail({
                   type="button"
                   onClick={() => setIsBottomStickyDismissed(true)}
                   aria-label="Dismiss quick bar"
-                  className="text-slate-400 hover:text-slate-600 p-1.5 rounded-md hover:bg-slate-100 transition cursor-pointer"
+                  className="text-slate-400 hover:text-slate-600 p-1 sm:p-1.5 rounded-md hover:bg-slate-100 transition cursor-pointer shrink-0"
                 >
                   <CloseIcon className="size-4" />
                 </button>

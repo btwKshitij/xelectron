@@ -32,6 +32,7 @@ import {
 const routeIcons: Record<string, React.ReactNode> = {
   Home: <HomeIcon className="size-4 shrink-0" />,
   Banners: <ImageIcon className="size-4 shrink-0" />,
+  "Festive Popup": <Sparkles className="size-4 shrink-0 text-orange-500" />,
   Announcements: <Megaphone className="size-4 shrink-0" />,
   "Brand Showcase": <Layers className="size-4 shrink-0" />,
   "Brand Platforms": <Sparkles className="size-4 shrink-0" />,

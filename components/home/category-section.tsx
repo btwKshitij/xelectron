@@ -3,8 +3,15 @@
 import { orderedTopics, getCategoryOrder } from "@/lib/shared/category-order";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { useState, useEffect, useRef } from "react";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+  type CarouselApi,
+} from "@/components/ui/carousel";
 import { categories as defaultCategories } from "@/components/home/content";
 import { resolveCategoryImage, getCategoryFallbackImage } from "@/lib/shared/category-utils";
 
@@ -38,6 +45,13 @@ function CategoryCardImage({ category }: { category: StorefrontCategory }) {
 }
 
 export default function CategorySection({ categories }: { categories?: StorefrontCategory[] }) {
+  const [api, setApi] = useState<CarouselApi>();
+  const [isPaused, setIsPaused] = useState(false);
+  const [isInView, setIsInView] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const sectionRef = useRef<HTMLElement>(null);
+  const resumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const sourceCategories =
     categories && categories.length > 0
       ? categories
@@ -53,10 +67,93 @@ export default function CategorySection({ categories }: { categories?: Storefron
     return { ...category, title: orderedTopics[index]?.title ?? category.title, order: index };
   }).sort((a, b) => a.order - b.order);
 
+  // Auto-pause when not in viewport
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsInView(entry.isIntersecting);
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // Auto-pause when browser tab is inactive
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsPaused(document.hidden);
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
+  // Pause on touch / drag interaction
+  useEffect(() => {
+    if (!api) return;
+
+    const onPointerDown = () => {
+      if (resumeTimeoutRef.current) clearTimeout(resumeTimeoutRef.current);
+      setIsPaused(true);
+    };
+
+    const onPointerUp = () => {
+      if (resumeTimeoutRef.current) clearTimeout(resumeTimeoutRef.current);
+      resumeTimeoutRef.current = setTimeout(() => {
+        setIsPaused(false);
+      }, 1500);
+    };
+
+    api.on("pointerDown", onPointerDown);
+    api.on("pointerUp", onPointerUp);
+
+    return () => {
+      api.off("pointerDown", onPointerDown);
+      api.off("pointerUp", onPointerUp);
+    };
+  }, [api]);
+
+  // Track slide index changes to reset timer
+  useEffect(() => {
+    if (!api) return;
+    const onSelect = () => {
+      setSelectedIndex(api.selectedScrollSnap());
+    };
+    api.on("select", onSelect);
+    return () => {
+      api.off("select", onSelect);
+    };
+  }, [api]);
+
+  // Auto-move carousel timer
+  useEffect(() => {
+    if (!api || isPaused || !isInView) return;
+
+    const timer = setInterval(() => {
+      if (api.canScrollNext()) {
+        api.scrollNext();
+      } else {
+        api.scrollTo(0);
+      }
+    }, 3000);
+
+    return () => clearInterval(timer);
+  }, [api, isPaused, isInView, selectedIndex]);
+
+  useEffect(() => {
+    return () => {
+      if (resumeTimeoutRef.current) clearTimeout(resumeTimeoutRef.current);
+    };
+  }, []);
+
   if (!displayCategories || displayCategories.length === 0) return null;
 
   return (
-    <section className="bg-white px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
+    <section ref={sectionRef} className="bg-white px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
       <div className="mx-auto max-w-[1400px]">
         {/* SECTION HEADER */}
         <div className="mb-8 flex flex-col items-center text-center sm:mb-10">
@@ -71,25 +168,39 @@ export default function CategorySection({ categories }: { categories?: Storefron
           </div>
         </div>
 
-        <Carousel opts={{ align: "start", slidesToScroll: 1, breakpoints: { "(min-width: 640px)": { active: false } } }} aria-label="Shop by category">
-          <CarouselContent className="-ml-3 py-2 sm:-ml-4 sm:flex-wrap">
-            {displayCategories.map(category => (
-              <CarouselItem key={category.id} className="basis-1/2 pl-3 sm:basis-1/4 sm:pl-4">
-                <Link href={`/shop?filter=${encodeURIComponent(category.slug)}`} prefetch={false} className="group flex h-[190px] flex-col items-center justify-between rounded-2xl border border-slate-200 bg-white p-3 text-center transition-colors hover:border-[#0a7ae6] sm:h-[230px] sm:p-5">
-                  <div className="relative h-[120px] w-full sm:h-[155px]">
-                    <CategoryCardImage category={category} />
-                  </div>
-                  <h3 className="mt-2 text-xs font-semibold leading-snug text-slate-800 group-hover:text-[#0a7ae6] sm:text-sm">{category.title}</h3>
-                </Link>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-          <div className="mt-4 flex items-center justify-center gap-3 sm:hidden">
-            <CarouselPrevious className="static size-11 translate-y-0" />
-            <span className="text-xs text-slate-500">Explore categories</span>
-            <CarouselNext className="static size-11 translate-y-0" />
-          </div>
-        </Carousel>
+        <div
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+        >
+          <Carousel
+            setApi={setApi}
+            opts={{
+              align: "start",
+              loop: true,
+              slidesToScroll: 1,
+              breakpoints: { "(min-width: 640px)": { active: false } },
+            }}
+            aria-label="Shop by category"
+          >
+            <CarouselContent className="-ml-3 py-2 sm:-ml-4 sm:flex-wrap">
+              {displayCategories.map(category => (
+                <CarouselItem key={category.id} className="basis-1/2 pl-3 sm:basis-1/4 sm:pl-4">
+                  <Link href={`/shop?filter=${encodeURIComponent(category.slug)}`} prefetch={false} className="group flex h-[190px] flex-col items-center justify-between rounded-2xl border border-slate-200 bg-white p-3 text-center transition-colors hover:border-[#0a7ae6] sm:h-[230px] sm:p-5">
+                    <div className="relative h-[120px] w-full sm:h-[155px]">
+                      <CategoryCardImage category={category} />
+                    </div>
+                    <h3 className="mt-2 text-xs font-semibold leading-snug text-slate-800 group-hover:text-[#0a7ae6] sm:text-sm">{category.title}</h3>
+                  </Link>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <div className="mt-4 flex items-center justify-center gap-3 sm:hidden">
+              <CarouselPrevious className="static size-11 translate-y-0" />
+              <span className="text-xs text-slate-500">Explore categories</span>
+              <CarouselNext className="static size-11 translate-y-0" />
+            </div>
+          </Carousel>
+        </div>
       </div>
     </section>
   );

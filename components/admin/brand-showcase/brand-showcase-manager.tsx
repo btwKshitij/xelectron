@@ -20,6 +20,10 @@ import {
   Layers,
   ShoppingBag,
   Tag,
+  Maximize2,
+  ImageIcon,
+  AlertCircle,
+  CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { BrandShowcaseItemDTO } from "@/lib/server/controllers/brand-showcase.controller";
@@ -57,6 +61,11 @@ export function BrandShowcaseManager({
   const [selectedLinkType, setSelectedLinkType] = useState<string>("");
   const [formSortOrder, setFormSortOrder] = useState<number>(0);
   const [formIsActive, setFormIsActive] = useState(true);
+  const [imageMeta, setImageMeta] = useState<{
+    width: number;
+    height: number;
+    ratio: number;
+  } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -128,6 +137,7 @@ export function BrandShowcaseManager({
     setFormTitle("");
     setFormSubtitle("");
     setFormImage("");
+    setImageMeta(null);
     setFormLinkUrl("");
     setSelectedLinkType("");
     setFormSortOrder(items.length);
@@ -141,6 +151,7 @@ export function BrandShowcaseManager({
     setFormTitle(item.title);
     setFormSubtitle(item.subtitle || "");
     setFormImage(item.image);
+    setImageMeta(null);
     const link = item.linkUrl || "";
     setFormLinkUrl(link);
     syncLinkTypeFromUrl(link);
@@ -372,6 +383,50 @@ export function BrandShowcaseManager({
         </div>
       </div>
 
+      {/* IMAGE SPECIFICATION GUIDELINE BANNER */}
+      <div className="rounded-xl border border-blue-200/80 bg-gradient-to-r from-blue-50/90 via-indigo-50/40 to-blue-50/80 p-4 text-xs shadow-xs space-y-2.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white font-bold text-xs shadow-xs">
+              2.4:1
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="font-bold text-slate-900 text-sm">
+                  Showcase Banner Image Guidelines
+                </p>
+                <span className="rounded-full bg-blue-100 text-[#0a7ae6] px-2 py-0.5 text-[10px] font-bold">
+                  Fastest growing Consumer Electronics Brand in India
+                </span>
+              </div>
+              <p className="text-slate-600 text-xs mt-0.5">
+                Recommended Dimensions: <strong className="text-slate-900 font-bold font-mono">1200 × 500 px</strong> (~2.4:1 / 21:9 Widescreen) or <strong className="text-slate-900 font-bold font-mono">1200 × 675 px</strong> (16:9 Landscape, min 1000 × 562 px).
+              </p>
+            </div>
+          </div>
+          <div className="shrink-0 flex items-center gap-2 text-[11px]">
+            <span className="rounded-md bg-white border border-blue-200 px-2.5 py-1 font-semibold text-slate-700 shadow-2xs">
+              PNG, JPG, WEBP • Max 5MB
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-blue-100/80 text-[11px] text-slate-600">
+          <div className="flex items-start gap-1.5">
+            <span className="text-blue-600 font-bold mt-0.5">•</span>
+            <span>
+              <strong className="text-slate-800 font-medium">Desktop Accordion:</strong> The active card expands to a wide landscape banner (~2.4:1 ratio), while other cards collapse into vertical slices. Keep focal subjects (product/person) vertically centered and towards the center so they stay visible when cards collapse.
+            </span>
+          </div>
+          <div className="flex items-start gap-1.5">
+            <span className="text-blue-600 font-bold mt-0.5">•</span>
+            <span>
+              <strong className="text-slate-800 font-medium">Clean Natural Photos:</strong> Upload bright, vibrant images. No dark shading or artificial tint is applied on the homepage — typography uses drop shadows for crisp legibility.
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* FILTER & SEARCH CONTROLS */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200/90 shadow-2xs">
         <div className="relative w-full sm:w-80">
@@ -429,7 +484,7 @@ export function BrandShowcaseManager({
             <thead className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500">
               <tr>
                 <th className="py-3 px-4 w-16 text-center">Order</th>
-                <th className="py-3 px-4 w-28">Image</th>
+                <th className="py-3 px-4 w-32">Image (1200×500 / 16:9)</th>
                 <th className="py-3 px-4 min-w-[200px]">Title &amp; Subtitle</th>
                 <th className="py-3 px-4 min-w-[150px]">Destination</th>
                 <th className="py-3 px-4 w-28 text-center">Status</th>
@@ -597,15 +652,20 @@ export function BrandShowcaseManager({
       {/* CREATE / EDIT MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
-          <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto">
+          <div className="relative w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-              <h2 className="text-base font-bold text-slate-900">
-                {editingItem ? "Edit Showcase Item" : "Add Showcase Item"}
-              </h2>
+              <div>
+                <h2 className="text-base font-bold text-slate-900">
+                  {editingItem ? "Edit Showcase Item" : "Add Showcase Item"}
+                </h2>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Card in &ldquo;Fastest growing Consumer Electronics Brand in India&rdquo; section
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition cursor-pointer"
               >
                 <X className="size-4" />
               </button>
@@ -640,42 +700,189 @@ export function BrandShowcaseManager({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Image <span className="text-rose-500">*</span>
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    Banner Image <span className="text-rose-500">*</span>
+                  </label>
+                  <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-[#0a7ae6] border border-blue-200/80">
+                    Target: 1200 × 500 px (21:9) or 16:9
+                  </span>
+                </div>
                 <div className="space-y-2">
                   {formImage ? (
-                    <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-950">
-                      <Image
-                        src={formImage}
-                        alt="Preview"
-                        fill
-                        unoptimized
-                        className="object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setFormImage("")}
-                        className="absolute top-2 right-2 rounded-full bg-black/60 p-1 text-white hover:bg-black transition"
+                    <div className="space-y-2">
+                      {/* Image Preview with overlay actions */}
+                      <div className="group relative aspect-[21/9] w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-900 shadow-2xs">
+                        <Image
+                          src={formImage}
+                          alt="Preview"
+                          fill
+                          unoptimized
+                          onLoadingComplete={(img) => {
+                            if (img.naturalWidth && img.naturalHeight) {
+                              setImageMeta({
+                                width: img.naturalWidth,
+                                height: img.naturalHeight,
+                                ratio: Number((img.naturalWidth / img.naturalHeight).toFixed(2)),
+                              });
+                            }
+                          }}
+                          className="object-cover transition-transform duration-300 group-hover:scale-[1.01]"
+                        />
+
+                        {/* Top Right Quick Actions */}
+                        <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="inline-flex items-center gap-1 rounded-lg bg-black/75 backdrop-blur-xs px-2.5 py-1 text-[11px] font-medium text-white shadow-xs hover:bg-black transition cursor-pointer"
+                            title="Replace image"
+                          >
+                            <Upload className="size-3" />
+                            Replace
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFormImage("");
+                              setImageMeta(null);
+                            }}
+                            className="inline-flex items-center justify-center size-6 rounded-lg bg-black/75 backdrop-blur-xs text-white shadow-xs hover:bg-rose-600 transition cursor-pointer"
+                            title="Remove image"
+                          >
+                            <Trash2 className="size-3" />
+                          </button>
+                        </div>
+
+                        {/* Bottom Left Type Badge */}
+                        <div className="absolute bottom-2 left-2 flex items-center gap-1 rounded-md bg-black/70 backdrop-blur-xs px-2 py-0.5 text-[10px] font-medium text-white/90">
+                          <ImageIcon className="size-3 text-blue-400" />
+                          <span>Accordion Banner View</span>
+                        </div>
+                      </div>
+
+                      {/* Dimension & Aspect Ratio Specs Box */}
+                      <div
+                        className={`rounded-xl border p-2.5 text-xs transition-colors ${
+                          imageMeta && imageMeta.ratio >= 2.0 && imageMeta.ratio <= 2.8
+                            ? "border-emerald-200/90 bg-emerald-50/70"
+                            : imageMeta && imageMeta.ratio >= 1.5 && imageMeta.ratio < 2.0
+                            ? "border-blue-200/90 bg-blue-50/70"
+                            : "border-amber-200/90 bg-amber-50/70"
+                        }`}
                       >
-                        <X className="size-3.5" />
-                      </button>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div
+                              className={`flex size-6 shrink-0 items-center justify-center rounded-lg ${
+                                imageMeta && imageMeta.ratio >= 2.0 && imageMeta.ratio <= 2.8
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : imageMeta && imageMeta.ratio >= 1.5 && imageMeta.ratio < 2.0
+                                  ? "bg-blue-100 text-blue-700"
+                                  : "bg-amber-100 text-amber-700"
+                              }`}
+                            >
+                              <Maximize2 className="size-3.5" />
+                            </div>
+                            <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+                              <span className="font-bold text-slate-900 font-mono text-xs">
+                                {imageMeta ? `${imageMeta.width} × ${imageMeta.height}` : "Showcase Banner"}
+                              </span>
+                              <span className="text-[10px] font-medium text-slate-500">px</span>
+                              {imageMeta && (
+                                <span className="text-[10px] font-medium text-slate-400 font-mono">
+                                  ({imageMeta.ratio}:1)
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {imageMeta ? (
+                            imageMeta.ratio >= 2.0 && imageMeta.ratio <= 2.8 ? (
+                              <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-emerald-100 border border-emerald-300/80 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800 whitespace-nowrap">
+                                <CheckCircle2 className="size-3" />
+                                Ideal 21:9 Banner
+                              </span>
+                            ) : imageMeta.ratio >= 1.5 && imageMeta.ratio < 2.0 ? (
+                              <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-blue-100 border border-blue-300/80 px-2.5 py-0.5 text-[10px] font-bold text-blue-800 whitespace-nowrap">
+                                <CheckCircle2 className="size-3" />
+                                16:9 Landscape
+                              </span>
+                            ) : (
+                              <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-amber-100 border border-amber-300/80 px-2.5 py-0.5 text-[10px] font-bold text-amber-800 whitespace-nowrap">
+                                <AlertCircle className="size-3" />
+                                {imageMeta.ratio >= 0.9 && imageMeta.ratio <= 1.1
+                                  ? "Square (1:1)"
+                                  : imageMeta.ratio < 0.9
+                                  ? "Portrait"
+                                  : "Custom Ratio"}
+                              </span>
+                            )
+                          ) : (
+                            <span className="text-[10px] font-medium text-slate-500">
+                              Target: 1200 × 500 px
+                            </span>
+                          )}
+                        </div>
+
+                        {imageMeta && imageMeta.ratio < 1.5 && (
+                          <div className="mt-2 flex items-start gap-1.5 border-t border-amber-200/60 pt-1.5 text-[11px] text-amber-800">
+                            <span className="font-semibold shrink-0">Note:</span>
+                            <span>
+                              Image is taller than widescreen and will crop top & bottom in wide accordion view. Recommended: <strong className="font-semibold font-mono">1200 × 500 px</strong>.
+                            </span>
+                          </div>
+                        )}
+                        {imageMeta && imageMeta.ratio >= 1.5 && imageMeta.ratio < 2.0 && (
+                          <div className="mt-2 flex items-start gap-1.5 border-t border-blue-200/60 pt-1.5 text-[11px] text-blue-800">
+                            <span className="font-semibold shrink-0">Note:</span>
+                            <span>
+                              Standard 16:9 banner looks great. Keep main subjects centered so they stay visible when cards collapse.
+                            </span>
+                          </div>
+                        )}
+                        {imageMeta && imageMeta.ratio >= 2.0 && imageMeta.ratio <= 2.8 && (
+                          <div className="mt-2 flex items-start gap-1.5 border-t border-emerald-200/60 pt-1.5 text-[11px] text-emerald-800">
+                            <span className="font-semibold shrink-0">✓</span>
+                            <span>
+                              Ideal aspect ratio! Expands cleanly in the desktop accordion with no unexpected vertical cropping.
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ) : (
                     <div
                       onClick={() => fileInputRef.current?.click()}
-                      className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 p-5 text-center hover:border-[#0a7ae6] cursor-pointer bg-slate-50/50 hover:bg-slate-50 transition"
+                      className="group flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 p-6 text-center hover:border-[#0a7ae6] hover:bg-blue-50/20 cursor-pointer bg-slate-50/60 transition"
                     >
                       {isUploading ? (
-                        <Loader2 className="size-5 animate-spin text-[#0a7ae6]" />
+                        <div className="flex flex-col items-center gap-2 py-3">
+                          <Loader2 className="size-6 animate-spin text-[#0a7ae6]" />
+                          <span className="text-xs font-semibold text-slate-700">Uploading banner image...</span>
+                        </div>
                       ) : (
                         <>
-                          <Upload className="size-5 text-slate-400 mb-1" />
-                          <p className="text-xs font-semibold text-slate-700">
-                            Click to upload image file
+                          <div className="flex size-10 items-center justify-center rounded-full bg-blue-50 text-[#0a7ae6] group-hover:scale-110 group-hover:bg-[#0a7ae6] group-hover:text-white transition">
+                            <Upload className="size-5" />
+                          </div>
+                          <p className="mt-2.5 text-xs font-bold text-slate-800">
+                            Click to upload banner image
                           </p>
-                          <p className="text-[10px] text-slate-400 mt-0.5">
-                            PNG, JPG, or WEBP recommended
+                          <div className="mt-2 flex items-center justify-center gap-1.5 text-[11px]">
+                            <span className="rounded-md bg-white border border-slate-200 px-2 py-0.5 font-bold font-mono text-slate-800 shadow-2xs">
+                              1200 × 500 px
+                            </span>
+                            <span className="text-slate-400 text-[10px]">or</span>
+                            <span className="rounded-md bg-white border border-slate-200 px-2 py-0.5 font-bold font-mono text-slate-800 shadow-2xs">
+                              1200 × 675 px (16:9)
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-slate-400 mt-1.5">
+                            Min 1000 × 562 px • PNG, JPG, or WEBP (Max 5MB)
+                          </p>
+                          <p className="text-[10px] text-blue-600 font-medium mt-1">
+                            Tip: Center your product so it stays visible when the card is collapsed.
                           </p>
                         </>
                       )}
@@ -690,24 +897,33 @@ export function BrandShowcaseManager({
                     className="hidden"
                   />
 
-                  <div className="flex items-center justify-between text-[11px] pt-0.5">
+                  <div className="flex items-center justify-between text-[11px] pt-1">
                     <button
                       type="button"
                       onClick={() => setShowUrlInput((prev) => !prev)}
-                      className="text-[#0a7ae6] hover:underline font-semibold"
+                      className="inline-flex items-center gap-1 text-[#0a7ae6] hover:text-[#096ecf] hover:underline font-semibold cursor-pointer"
                     >
-                      {showUrlInput ? "Hide custom URL" : "Or enter custom Image URL"}
+                      {showUrlInput ? "Hide custom URL input" : "Or enter custom Image URL"}
                     </button>
+                    <span className="text-[10px] text-slate-400 font-medium">Recommended: 1200 × 500 px</span>
                   </div>
 
                   {showUrlInput && (
-                    <input
-                      type="text"
-                      placeholder="https://... or /banner-projector.png"
-                      value={formImage}
-                      onChange={(e) => setFormImage(e.target.value)}
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-[#0a7ae6] focus:outline-none"
-                    />
+                    <div className="space-y-1 pt-1">
+                      <input
+                        type="text"
+                        placeholder="https://... or /banner-projector.png"
+                        value={formImage}
+                        onChange={(e) => {
+                          setFormImage(e.target.value);
+                          setImageMeta(null);
+                        }}
+                        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-[#0a7ae6] focus:outline-none focus:ring-1 focus:ring-[#0a7ae6]/20"
+                      />
+                      <p className="text-[10px] text-slate-500">
+                        Direct link to a landscape banner image. Ideal dimensions: <span className="font-semibold text-slate-700 font-mono">1200 × 500 px</span> (~21:9).
+                      </p>
+                    </div>
                   )}
                 </div>
               </div>

@@ -3,6 +3,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import CartProvider from "@/components/providers/cart-provider";
 import SmoothScrollProvider from "@/components/providers/smooth-scroll-provider";
+import FestiveOfferPopup from "@/components/common/festive-offer-popup";
 
 export const metadata: Metadata = {
   title: "Xelectron",
@@ -22,9 +23,9 @@ export default function RootLayout({
       <body className="min-h-dvh flex flex-col">
         <CartProvider>
           <SmoothScrollProvider>{children}</SmoothScrollProvider>
+          <FestiveOfferPopup />
         </CartProvider>
       </body>
     </html>
   );
 }
-

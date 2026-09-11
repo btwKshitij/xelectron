@@ -17,6 +17,7 @@ import {
   Headphones,
 } from "lucide-react";
 import { LOCATIONS } from "@/lib/shared/locations";
+import { CONTACT_DEPARTMENTS } from "@/lib/shared/contact-departments";
 import { toast } from "sonner";
 
 const QUICK_CONTACTS = [
@@ -49,40 +50,6 @@ const QUICK_CONTACTS = [
     email: "sales@xelectron.com",
     tagColor: "bg-emerald-50 text-emerald-700 border-emerald-200/80",
     iconBg: "bg-emerald-50 text-emerald-600",
-  },
-];
-
-
-const DEPARTMENTS = [
-  {
-    label: "Sales Department",
-    value: "Sales Department",
-    email: "sales@xelectron.com",
-    desc: "For sales inquiries, corporate & bulk orders",
-  },
-  {
-    label: "Customer Help Desk",
-    value: "Customer Help Desk",
-    email: "customercare@xelectron.com",
-    desc: "For general customer support & warranty claims",
-  },
-  {
-    label: "Service Center (Vaishali, Ghaziabad)",
-    value: "Service Center (Vaishali, Ghaziabad)",
-    email: "kapil@xelectron.com",
-    desc: "For technical service, repairs & hardware replacements",
-  },
-  {
-    label: "Spectrum Metro Store",
-    value: "Spectrum Metro Store",
-    email: "sales@xelectron.com",
-    desc: "For showroom demos & retail store purchases",
-  },
-  {
-    label: "Corporate Office",
-    value: "Corporate Office",
-    email: "info@xelectron.com",
-    desc: "For administrative & corporate office correspondence",
   },
 ];
 
@@ -119,10 +86,11 @@ export default function ContactPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [sentToEmail, setSentToEmail] = useState<string>("");
   const [activeFaqIndex, setActiveFaqIndex] = useState<number | null>(0);
 
   const selectedDepartmentInfo =
-    DEPARTMENTS.find((d) => d.value === formData.department) || DEPARTMENTS[0];
+    CONTACT_DEPARTMENTS.find((d) => d.value === formData.department) || CONTACT_DEPARTMENTS[0];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -136,13 +104,17 @@ export default function ContactPage() {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          targetEmail: selectedDepartmentInfo.email,
+        }),
       });
 
       const json = await res.json();
       if (res.ok && json.success) {
         setSubmitted(true);
-        toast.success("Thank you! Your inquiry has been received.");
+        setSentToEmail(json.recipientEmail || selectedDepartmentInfo.email);
+        toast.success(`Inquiry sent directly to ${json.recipientEmail || selectedDepartmentInfo.email}`);
       } else {
         toast.error(json.error || "Failed to send message. Please try again.");
       }
@@ -377,23 +349,51 @@ export default function ContactPage() {
               </p>
 
               {submitted ? (
-                <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50/70 p-6 text-center text-emerald-900 space-y-3 animate-in fade-in">
-                  <CheckCircle2 className="mx-auto size-12 text-emerald-600" />
-                  <h3 className="text-base font-bold">Inquiry Received</h3>
-                  <p className="text-xs text-emerald-700 max-w-md mx-auto leading-relaxed">
-                    Thank you, <span className="font-bold">{formData.name}</span>. Your inquiry has been saved for{" "}
-                    <span className="font-semibold text-emerald-900 underline">{selectedDepartmentInfo.label}</span>. Our team will review your request.
+                <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-6 sm:p-8 text-center text-emerald-950 space-y-4 animate-in fade-in">
+                  <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 shadow-2xs">
+                    <CheckCircle2 className="size-7" />
+                  </div>
+                  <div>
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100/90 px-3 py-1 text-[11px] font-bold text-emerald-800 uppercase tracking-wider">
+                      ● Inquiry Dispatched
+                    </span>
+                    <h3 className="mt-2 text-lg font-bold text-slate-900">Inquiry Routed Successfully</h3>
+                    <p className="mt-2 text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
+                      Thank you, <strong className="text-slate-900">{formData.name}</strong>. Your message has been routed directly to the designated department inbox:
+                    </p>
+                  </div>
+
+                  <div className="mx-auto max-w-md rounded-xl border border-emerald-300/80 bg-white p-3.5 shadow-2xs text-left space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-slate-500">Department:</span>
+                      <span className="font-bold text-slate-900">{selectedDepartmentInfo.label}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs border-t border-slate-100 pt-2">
+                      <span className="font-semibold text-slate-500 flex items-center gap-1.5">
+                        <Mail className="size-3.5 text-emerald-600" />
+                        Routed Mailbox:
+                      </span>
+                      <span className="font-mono font-bold text-[#0a7ae6]">{sentToEmail || selectedDepartmentInfo.email}</span>
+                    </div>
+                  </div>
+
+                  <p className="text-[11px] text-slate-500">
+                    A confirmation email has also been sent to <strong className="text-slate-700">{formData.email}</strong>. Our team will review your inquiry within 24 business hours.
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSubmitted(false);
-                      setFormData({ name: "", email: "", phone: "", department: "Sales Department", message: "" });
-                    }}
-                    className="mt-2 inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700 transition cursor-pointer"
-                  >
-                    Send Another Message
-                  </button>
+
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSubmitted(false);
+                        setSentToEmail("");
+                        setFormData({ name: "", email: "", phone: "", department: "Sales Department", message: "" });
+                      }}
+                      className="inline-flex items-center rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-semibold text-white hover:bg-[#0a7ae6] transition cursor-pointer shadow-xs"
+                    >
+                      Send Another Message
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="mt-6 space-y-4">
@@ -454,9 +454,9 @@ export default function ContactPage() {
                         onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                         className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#0a7ae6] focus:bg-white focus:ring-2 focus:ring-[#0a7ae6]/10 transition"
                       >
-                        {DEPARTMENTS.map((dept) => (
+                        {CONTACT_DEPARTMENTS.map((dept) => (
                           <option key={dept.value} value={dept.value}>
-                            {dept.label}
+                            {dept.label} ({dept.email})
                           </option>
                         ))}
                       </select>
@@ -464,14 +464,20 @@ export default function ContactPage() {
                   </div>
 
                   {/* Destination Email Indicator Badge */}
-                  <div className="rounded-xl border border-blue-100 bg-blue-50/60 px-3.5 py-2 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2 text-slate-600">
-                      <Mail className="size-3.5 text-[#0a7ae6]" />
-                      <span className="text-[11px]">Direct recipient email:</span>
+                  <div className="rounded-xl border border-blue-100 bg-blue-50/70 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                    <div className="flex items-center gap-2 text-slate-700 min-w-0">
+                      <Mail className="size-4 text-[#0a7ae6] shrink-0" />
+                      <div className="min-w-0">
+                        <span className="text-[11px] font-semibold text-slate-500 block">Direct recipient mailbox:</span>
+                        <span className="text-[11px] text-slate-600 truncate block">{selectedDepartmentInfo.desc}</span>
+                      </div>
                     </div>
-                    <span className="font-mono font-bold text-[#0a7ae6] text-[11px]">
-                      {selectedDepartmentInfo.email}
-                    </span>
+                    <div className="shrink-0 flex items-center gap-1.5 self-start sm:self-auto bg-white border border-blue-200/80 px-2.5 py-1 rounded-lg">
+                      <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="font-mono font-bold text-[#0a7ae6] text-[11px]">
+                        {selectedDepartmentInfo.email}
+                      </span>
+                    </div>
                   </div>
 
                   <div>

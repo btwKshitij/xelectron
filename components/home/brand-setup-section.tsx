@@ -73,7 +73,7 @@ export default function BrandSetupSection({
           <div className="no-scrollbar flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 pr-2">
             {displayItems.map((item, index) => {
               const cardContent = (
-                <article className="relative min-w-[76vw] snap-start overflow-hidden rounded-[10px] bg-slate-950">
+                <article className="relative min-w-[76vw] snap-start overflow-hidden rounded-[10px] bg-slate-100">
                   <div className="relative h-[370px] w-full">
                     <Image
                       src={item.image}
@@ -84,15 +84,32 @@ export default function BrandSetupSection({
                       sizes="78vw"
                       priority={index === 0}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+                    {/* Clean image display with no dark shade overlay */}
                     <div className="absolute inset-x-0 bottom-0 p-5">
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/50">
+                      <p
+                        className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/90"
+                        style={{
+                          textShadow: "0 1px 4px rgba(0,0,0,0.9)",
+                        }}
+                      >
                         XElectron
                       </p>
-                      <h3 className="mt-2 text-[1.4rem] font-bold leading-[1.1] text-white">
+                      <h3
+                        className="mt-1 text-[1.4rem] font-bold leading-[1.1] text-white"
+                        style={{
+                          textShadow:
+                            "0 2px 10px rgba(0,0,0,0.9), 0 1px 3px rgba(0,0,0,0.95)",
+                        }}
+                      >
                         {item.title}
                       </h3>
-                      <p className="mt-2 text-[0.9rem] leading-5 text-white/70">
+                      <p
+                        className="mt-1 text-[0.9rem] leading-5 text-white/95"
+                        style={{
+                          textShadow:
+                            "0 1px 6px rgba(0,0,0,0.9), 0 1px 2px rgba(0,0,0,0.95)",
+                        }}
+                      >
                         {item.subtitle}
                       </p>
                     </div>
@@ -120,22 +137,10 @@ export default function BrandSetupSection({
             const cardElement = (
               <div
                 onMouseEnter={() => setHoveredIndex(index)}
-                className={`group relative h-full cursor-pointer overflow-hidden rounded-[10px] transition-all duration-500 ease-in-out ${
+                className={`group relative h-full cursor-pointer overflow-hidden rounded-[10px] bg-slate-100 transition-all duration-500 ease-in-out ${
                   isActive ? "flex-[12] lg:flex-[16]" : "flex-[1]"
                 }`}
               >
-                <div
-                  className={`absolute inset-0 z-10 bg-slate-900/10 transition-opacity duration-500 ease-in-out group-hover:bg-transparent ${
-                    isActive ? "opacity-0" : "opacity-100"
-                  }`}
-                />
-
-                <div
-                  className={`absolute inset-0 z-20 bg-gradient-to-t from-black/80 via-black/20 to-transparent transition-opacity duration-500 ease-in-out ${
-                    isActive ? "opacity-100" : "opacity-0"
-                  }`}
-                />
-
                 <Image
                   src={item.image}
                   alt={item.title}
@@ -147,15 +152,37 @@ export default function BrandSetupSection({
                   sizes="(max-width: 767px) 100vw, 50vw"
                 />
 
+                {/* Black shade overlay when card is not open (collapsed) */}
+                <div
+                  className={`pointer-events-none absolute inset-0 z-10 bg-black/55 transition-opacity duration-500 ease-in-out ${
+                    isActive ? "opacity-0" : "opacity-100"
+                  }`}
+                />
+
+                {/* Clean image display with no dark shade overlay when open; drop shadows keep typography crisp and readable */}
                 <div
                   className={`absolute bottom-6 right-6 z-30 flex flex-col justify-end text-right transition-all duration-500 ease-in-out md:bottom-10 md:right-10 ${
-                    isActive ? "translate-y-0 opacity-100 delay-100" : "translate-y-4 opacity-0"
+                    isActive
+                      ? "translate-y-0 opacity-100 delay-100"
+                      : "translate-y-4 opacity-0 pointer-events-none"
                   }`}
                 >
-                  <h3 className="mb-2 whitespace-nowrap text-2xl font-bold text-white drop-shadow-md md:text-3xl lg:text-4xl">
+                  <h3
+                    className="mb-2 whitespace-nowrap text-2xl font-bold text-white md:text-3xl lg:text-4xl"
+                    style={{
+                      textShadow:
+                        "0 2px 12px rgba(0,0,0,0.9), 0 1px 4px rgba(0,0,0,0.95)",
+                    }}
+                  >
                     {item.title}
                   </h3>
-                  <p className="whitespace-nowrap text-sm font-medium text-white/90 drop-shadow md:text-base">
+                  <p
+                    className="whitespace-nowrap text-sm font-medium text-white/95 md:text-base"
+                    style={{
+                      textShadow:
+                        "0 2px 8px rgba(0,0,0,0.9), 0 1px 3px rgba(0,0,0,0.95)",
+                    }}
+                  >
                     {item.subtitle}
                   </p>
                 </div>

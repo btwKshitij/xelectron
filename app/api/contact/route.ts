@@ -2,14 +2,30 @@ import { db } from "@/lib/db";
 import { z } from "zod";
 import { NextRequest, NextResponse } from "next/server";
 import { sendEmail, sendInquiryCustomerEmail } from "@/lib/server/mail";
+import { getDepartmentEmail } from "@/lib/shared/contact-departments";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const parsed = z.object({ name: z.string().trim().min(1).max(120), email: z.string().trim().email().max(254), phone: z.string().trim().max(40).optional(), department: z.string().trim().max(120).optional(), message: z.string().trim().min(1).max(10000) }).safeParse(body);
-    if (!parsed.success) return NextResponse.json({ success: false, error: "Please provide a valid name, email and message." }, { status: 400 });
-    const { name, email, phone, department, message } = parsed.data;
-    const saved = await db.supportRequest.create({ data: { kind: department?.includes("Warranty") ? "WARRANTY" : "INQUIRY", details: parsed.data } });
+    const parsed = z
+      .object({
+        name: z.string().trim().min(1).max(120),
+        email: z.string().trim().email().max(254),
+        phone: z.string().trim().max(40).optional(),
+        department: z.string().trim().max(120).optional(),
+        targetEmail: z.string().trim().email().max(254).optional(),
+        message: z.string().trim().min(1).max(10000),
+      })
+      .safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { success: false, error: "Please provide a valid name, email and message." },
+        { status: 400 }
+      );
+    }
+
+    const { name, email, phone, department, message, targetEmail: preferredEmail } = parsed.data;
 
     if (!name || !email || !message) {
       return NextResponse.json(
@@ -18,7 +34,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const targetEmail = "kapil@xelectron.com";
+    // Dynamically route to correct department email based on department selection or whitelist
+    const targetEmail = getDepartmentEmail(department, preferredEmail);
+
+    const saved = await db.supportRequest.create({
+      data: {
+        kind: department?.includes("Warranty") ? "WARRANTY" : "INQUIRY",
+        details: {
+          ...parsed.data,
+          routedToEmail: targetEmail,
+        },
+      },
+    });
 
     // 1. Send Notification Email to Internal Team
     const escapeHtml = (value: string) => value.replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]!);
@@ -80,7 +107,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       reference: saved.id,
-      message: "Your request has been received and saved for our team.",
+      recipientEmail: targetEmail,
+      message: `Your request has been received and routed to ${targetEmail}.`,
     });
   } catch (error) {
     console.error("Contact form submission error:", error);

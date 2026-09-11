@@ -504,3 +504,20 @@ model SupportRequest {
   createdAt DateTime @default(now()) @map("created_at")
   @@map("support_requests")
 }
+
+// ─── Festive Popup & Promotional Offer Settings ─────────────────────────────
+
+model FestivePopupSettings {
+  id           String   @id @default("default")
+  isActive     Boolean  @default(true) @map("is_active")
+  imageUrl     String   @default("/ganesh-chaturthi-popup-clean.png") @map("image_url")
+  badgeTitle   String   @default("GANESH CHATURTHI SPECIAL") @map("badge_title")
+  heading      String   @default("BRING HOME MORE JOY")
+  offerText    String   @default("GET 5% OFF") @map("offer_text")
+  subtext      String   @default("Sign up and receive your festive offer by email.")
+  buttonText   String   @default("UNLOCK MY 5% OFF") @map("button_text")
+  discountCode String   @default("GANESH5") @map("discount_code")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("festive_popup_settings")
+}

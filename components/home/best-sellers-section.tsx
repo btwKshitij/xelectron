@@ -25,8 +25,12 @@ function SpecificationRow({ label, value }: { label: string; value: string }) {
 
 function MobileBestSellers({ items }: { items: BestSellerItem[] }) {
   const { addItem } = useCart();
+  const sectionRef = useRef<HTMLElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activePageIndex, setActivePageIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [isInView, setIsInView] = useState(false);
+  const resumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // In phone view, one product per view
   const totalPages = items.length;
@@ -56,10 +60,74 @@ function MobileBestSellers({ items }: { items: BestSellerItem[] }) {
     return () => el.removeEventListener("scroll", handleScroll);
   }, [handleScroll]);
 
+  // Auto-pause when not in viewport
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsInView(entry.isIntersecting);
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // Auto-pause when browser tab is inactive
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsPaused(document.hidden);
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
+  const handleTouchStart = () => {
+    if (resumeTimeoutRef.current) clearTimeout(resumeTimeoutRef.current);
+    setIsPaused(true);
+  };
+
+  const handleTouchEnd = () => {
+    if (resumeTimeoutRef.current) clearTimeout(resumeTimeoutRef.current);
+    resumeTimeoutRef.current = setTimeout(() => {
+      setIsPaused(false);
+    }, 1500);
+  };
+
+  // Auto-move best sellers timer
+  useEffect(() => {
+    if (totalPages <= 1 || isPaused || !isInView) return;
+
+    const timer = setInterval(() => {
+      setActivePageIndex((prev) => {
+        const nextIndex = (prev + 1) % totalPages;
+        if (scrollRef.current) {
+          const container = scrollRef.current;
+          container.scrollTo({
+            left: nextIndex * (container.clientWidth + 12),
+            behavior: "smooth",
+          });
+        }
+        return nextIndex;
+      });
+    }, 3500);
+
+    return () => clearInterval(timer);
+  }, [totalPages, isPaused, isInView, activePageIndex]);
+
+  useEffect(() => {
+    return () => {
+      if (resumeTimeoutRef.current) clearTimeout(resumeTimeoutRef.current);
+    };
+  }, []);
+
   if (items.length === 0) return null;
 
   return (
-    <section className="block lg:hidden bg-white py-10 px-4 sm:px-6 text-slate-900 overflow-hidden">
+    <section ref={sectionRef} className="block lg:hidden bg-white py-10 px-4 sm:px-6 text-slate-900 overflow-hidden">
       <div className="mx-auto max-w-md sm:max-w-xl">
         {/* SECTION HEADER */}
         <div className="mb-6 flex flex-col items-center text-center">
@@ -77,6 +145,10 @@ function MobileBestSellers({ items }: { items: BestSellerItem[] }) {
         {/* ONE PRODUCT PER VIEW SWIPABLE TRACK */}
         <div
           ref={scrollRef}
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
           className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto pb-3 pt-1 scroll-smooth"
         >
           {items.map((item) => {

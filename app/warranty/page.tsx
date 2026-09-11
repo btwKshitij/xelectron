@@ -54,7 +54,8 @@ Purchase Date: ${regData.purchaseDate || "N/A"}`;
           name: regData.name,
           email: regData.email,
           phone: regData.phone,
-          department: "Warranty & Service Department",
+          department: "Customer Help Desk (Warranty Registration)",
+          targetEmail: "customercare@xelectron.com",
           message,
         }),
       });

@@ -20,79 +20,230 @@ export default function TroubleshootingContentView({ content }: { content: Troub
   const activeTopic = topics.find(topic => topic.id === selectedCat)?.name ?? "All topics";
 
   return (
-    <main className="min-h-screen bg-white text-slate-900">
+    <main className="min-h-screen w-full overflow-x-hidden bg-white text-slate-900 pt-[96px] sm:pt-[120px]">
       <Navbar />
+      
+      {/* HERO & SEARCH SECTION */}
       <section className="relative overflow-hidden border-b border-blue-100 bg-[#f0f6fd]">
-        <div aria-hidden="true" className="pointer-events-none absolute -right-32 -top-52 size-[600px] rounded-full border-[80px] border-white/50" />
-        <div className="relative mx-auto max-w-[1200px] px-5 py-10 sm:px-8 sm:py-14">
-          <nav aria-label="Breadcrumb" className="mb-8 flex items-center gap-2 text-xs text-slate-500">
-            <Link href="/" className="hover:text-blue-600">Home</Link><span aria-hidden="true">/</span><span aria-current="page">Support</span>
+        <div aria-hidden="true" className="pointer-events-none absolute -right-32 -top-52 size-[500px] rounded-full border-[80px] border-white/50 hidden sm:block" />
+        <div className="relative mx-auto max-w-[1200px] px-4 py-6 sm:px-8 sm:py-12">
+          {/* Breadcrumb */}
+          <nav aria-label="Breadcrumb" className="mb-4 sm:mb-6 flex items-center gap-2 text-xs text-slate-500">
+            <Link href="/" className="hover:text-blue-600">Home</Link>
+            <span aria-hidden="true">/</span>
+            <span aria-current="page" className="text-slate-700 font-medium">Support</span>
           </nav>
-          <div className="grid items-end gap-8 lg:grid-cols-[1.15fr_1fr] lg:gap-16">
+
+          <div className="grid items-end gap-6 lg:grid-cols-[1.15fr_1fr] lg:gap-16">
             <div>
-              <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#0876d5]"><Wrench className="size-4" aria-hidden="true" />{content.badge}</div>
-              <h1 className="max-w-2xl text-3xl font-semibold leading-[1.12] tracking-tight text-slate-950 sm:text-[42px]">{content.title}</h1>
-              <p className="mt-5 max-w-xl text-sm leading-7 text-slate-600">{content.description}</p>
-            </div>
-            <div className="pb-1">
-              <label htmlFor="guide-search" className="mb-3 block text-sm font-semibold text-slate-800">What can we help you with?</label>
-              <div className="relative">
-                <Search aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-[#0a7ae6]" />
-                <input id="guide-search" type="search" placeholder={content.searchPlaceholder} value={search} onChange={e => setSearch(e.target.value)} className="h-14 w-full rounded-xl border border-slate-200 bg-white pl-12 pr-12 text-sm text-slate-900 shadow-[0_4px_20px_#16487808] outline-none placeholder:text-slate-400 focus:border-blue-500 focus:ring-3 focus:ring-blue-100 [&::-webkit-search-cancel-button]:appearance-none" />
-                {search && <button type="button" aria-label="Clear search" onClick={() => setSearch("")} className="absolute right-2 top-2 rounded-lg p-3 text-slate-500 hover:bg-slate-100"><X className="size-4" /></button>}
+              <div className="mb-2.5 sm:mb-3 inline-flex items-center gap-1.5 rounded-full bg-blue-100/70 border border-blue-200/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-[#0876d5]">
+                <Wrench className="size-3.5" aria-hidden="true" />
+                {content.badge}
               </div>
-              <p className="mt-3 text-xs text-slate-500">Search a device, connection, or issue to get started.</p>
+              <h1 className="text-2xl sm:text-4xl lg:text-[42px] font-bold leading-tight tracking-tight text-slate-950">
+                {content.title}
+              </h1>
+              <p className="mt-2.5 sm:mt-4 text-xs sm:text-sm leading-relaxed text-slate-600 max-w-xl">
+                {content.description}
+              </p>
+            </div>
+
+            <div className="w-full min-w-0 pt-1 sm:pt-0">
+              <label htmlFor="guide-search" className="mb-2 block text-xs sm:text-sm font-semibold text-slate-800">
+                What can we help you with?
+              </label>
+              <div className="relative w-full">
+                <Search aria-hidden="true" className="pointer-events-none absolute left-3.5 sm:left-4 top-1/2 size-4 sm:size-5 -translate-y-1/2 text-[#0a7ae6]" />
+                <input
+                  id="guide-search"
+                  type="search"
+                  placeholder={content.searchPlaceholder}
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="h-11 sm:h-14 w-full rounded-xl border border-slate-200 bg-white pl-10 sm:pl-12 pr-10 text-xs sm:text-sm text-slate-900 shadow-xs outline-none placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 [&::-webkit-search-cancel-button]:appearance-none"
+                />
+                {search && (
+                  <button
+                    type="button"
+                    aria-label="Clear search"
+                    onClick={() => setSearch("")}
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                  >
+                    <X className="size-4" />
+                  </button>
+                )}
+              </div>
+              <p className="mt-2 text-[11px] sm:text-xs text-slate-500">
+                Search a device, connection, or issue to get started.
+              </p>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1200px] px-5 py-10 sm:px-8 sm:py-14">
-        <div className="grid gap-8 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-12">
-          <aside>
-            <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Browse by topic</h2>
-            <nav aria-label="Guide topics" className="flex gap-2 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible">
+      {/* TOPICS & GUIDES SECTION */}
+      <section className="mx-auto max-w-[1200px] px-4 py-8 sm:px-8 sm:py-14 w-full">
+        <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-12 w-full">
+          {/* Aside Topics: Horizontal scroll chips on phone, vertical list on desktop */}
+          <aside className="w-full min-w-0">
+            <h2 className="mb-2.5 sm:mb-4 text-xs font-bold uppercase tracking-wider text-slate-500">
+              Browse by topic
+            </h2>
+            <nav
+              aria-label="Guide topics"
+              className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 lg:flex-col lg:overflow-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
               {topics.map(topic => {
                 const Icon = topic.icon;
                 const count = topic.id === "all" ? content.guides.length : content.guides.filter(g => g.category === topic.id).length;
-                return <button type="button" key={topic.id} aria-pressed={selectedCat === topic.id} onClick={() => setSelectedCat(topic.id)} className={`flex shrink-0 items-center gap-3 rounded-lg px-3 py-3.5 text-left text-sm transition-colors focus-visible:outline-2 focus-visible:outline-blue-500 ${selectedCat === topic.id ? "bg-blue-50 font-semibold text-[#0876d5]" : "text-slate-600 hover:bg-slate-50"}`}><Icon aria-hidden="true" className="size-4 shrink-0" /><span className="flex-1 whitespace-nowrap">{topic.name}</span><span className="ml-2 text-xs tabular-nums opacity-65">{count}</span></button>;
+                const isSelected = selectedCat === topic.id;
+
+                return (
+                  <button
+                    type="button"
+                    key={topic.id}
+                    aria-pressed={isSelected}
+                    onClick={() => setSelectedCat(topic.id)}
+                    className={`flex shrink-0 items-center gap-2 rounded-full lg:rounded-xl px-3.5 py-2 lg:px-3.5 lg:py-3 text-left text-xs sm:text-sm font-medium transition-all focus-visible:outline-2 focus-visible:outline-blue-500 ${
+                      isSelected
+                        ? "bg-[#0a7ae6] text-white shadow-xs"
+                        : "bg-slate-100/90 lg:bg-transparent text-slate-700 hover:bg-slate-200/70"
+                    }`}
+                  >
+                    <Icon aria-hidden="true" className="size-3.5 sm:size-4 shrink-0" />
+                    <span className="whitespace-nowrap flex-1">{topic.name}</span>
+                    <span
+                      className={`ml-1 text-[10px] sm:text-xs tabular-nums px-1.5 py-0.5 rounded-full ${
+                        isSelected
+                          ? "bg-white/25 text-white"
+                          : "bg-slate-200/80 text-slate-600"
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
               })}
             </nav>
           </aside>
 
-          <div className="min-w-0">
-            <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-xl font-semibold tracking-tight">{query ? "Search results" : activeTopic}</h2>
-              <p role="status" className="text-xs text-slate-500">{filteredGuides.length} {filteredGuides.length === 1 ? "guide" : "guides"}</p>
+          {/* Guides Accordion */}
+          <div className="min-w-0 w-full">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-lg sm:text-xl font-bold tracking-tight text-slate-900">
+                {query ? "Search results" : activeTopic}
+              </h2>
+              <p role="status" className="text-xs text-slate-500">
+                {filteredGuides.length} {filteredGuides.length === 1 ? "guide" : "guides"}
+              </p>
             </div>
+
             <div className="space-y-3">
               {filteredGuides.map(guide => {
                 const isOpen = openGuide === guide.id;
+                const categoryName = content.categories.find(cat => cat.id === guide.category)?.name;
+
                 return (
-                  <article key={guide.id} className={`overflow-hidden rounded-xl border transition-colors ${isOpen ? "border-blue-200 bg-white shadow-[0_4px_20px_#16487806]" : "border-slate-200 bg-white hover:border-slate-300"}`}>
-                    <h3><button type="button" id={`guide-${guide.id}`} aria-expanded={isOpen} aria-controls={`steps-${guide.id}`} onClick={() => setOpenGuide(isOpen ? null : guide.id)} className="flex w-full items-center gap-4 p-5 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue-500 sm:p-6">
-                      <span className="min-w-0 flex-1"><span className="mb-2 block text-[11px] font-medium text-slate-500">{content.categories.find(cat => cat.id === guide.category)?.name}</span><span className={`block text-sm font-semibold leading-6 sm:text-base ${isOpen ? "text-[#0876d5]" : "text-slate-800"}`}>{guide.title}</span></span>
-                      <span className={`flex size-8 shrink-0 items-center justify-center rounded-full ${isOpen ? "bg-blue-50 text-blue-600" : "bg-slate-50 text-slate-500"}`}><ChevronDown aria-hidden="true" className={`size-4 ${isOpen ? "rotate-180" : ""}`} /></span>
-                    </button></h3>
-                    <div id={`steps-${guide.id}`} role="region" aria-labelledby={`guide-${guide.id}`} hidden={!isOpen} className="px-5 pb-6 sm:px-6">
-                      <ol className="space-y-5 border-t border-slate-100 pt-5">
-                        {guide.steps.map((step, index) => <li key={index} className="flex gap-3 text-sm leading-6 text-slate-600"><span aria-hidden="true" className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-blue-50 text-[11px] font-semibold text-blue-600">{index + 1}</span><span className="min-w-0 break-words">{step}</span></li>)}
-                      </ol>
-                    </div>
+                  <article
+                    key={guide.id}
+                    className={`overflow-hidden rounded-xl border transition-all ${
+                      isOpen
+                        ? "border-blue-200 bg-white shadow-sm"
+                        : "border-slate-200/90 bg-white hover:border-slate-300"
+                    }`}
+                  >
+                    <h3>
+                      <button
+                        type="button"
+                        id={`guide-${guide.id}`}
+                        aria-expanded={isOpen}
+                        aria-controls={`steps-${guide.id}`}
+                        onClick={() => setOpenGuide(isOpen ? null : guide.id)}
+                        className="flex w-full items-center gap-3 p-4 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue-500 sm:p-5 cursor-pointer"
+                      >
+                        <span className="min-w-0 flex-1">
+                          {categoryName && (
+                            <span className="mb-1 block text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#0876d5]">
+                              {categoryName}
+                            </span>
+                          )}
+                          <span className={`block text-xs sm:text-[15px] font-semibold leading-snug ${isOpen ? "text-[#0876d5]" : "text-slate-800"}`}>
+                            {guide.title}
+                          </span>
+                        </span>
+                        <span className={`flex size-7 sm:size-8 shrink-0 items-center justify-center rounded-full transition-colors ${isOpen ? "bg-blue-50 text-blue-600" : "bg-slate-100 text-slate-500"}`}>
+                          <ChevronDown aria-hidden="true" className={`size-3.5 sm:size-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+                        </span>
+                      </button>
+                    </h3>
+
+                    {isOpen && (
+                      <div id={`steps-${guide.id}`} role="region" aria-labelledby={`guide-${guide.id}`} className="px-4 pb-5 sm:px-5 sm:pb-6">
+                        <ol className="space-y-3 sm:space-y-4 border-t border-slate-100 pt-4">
+                          {guide.steps.map((step, index) => (
+                            <li key={index} className="flex items-start gap-2.5 sm:gap-3 text-xs sm:text-sm leading-relaxed text-slate-600">
+                              <span aria-hidden="true" className="mt-0.5 flex size-5 sm:size-6 shrink-0 items-center justify-center rounded-full bg-blue-50 text-[10px] sm:text-[11px] font-bold text-blue-600">
+                                {index + 1}
+                              </span>
+                              <span className="min-w-0 break-words flex-1">
+                                {step}
+                              </span>
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    )}
                   </article>
                 );
               })}
-              {filteredGuides.length === 0 && <div className="rounded-xl border border-dashed border-slate-200 px-5 py-14 text-center"><HelpCircle aria-hidden="true" className="mx-auto mb-4 size-8 text-slate-400" /><h3 className="font-semibold">No guides found</h3><p className="mt-2 text-sm text-slate-500">Try another topic or a different search term.</p><button type="button" onClick={() => { setSearch(""); setSelectedCat("all"); }} className="mt-5 text-sm font-semibold text-blue-600 underline underline-offset-4">View all guides</button></div>}
+
+              {filteredGuides.length === 0 && (
+                <div className="rounded-xl border border-dashed border-slate-200 px-4 py-12 text-center bg-slate-50/50">
+                  <HelpCircle aria-hidden="true" className="mx-auto mb-3 size-7 text-slate-400" />
+                  <h3 className="text-sm font-semibold text-slate-800">No guides found</h3>
+                  <p className="mt-1 text-xs text-slate-500">Try another topic or a different search term.</p>
+                  <button
+                    type="button"
+                    onClick={() => { setSearch(""); setSelectedCat("all"); }}
+                    className="mt-4 text-xs font-semibold text-blue-600 underline underline-offset-4 cursor-pointer"
+                  >
+                    View all guides
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col gap-6 rounded-2xl border border-blue-100 bg-[#f0f6fd] p-6 sm:p-8 lg:flex-row lg:items-center">
-          <span aria-hidden="true" className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-white text-[#0a7ae6]"><Headphones className="size-6" /></span>
-          <div className="flex-1"><h2 className="text-lg font-semibold tracking-tight">{content.helpTitle}</h2><p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">{content.helpDescription}</p></div>
-          <Link prefetch={false} href={content.helpHref} className="inline-flex min-h-12 items-center justify-center gap-3 self-start rounded-lg bg-[#0a7ae6] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#0868c4] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-500 lg:self-center">{content.helpButton}<ArrowRight aria-hidden="true" className="size-4 shrink-0" /></Link>
+        {/* HELP & REPAIR CARD */}
+        <div className="mt-10 sm:mt-14 flex flex-col gap-4 sm:gap-6 rounded-2xl border border-blue-100 bg-[#f0f6fd] p-5 sm:p-8 lg:flex-row lg:items-center">
+          <div className="flex items-center gap-3.5">
+            <span aria-hidden="true" className="flex size-11 sm:size-12 shrink-0 items-center justify-center rounded-xl bg-white text-[#0a7ae6] shadow-2xs">
+              <Headphones className="size-5 sm:size-6" />
+            </span>
+            <div className="lg:hidden">
+              <h2 className="text-sm font-bold tracking-tight text-slate-900">{content.helpTitle}</h2>
+            </div>
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <h2 className="hidden lg:block text-lg font-semibold tracking-tight text-slate-900">{content.helpTitle}</h2>
+            <p className="text-xs sm:text-sm leading-relaxed text-slate-600">
+              {content.helpDescription}
+            </p>
+          </div>
+
+          <Link
+            prefetch={false}
+            href={content.helpHref}
+            className="inline-flex min-h-11 sm:min-h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#0a7ae6] px-5 py-2.5 text-xs sm:text-sm font-semibold text-white transition-all hover:bg-[#0868c4] shadow-xs active:scale-95"
+          >
+            {content.helpButton}
+            <ArrowRight aria-hidden="true" className="size-4 shrink-0" />
+          </Link>
         </div>
       </section>
+
       <Footer />
     </main>
   );
