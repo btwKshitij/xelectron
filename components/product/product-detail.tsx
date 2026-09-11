@@ -48,7 +48,7 @@ import SimilarProductsSection from "@/components/product/similar-products-sectio
 import RecentlyViewedSection from "@/components/product/recently-viewed-section";
 import ProductReviewsSection from "@/components/product/product-reviews-section";
 import { ProductDescriptionContent } from "@/components/product/product-description-content";
-import { VelocityLogo, UpiLogo, GPayLogo, PhonePeLogo, PaytmLogo } from "@/components/checkout/payment-logos";
+import { UpiLogo, VelocityLogo } from "@/components/checkout/payment-logos";
 import { priceToNumber, useCart } from "@/components/providers/cart-provider";
 import { formatINR } from "@/lib/format-price";
 import { recordRecentlyViewedProduct } from "@/lib/recently-viewed-products";

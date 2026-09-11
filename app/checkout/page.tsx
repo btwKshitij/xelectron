@@ -1218,91 +1218,93 @@ function CheckoutContent() {
 
           {/* ─── RIGHT COLUMN: YOUR ORDER & PAYMENT METHOD ─── */}
           <div className="lg:col-span-5">
-            <div className="sticky top-28 rounded-3xl border border-slate-200/80 bg-[#f8fafc] p-6 sm:p-8 shadow-xs">
-              {/* Order Heading */}
-              <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl mb-6">
-                Your order
-              </h2>
+            <div className="sticky top-28 rounded-2xl sm:rounded-3xl border border-slate-200/80 bg-[#f8fafc] p-3.5 sm:p-6 lg:p-8 shadow-xs">
+              {/* Order Heading with Item Count Badge */}
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-base sm:text-lg lg:text-xl font-bold tracking-tight text-slate-900">
+                  Your order
+                </h2>
+                <span className="rounded-full bg-slate-200/80 px-2.5 py-0.5 text-[11px] font-bold text-slate-700">
+                  {orderItems.reduce((sum, item) => sum + item.quantity, 0)} {orderItems.reduce((sum, item) => sum + item.quantity, 0) === 1 ? "item" : "items"}
+                </span>
+              </div>
 
               {/* Order Items */}
-              <div className="divide-y divide-slate-200/80">
+              <div className="divide-y divide-slate-200/70">
                 {orderItems.map((item) => {
                   const itemTotal = item.price * item.quantity;
                   return (
-                    <div key={item.id} className="py-3.5 first:pt-0">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-start gap-3 min-w-0">
-                          <div className="relative size-12 sm:size-14 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-white p-1">
-                            <Image
-                              src={item.image || "/category-smartphone.png"}
-                              alt={item.name}
-                              fill
-                              className="object-contain"
-                            />
-                          </div>
-                          <div className="min-w-0 flex-1">
+                    <div key={item.id} className="py-3 first:pt-0 last:pb-2">
+                      <div className="flex items-start gap-3">
+                        {/* Thumbnail */}
+                        <div className="relative size-12 sm:size-14 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-white p-1 shadow-2xs">
+                          <Image
+                            src={item.image || "/category-smartphone.png"}
+                            alt={item.name}
+                            fill
+                            className="object-contain"
+                          />
+                        </div>
+
+                        {/* Details & Controls */}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-2">
                             <h4 className="text-xs sm:text-sm font-semibold text-slate-900 line-clamp-2 leading-snug">
                               {item.name}
                             </h4>
-                            <div className="mt-0.5 text-[11px] text-slate-500">
-                              ₹{item.price.toLocaleString("en-IN", {
-                                minimumFractionDigits: item.price % 1 !== 0 ? 2 : 0,
+                            <span className="text-xs sm:text-sm font-bold text-slate-900 shrink-0 whitespace-nowrap">
+                              ₹{itemTotal.toLocaleString("en-IN", {
+                                minimumFractionDigits: itemTotal % 1 !== 0 ? 2 : 0,
                                 maximumFractionDigits: 2,
                               })}
-                              {item.quantity > 1 ? ` each` : ""}
+                            </span>
+                          </div>
+
+                          {/* Stepper + Unit Price + Remove in one clean row */}
+                          <div className="mt-2 flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <div className="inline-flex items-center rounded-lg border border-slate-200/90 bg-white shadow-2xs">
+                                <button
+                                  type="button"
+                                  onClick={() => handleQuantityChange(item, -1)}
+                                  className="flex size-6 items-center justify-center rounded-l-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
+                                  aria-label="Decrease quantity"
+                                  title={item.quantity === 1 ? "Remove product" : "Decrease quantity"}
+                                >
+                                  <Minus className="size-3 text-slate-600" />
+                                </button>
+                                <span className="w-6 text-center text-xs font-semibold text-slate-800">
+                                  {item.quantity}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleQuantityChange(item, 1)}
+                                  className="flex size-6 items-center justify-center rounded-r-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
+                                  aria-label="Increase quantity"
+                                  title="Increase quantity"
+                                >
+                                  <Plus className="size-3 text-slate-600" />
+                                </button>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveItem(item.id, item.slug)}
+                                className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-rose-600 transition-colors px-1.5 py-0.5 rounded hover:bg-rose-50/70 cursor-pointer"
+                                aria-label={`Remove ${item.name}`}
+                              >
+                                <Trash2 className="size-3 text-rose-500" />
+                                <span>Remove</span>
+                              </button>
                             </div>
+
+                            {item.quantity > 1 && (
+                              <span className="text-[10.5px] text-slate-500 font-medium">
+                                ₹{item.price.toLocaleString("en-IN")} each
+                              </span>
+                            )}
                           </div>
                         </div>
-
-                        <div className="text-right shrink-0">
-                          <span className="text-xs sm:text-sm font-bold text-slate-900">
-                            ₹{itemTotal.toLocaleString("en-IN", {
-                              minimumFractionDigits: itemTotal % 1 !== 0 ? 2 : 0,
-                              maximumFractionDigits: 2,
-                            })}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Quantity Stepper & Remove Button */}
-                      <div className="mt-2.5 flex items-center justify-between pl-14 sm:pl-[68px]">
-                        <div className="inline-flex items-center rounded-lg border border-slate-200 bg-white shadow-2xs">
-                          <button
-                            type="button"
-                            onClick={() => handleQuantityChange(item, -1)}
-                            className="flex size-6 sm:size-7 items-center justify-center rounded-l-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
-                            aria-label="Decrease quantity"
-                            title={item.quantity === 1 ? "Remove product" : "Decrease quantity"}
-                          >
-                            {item.quantity === 1 ? (
-                              <Trash2 className="size-3 text-rose-500" />
-                            ) : (
-                              <Minus className="size-3" />
-                            )}
-                          </button>
-                          <span className="w-7 sm:w-8 text-center text-xs font-semibold text-slate-800">
-                            {item.quantity}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleQuantityChange(item, 1)}
-                            className="flex size-6 sm:size-7 items-center justify-center rounded-r-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
-                            aria-label="Increase quantity"
-                            title="Increase quantity"
-                          >
-                            <Plus className="size-3" />
-                          </button>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveItem(item.id, item.slug)}
-                          className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-rose-600 transition-colors px-2 py-1 rounded-md hover:bg-rose-50 cursor-pointer"
-                          aria-label={`Remove ${item.name}`}
-                        >
-                          <Trash2 className="size-3 text-rose-500" />
-                          <span>Remove</span>
-                        </button>
                       </div>
                     </div>
                   );
@@ -1310,7 +1312,7 @@ function CheckoutContent() {
               </div>
 
               {/* Calculation Summary */}
-              <div className="mt-4 border-t border-slate-200/80 pt-4 space-y-2 text-xs sm:text-sm">
+              <div className="mt-3.5 border-t border-slate-200/80 pt-3.5 space-y-2 text-xs sm:text-sm">
                 <div className="flex justify-between text-slate-600">
                   <span>Subtotal</span>
                   <span className="font-medium text-slate-900">
@@ -1333,19 +1335,26 @@ function CheckoutContent() {
                   </div>
                 )}
 
-                <div className="flex justify-between text-slate-600">
+                <div className="flex justify-between items-center text-slate-600">
                   <span>Shipping</span>
-                  <span className="font-medium text-emerald-600">Free shipping</span>
+                  <span className="inline-flex items-center gap-1 font-semibold text-emerald-600">
+                    <span className="rounded-full bg-emerald-100/90 text-emerald-800 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider">
+                      Free shipping
+                    </span>
+                  </span>
                 </div>
 
-                <div className="flex justify-between text-slate-500 text-[11px]">
-                  <span>GST (18% included)</span>
+                <div className="flex justify-between text-slate-400 text-[10.5px]">
+                  <span>Estimated GST (18% included)</span>
                   <span>₹{Math.round((total * 0.18) / 1.18).toLocaleString("en-IN")}</span>
                 </div>
 
-                <div className="flex justify-between border-t border-slate-200/80 pt-3 text-base sm:text-lg font-bold text-slate-900">
-                  <span>Total</span>
-                  <span className="text-[#0a7ae6]">
+                <div className="flex justify-between items-baseline border-t border-slate-200/80 pt-3 text-slate-900">
+                  <div>
+                    <span className="text-base sm:text-lg font-bold block leading-tight">Total</span>
+                    <span className="text-[10px] text-slate-400 font-normal block">Free delivery & taxes included</span>
+                  </div>
+                  <span className="text-lg sm:text-xl font-extrabold text-[#0a7ae6]">
                     ₹{total.toLocaleString("en-IN", {
                       minimumFractionDigits: total % 1 !== 0 ? 2 : 0,
                       maximumFractionDigits: 2,
@@ -1376,48 +1385,52 @@ function CheckoutContent() {
                         : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
                     }`}
                   >
-                    <div className="flex items-center justify-between w-full">
-                      <div className="flex items-center gap-2.5">
+                    <div className="flex items-center justify-between w-full gap-2">
+                      <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
                         <span className={`size-3.5 shrink-0 rounded-full border flex items-center justify-center ${
                           paymentMethod === "razorpay" ? "border-[#0a7ae6] bg-[#0a7ae6]" : "border-slate-300"
                         }`}>
                           {paymentMethod === "razorpay" && <span className="size-1.5 rounded-full bg-white" />}
                         </span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs sm:text-sm font-bold text-slate-900">
+                        <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                          <span className="text-xs sm:text-sm font-bold text-slate-900 leading-tight">
                             Instant Online Payment
                           </span>
-                          <span className="rounded-full bg-blue-100 text-[#0a7ae6] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider">
+                          <span className="rounded-full bg-blue-100 text-[#0a7ae6] px-1.5 py-0.5 text-[8.5px] sm:text-[9px] font-bold uppercase tracking-wider whitespace-nowrap">
                             Fast & Safe
                           </span>
                         </div>
                       </div>
-                      <RazorpayLogo className="h-4 w-auto shrink-0" />
+                      <RazorpayLogo className="h-3.5 sm:h-4.5 w-auto shrink-0" />
                     </div>
 
-                    {/* Compact Single-Row Logo Badges */}
-                    <div className="flex items-center justify-start gap-1 sm:gap-1.5 pl-6 overflow-x-auto no-scrollbar">
-                      <div className="flex h-5 items-center justify-center rounded border border-slate-200 bg-white px-1.5 shadow-2xs shrink-0">
-                        <UpiLogo className="h-2.5 w-auto" />
+                    {/* Responsive Multi-Badge Strip for Phone & Desktop */}
+                    <div className="flex flex-wrap items-center gap-1 sm:gap-1.5 pl-5 sm:pl-6 pt-0.5">
+                      <div className="flex h-5.5 sm:h-6 items-center justify-center rounded-md border border-slate-200/90 bg-white px-1.5 sm:px-2 py-0.5 shadow-2xs shrink-0">
+                        <UpiLogo className="h-3 sm:h-3.5 w-auto" />
                       </div>
-                      <div className="flex h-5 items-center justify-center rounded border border-slate-200 bg-white px-1.5 shadow-2xs shrink-0">
-                        <GPayLogo className="h-2.5 w-auto" />
+                      <div className="flex h-5.5 sm:h-6 items-center justify-center rounded-md border border-slate-200/90 bg-white px-1.5 sm:px-2 py-0.5 shadow-2xs shrink-0">
+                        <GPayLogo className="h-3 sm:h-3.5 w-auto" />
                       </div>
-                      <div className="flex h-5 items-center gap-1 rounded border border-slate-200 bg-white px-1.5 shadow-2xs shrink-0">
-                        <PhonePeLogo className="h-2.5 w-2.5" />
-                        <span className="text-[8.5px] font-bold text-[#5F259F]">PhonePe</span>
+                      <div className="flex h-5.5 sm:h-6 items-center justify-center rounded-md border border-slate-200/90 bg-white px-1.5 sm:px-2 py-0.5 shadow-2xs shrink-0">
+                        <PhonePeLogo className="h-3 sm:h-3.5 w-auto" />
                       </div>
-                      <div className="flex h-5 items-center justify-center rounded border border-slate-200 bg-white px-1.5 shadow-2xs shrink-0">
-                        <PaytmLogo className="h-2 w-auto" />
+                      <div className="flex h-5.5 sm:h-6 items-center justify-center rounded-md border border-slate-200/90 bg-white px-1.5 sm:px-2 py-0.5 shadow-2xs shrink-0">
+                        <PaytmLogo className="h-2.5 sm:h-3 w-auto" />
                       </div>
-                      <div className="flex h-5 items-center justify-center rounded border border-slate-200 bg-white px-1.5 shadow-2xs shrink-0">
-                        <VisaLogo className="h-2 w-auto" />
+                      <div className="flex h-5.5 sm:h-6 items-center justify-center rounded-md border border-slate-200/90 bg-white px-1.5 sm:px-2 py-0.5 shadow-2xs shrink-0">
+                        <VisaLogo className="h-2.5 sm:h-3 w-auto" />
                       </div>
-                      <div className="flex h-5 items-center justify-center rounded border border-slate-200 bg-white px-1.5 shadow-2xs shrink-0">
-                        <MastercardLogo className="h-2.5 w-auto" />
+                      <div className="flex h-5.5 sm:h-6 items-center justify-center rounded-md border border-slate-200/90 bg-white px-1.5 sm:px-2 py-0.5 shadow-2xs shrink-0">
+                        <MastercardLogo className="h-3 sm:h-3.5 w-auto" />
                       </div>
-                      <div className="flex h-5 items-center justify-center rounded border border-slate-200 bg-white px-1.5 shadow-2xs shrink-0">
-                        <RuPayLogo className="h-2 w-auto" />
+                      <div className="flex h-5.5 sm:h-6 items-center justify-center rounded-md border border-slate-200/90 bg-white px-1.5 sm:px-2 py-0.5 shadow-2xs shrink-0">
+                        <RuPayLogo className="h-2.5 sm:h-3 w-auto" />
+                      </div>
+                      <div className="flex h-5.5 sm:h-6 items-center justify-center rounded-md border border-slate-200/80 bg-slate-50 px-1.5 sm:px-2 py-0.5 shadow-2xs shrink-0">
+                        <span className="text-[8.5px] sm:text-[9.5px] font-bold text-slate-500 tracking-tight whitespace-nowrap">
+                          + NetBanking
+                        </span>
                       </div>
                     </div>
                   </button>
@@ -1432,28 +1445,28 @@ function CheckoutContent() {
                         : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
                     }`}
                   >
-                    <div className="flex items-center justify-between w-full">
-                      <div className="flex items-center gap-2.5">
+                    <div className="flex items-center justify-between w-full gap-2">
+                      <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
                         <span className={`size-3.5 shrink-0 rounded-full border flex items-center justify-center ${
                           paymentMethod === "velocity" ? "border-[#0a7ae6] bg-[#0a7ae6]" : "border-slate-300"
                         }`}>
                           {paymentMethod === "velocity" && <span className="size-1.5 rounded-full bg-white" />}
                         </span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs sm:text-sm font-bold text-slate-900">
+                        <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                          <span className="text-xs sm:text-sm font-bold text-slate-900 leading-tight">
                             No-Cost EMI / Pay Later
                           </span>
-                          <span className="rounded-full bg-emerald-100 text-emerald-800 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider">
+                          <span className="rounded-full bg-emerald-100 text-emerald-800 px-1.5 py-0.5 text-[8.5px] sm:text-[9px] font-bold uppercase tracking-wider whitespace-nowrap">
                             0% Interest
                           </span>
                         </div>
                       </div>
-                      <VelocityLogo className="h-4 w-auto shrink-0" />
+                      <VelocityLogo className="h-3.5 sm:h-4 w-auto shrink-0" />
                     </div>
 
-                    <div className="flex items-center justify-between pl-6 text-[11px] text-slate-500">
-                      <span>{selectedEmiTenure}-month preference • plans from 3 to 12 months</span>
-                      <span className="font-bold text-[#0a7ae6]">
+                    <div className="flex items-center justify-between pl-5 sm:pl-6 text-[10.5px] sm:text-[11px] text-slate-500 gap-1 pt-0.5">
+                      <span className="truncate">{selectedEmiTenure}-mo preference • plans 3–12 mo</span>
+                      <span className="font-bold text-[#0a7ae6] shrink-0 whitespace-nowrap">
                         ₹{Math.ceil(total / selectedEmiTenure).toLocaleString("en-IN")}/mo
                       </span>
                     </div>
@@ -1469,62 +1482,62 @@ function CheckoutContent() {
                         : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
                     }`}
                   >
-                    <div className="flex items-center justify-between w-full">
-                      <div className="flex items-center gap-2.5">
+                    <div className="flex items-center justify-between w-full gap-2">
+                      <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
                         <span className={`size-3.5 shrink-0 rounded-full border flex items-center justify-center ${
                           paymentMethod === "cod" ? "border-[#0a7ae6] bg-[#0a7ae6]" : "border-slate-300"
                         }`}>
                           {paymentMethod === "cod" && <span className="size-1.5 rounded-full bg-white" />}
                         </span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs sm:text-sm font-bold text-slate-900">
+                        <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                          <span className="text-xs sm:text-sm font-bold text-slate-900 leading-tight">
                             Cash on Delivery (COD)
                           </span>
-                          <span className="rounded-full bg-slate-100 text-slate-700 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider">
+                          <span className="rounded-full bg-slate-100 text-slate-700 px-1.5 py-0.5 text-[8.5px] sm:text-[9px] font-bold uppercase tracking-wider whitespace-nowrap">
                             Verified
                           </span>
                         </div>
                       </div>
-                      <Truck className="size-4 text-slate-500 shrink-0" />
+                      <Truck className="size-3.5 sm:size-4 text-slate-500 shrink-0" />
                     </div>
 
-                    <div className="flex items-center justify-between pl-6 text-[11px] text-slate-500">
-                      <span>Pay via Cash or UPI QR at doorstep</span>
-                      <span className="font-semibold text-slate-500">OTP Confirmed</span>
+                    <div className="flex items-center justify-between pl-5 sm:pl-6 text-[10.5px] sm:text-[11px] text-slate-500 gap-1 pt-0.5">
+                      <span className="truncate">Pay via Cash or UPI QR at doorstep</span>
+                      <span className="font-semibold text-slate-500 shrink-0 whitespace-nowrap">OTP Confirmed</span>
                     </div>
                   </button>
                 </div>
 
                 {/* Compact Razorpay Security Line */}
                 {paymentMethod === "razorpay" && (
-                  <div className="mt-2.5 flex items-center justify-between rounded-lg bg-blue-50/60 border border-blue-100 px-3 py-1.5 text-[10px] text-slate-600">
-                    <span className="flex items-center gap-1.5 font-medium">
-                      <CheckCircle2 className="size-3 text-emerald-600" />
-                      Instant UPI, Cards, NetBanking & Wallets
+                  <div className="mt-2.5 flex items-center justify-between rounded-lg bg-blue-50/60 border border-blue-100 px-2.5 sm:px-3 py-1.5 text-[10px] text-slate-600 gap-1.5">
+                    <span className="flex items-center gap-1.5 font-medium min-w-0 truncate">
+                      <CheckCircle2 className="size-3 text-emerald-600 shrink-0" />
+                      <span className="truncate">Instant UPI, Cards, NetBanking & Wallets</span>
                     </span>
-                    <span className="font-bold text-emerald-700">Zero Extra Fees</span>
+                    <span className="font-bold text-emerald-700 shrink-0 whitespace-nowrap text-[9.5px] sm:text-[10px]">Zero Extra Fees</span>
                   </div>
                 )}
 
                 {/* Compact Velocity EMI Information Line */}
                 {paymentMethod === "velocity" && (
-                  <div className="mt-2.5 flex items-center justify-between rounded-lg bg-sky-50/70 border border-sky-100 px-3 py-1.5 text-[10px] text-slate-600">
-                    <span className="flex items-center gap-1.5 font-medium">
-                      <Sparkles className="size-3 text-[#0a7ae6]" />
-                      Your {selectedEmiTenure}-month EMI preference will be sent to Velocity
+                  <div className="mt-2.5 flex items-center justify-between rounded-lg bg-sky-50/70 border border-sky-100 px-2.5 sm:px-3 py-1.5 text-[10px] text-slate-600 gap-1.5">
+                    <span className="flex items-center gap-1.5 font-medium min-w-0 truncate">
+                      <Sparkles className="size-3 text-[#0a7ae6] shrink-0" />
+                      <span className="truncate">Your {selectedEmiTenure}-month EMI preference sent to Velocity</span>
                     </span>
-                    <span className="font-bold text-[#0a7ae6]">No Hidden Charges</span>
+                    <span className="font-bold text-[#0a7ae6] shrink-0 whitespace-nowrap text-[9.5px] sm:text-[10px]">No Hidden Charges</span>
                   </div>
                 )}
 
                 {/* Compact COD Information Line */}
                 {paymentMethod === "cod" && (
-                  <div className="mt-2.5 flex items-center justify-between rounded-lg bg-slate-50 border border-slate-200/80 px-3 py-1.5 text-[10px] text-slate-600">
-                    <span className="flex items-center gap-1.5 font-medium">
-                      <Truck className="size-3 text-emerald-600" />
-                      Pay via Cash or delivery partner UPI QR
+                  <div className="mt-2.5 flex items-center justify-between rounded-lg bg-slate-50 border border-slate-200/80 px-2.5 sm:px-3 py-1.5 text-[10px] text-slate-600 gap-1.5">
+                    <span className="flex items-center gap-1.5 font-medium min-w-0 truncate">
+                      <Truck className="size-3 text-emerald-600 shrink-0" />
+                      <span className="truncate">Pay via Cash or delivery partner UPI QR</span>
                     </span>
-                    <span className="font-semibold text-slate-500">Doorstep</span>
+                    <span className="font-semibold text-slate-500 shrink-0 whitespace-nowrap text-[9.5px] sm:text-[10px]">Doorstep</span>
                   </div>
                 )}
               </div>
@@ -1533,7 +1546,7 @@ function CheckoutContent() {
               <button
                 type="submit"
                 disabled={isSubmitting || orderItems.length === 0}
-                className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#0a7ae6] py-3.5 text-center text-sm font-bold uppercase tracking-wider text-white shadow-lg shadow-[#0a7ae6]/25 transition-all hover:bg-[#086ac9] hover:shadow-xl active:scale-98 disabled:opacity-75 disabled:cursor-not-allowed cursor-pointer"
+                className="mt-5 sm:mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#0a7ae6] py-3.5 text-center text-sm font-bold uppercase tracking-wider text-white shadow-lg shadow-[#0a7ae6]/25 transition-all hover:bg-[#086ac9] hover:shadow-xl active:scale-98 disabled:opacity-75 disabled:cursor-not-allowed cursor-pointer"
               >
                 {isSubmitting ? (
                   <div className="size-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -1567,18 +1580,18 @@ function CheckoutContent() {
               )}
 
               {/* Trust Badges */}
-              <div className="mt-5 grid grid-cols-3 gap-2 border-t border-slate-200/80 pt-4 text-center text-[10px] sm:text-[11px] text-slate-500">
+              <div className="mt-4 sm:mt-5 grid grid-cols-3 gap-2 border-t border-slate-200/80 pt-3.5 sm:pt-4 text-center text-[10px] sm:text-[11px] text-slate-500">
                 <div className="flex flex-col items-center">
-                  <ShieldCheck className="size-4 text-slate-600 mb-1" />
-                  <span>256-Bit SSL</span>
+                  <ShieldCheck className="size-3.5 sm:size-4 text-slate-600 mb-1" />
+                  <span className="whitespace-nowrap">256-Bit SSL</span>
                 </div>
                 <div className="flex flex-col items-center">
-                  <Package className="size-4 text-slate-600 mb-1" />
-                  <span>100% Genuine</span>
+                  <Package className="size-3.5 sm:size-4 text-slate-600 mb-1" />
+                  <span className="whitespace-nowrap">100% Genuine</span>
                 </div>
                 <div className="flex flex-col items-center">
-                  <RotateCcw className="size-4 text-slate-600 mb-1" />
-                  <span>Easy Returns</span>
+                  <RotateCcw className="size-3.5 sm:size-4 text-slate-600 mb-1" />
+                  <span className="whitespace-nowrap">Easy Returns</span>
                 </div>
               </div>
             </div>
