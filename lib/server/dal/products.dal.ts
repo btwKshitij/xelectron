@@ -425,6 +425,15 @@ export async function setProductWarrantyMenuPlacement(id: string, showInWarranty
   });
 }
 
+/** Minimal mutation used by the best seller toggle. */
+export async function setProductBestSellerPlacement(id: string, showInBestSellers: boolean) {
+  return db.product.update({
+    where: { id },
+    data: { showInBestSellers },
+    select: { id: true, slug: true, showInBestSellers: true },
+  });
+}
+
 export async function getProductById(id: string) {
   return safeFindUnique({
     where: { id },

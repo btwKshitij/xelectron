@@ -29,6 +29,7 @@ export const adminRoutes: AdminRoute[] = [
     children: [
       { label: "Categories", href: "/dashboard/products/categories" },
       { label: "Navbar products", href: "/dashboard/products/navbar" },
+      { label: "Best sellers", href: "/dashboard/products?tab=best-sellers" },
     ],
   },
   { label: "Customers", href: "/dashboard/customers" },

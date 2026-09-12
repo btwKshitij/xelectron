@@ -174,6 +174,15 @@ export async function setProductWarrantyMenuPlacement(id: string, showInWarranty
   return productsDal.setProductWarrantyMenuPlacement(existing.id, showInWarrantyMenu);
 }
 
+export async function setProductBestSellerPlacement(id: string, showInBestSellers: boolean) {
+  const existing = await productsDal.getProductById(id);
+  if (!existing) {
+    throw new Error("Product not found");
+  }
+
+  return productsDal.setProductBestSellerPlacement(existing.id, showInBestSellers);
+}
+
 export async function listBestSellerProducts() {
   return productsDal.getBestSellerProducts();
 }

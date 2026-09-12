@@ -35,12 +35,19 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const isWarrantyMenuToggle =
       typeof body?.showInWarrantyMenu === "boolean" &&
       Object.keys(body).length === 1;
+    const isBestSellerToggle =
+      typeof body?.showInBestSellers === "boolean" &&
+      Object.keys(body).length === 1;
+
     const product = isNavbarToggle
       ? await productsController.setProductNavbarPlacement(id, body.showInNavbar)
       : isWarrantyMenuToggle
         ? await productsController.setProductWarrantyMenuPlacement(id, body.showInWarrantyMenu)
+      : isBestSellerToggle
+        ? await productsController.setProductBestSellerPlacement(id, body.showInBestSellers)
       : await productsController.updateProduct(id, body);
     revalidatePath("/");
+    revalidatePath("/shop");
     revalidatePath("/product");
     revalidatePath(`/product/${product.id}`);
     if (product.slug) revalidatePath(`/product/${product.slug}`);

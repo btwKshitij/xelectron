@@ -102,6 +102,7 @@ export default async function ProductsPage() {
                 mainImage: product.mainImage,
                 quantity: product.quantity,
                 category: product.category ? { title: product.category.title } : null,
+                showInBestSellers: Boolean(product.showInBestSellers),
               }))}
             />
           </main>
