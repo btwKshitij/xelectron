@@ -367,7 +367,7 @@ export function ProductGallery({ images, name }: { images: string[]; name: strin
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [api, setApi] = useState<CarouselApi>();
   const [isPaused, setIsPaused] = useState(false);
-  const [isInView, setIsInView] = useState(false);
+  const [isInView, setIsInView] = useState(true);
 
   const galleryRef = useRef<HTMLDivElement>(null);
   const resumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -377,7 +377,7 @@ export function ProductGallery({ images, name }: { images: string[]; name: strin
   const showImage = (index: number) => { setPopupIndex(index); setOpen(true); };
   const move = (direction: number) => { setPopupIndex(index => (index + direction + images.length) % images.length); };
 
-  // Pause on touch / drag interaction
+  // Pause on touch / drag interaction, resume after release
   useEffect(() => {
     if (!api) return;
 
@@ -390,15 +390,24 @@ export function ProductGallery({ images, name }: { images: string[]; name: strin
       if (resumeTimeoutRef.current) clearTimeout(resumeTimeoutRef.current);
       resumeTimeoutRef.current = setTimeout(() => {
         setIsPaused(false);
-      }, 1500);
+      }, 2500);
+    };
+
+    const onSettle = () => {
+      if (resumeTimeoutRef.current) clearTimeout(resumeTimeoutRef.current);
+      resumeTimeoutRef.current = setTimeout(() => {
+        setIsPaused(false);
+      }, 2500);
     };
 
     api.on("pointerDown", onPointerDown);
     api.on("pointerUp", onPointerUp);
+    api.on("settle", onSettle);
 
     return () => {
       api.off("pointerDown", onPointerDown);
       api.off("pointerUp", onPointerUp);
+      api.off("settle", onSettle);
     };
   }, [api]);
 
@@ -439,7 +448,7 @@ export function ProductGallery({ images, name }: { images: string[]; name: strin
     };
   }, []);
 
-  // Auto-move gallery carousel timer
+  // Auto-move gallery carousel timer with smooth transition
   useEffect(() => {
     if (!api || productImages.length <= 1 || isPaused || !isInView || open) return;
 
@@ -449,7 +458,7 @@ export function ProductGallery({ images, name }: { images: string[]; name: strin
       } else {
         api.scrollTo(0);
       }
-    }, 3500);
+    }, 3000);
 
     return () => clearInterval(timer);
   }, [api, productImages.length, isPaused, isInView, open, activeImageIndex]);
@@ -501,8 +510,16 @@ export function ProductGallery({ images, name }: { images: string[]; name: strin
             {/* MOBILE / PHONE VIEW: CAROUSEL WITH SWIPE, ARROWS & EXTENDED PILL INDICATOR */}
             <div
               ref={galleryRef}
-              onMouseEnter={() => setIsPaused(true)}
-              onMouseLeave={() => setIsPaused(false)}
+              onMouseEnter={() => {
+                if (typeof window !== "undefined" && window.matchMedia?.("(hover: hover)").matches) {
+                  setIsPaused(true);
+                }
+              }}
+              onMouseLeave={() => {
+                if (typeof window !== "undefined" && window.matchMedia?.("(hover: hover)").matches) {
+                  setIsPaused(false);
+                }
+              }}
               className="lg:hidden flex flex-col items-center w-full"
             >
               {/* Primary Product Image Carousel with Smooth Sliding & Touch Swipe Support */}
@@ -510,6 +527,7 @@ export function ProductGallery({ images, name }: { images: string[]; name: strin
                 setApi={setApi}
                 opts={{
                   loop: productImages.length > 1,
+                  duration: 35,
                 }}
                 className="w-full"
               >
@@ -544,11 +562,16 @@ export function ProductGallery({ images, name }: { images: string[]; name: strin
                   {/* PREV ARROW (FAR LEFT) */}
                   <button
                     type="button"
-                    onClick={() => api?.scrollPrev()}
+                    onClick={() => {
+                      if (resumeTimeoutRef.current) clearTimeout(resumeTimeoutRef.current);
+                      setIsPaused(true);
+                      api?.scrollPrev();
+                      resumeTimeoutRef.current = setTimeout(() => setIsPaused(false), 2500);
+                    }}
                     aria-label="Previous image"
-                    className="p-2 text-slate-700 hover:text-slate-950 transition-colors cursor-pointer active:scale-90"
+                    className="p-2 text-slate-700 hover:text-[#0a7ae6] transition-colors cursor-pointer active:scale-90"
                   >
-                    <ArrowLeft className="size-5 stroke-[1.75]" />
+                    <ArrowLeft className="size-5 stroke-[2]" />
                   </button>
 
                   {/* PAGINATION: EXTENDED ACTIVE PILL & ROUND DOTS (CENTERED) */}
@@ -557,7 +580,12 @@ export function ProductGallery({ images, name }: { images: string[]; name: strin
                       <button
                         key={idx}
                         type="button"
-                        onClick={() => api?.scrollTo(idx)}
+                        onClick={() => {
+                          if (resumeTimeoutRef.current) clearTimeout(resumeTimeoutRef.current);
+                          setIsPaused(true);
+                          api?.scrollTo(idx);
+                          resumeTimeoutRef.current = setTimeout(() => setIsPaused(false), 2500);
+                        }}
                         aria-label={`Go to slide ${idx + 1}`}
                         className={`transition-all duration-300 rounded-full cursor-pointer ${
                           activeImageIndex === idx
@@ -571,11 +599,16 @@ export function ProductGallery({ images, name }: { images: string[]; name: strin
                   {/* NEXT ARROW (FAR RIGHT) */}
                   <button
                     type="button"
-                    onClick={() => api?.scrollNext()}
+                    onClick={() => {
+                      if (resumeTimeoutRef.current) clearTimeout(resumeTimeoutRef.current);
+                      setIsPaused(true);
+                      api?.scrollNext();
+                      resumeTimeoutRef.current = setTimeout(() => setIsPaused(false), 2500);
+                    }}
                     aria-label="Next image"
-                    className="p-2 text-slate-700 hover:text-slate-950 transition-colors cursor-pointer active:scale-90"
+                    className="p-2 text-slate-700 hover:text-[#0a7ae6] transition-colors cursor-pointer active:scale-90"
                   >
-                    <ArrowRight className="size-5 stroke-[1.75]" />
+                    <ArrowRight className="size-5 stroke-[2]" />
                   </button>
                 </div>
               )}
