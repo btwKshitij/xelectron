@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
     const post = await blogController.createBlogPost(body);
     revalidatePath("/dashboard/blog");
     revalidatePath("/");
+    revalidatePath("/blog");
     return NextResponse.json({ success: true, data: post }, { status: 201 });
   } catch (error) {
     if (error instanceof AuthError) {

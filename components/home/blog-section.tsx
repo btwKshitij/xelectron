@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { defaultBlogPosts, type DefaultBlogPost } from "@/lib/shared/default-blog-posts";
 
 type BlogPost = {
   id: string | number;
   title: string;
+  slug?: string;
   excerpt?: string | null;
   category: string;
   publishedAt?: string;
@@ -17,42 +19,6 @@ type BlogPost = {
   accentColor?: string | null;
   accent?: string;
 };
-
-const defaultBlogPosts: BlogPost[] = [
-  {
-    id: 1,
-    title: "Why XElectron Speakers Are Dominating the Market in 2026",
-    excerpt:
-      "Discover what makes XElectron the fastest-growing audio brand in India and why audiophiles are making the switch.",
-    category: "Insights",
-    date: "Jul 22, 2026",
-    readTime: "4 min read",
-    image: "/blog-1.png",
-    accentColor: "#0a7ae6",
-  },
-  {
-    id: 2,
-    title: "The Ultimate Guide to Choosing Your First Bluetooth Speaker",
-    excerpt:
-      "Battery life, bass response, waterproofing — we break down every spec that matters so you buy smart.",
-    category: "Guide",
-    date: "Jul 18, 2026",
-    readTime: "6 min read",
-    image: "/blog-2.png",
-    accentColor: "#025bb5",
-  },
-  {
-    id: 3,
-    title: "Behind the Sound: How We Engineer Deep Bass in Compact Bodies",
-    excerpt:
-      "A peek inside our R&D lab — from driver design to acoustic chambers, the science behind XElectron's signature sound.",
-    category: "Technology",
-    date: "Jul 12, 2026",
-    readTime: "5 min read",
-    image: "/blog-3.png",
-    accentColor: "#0284c7",
-  },
-];
 
 export default function BlogSection() {
   const [posts, setPosts] = useState<BlogPost[]>(defaultBlogPosts);
@@ -82,7 +48,7 @@ export default function BlogSection() {
             </h2>
           </div>
           <Link prefetch={false}
-            href="/dashboard/blog"
+            href="/blog"
             className="group flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm font-bold text-[#0a7ae6] transition-colors hover:text-[#025bb5] shrink-0"
           >
             <span>View all</span>
@@ -100,6 +66,8 @@ export default function BlogSection() {
                   year: "numeric",
                 }).format(new Date(post.publishedAt))
               : post.date || "Recent";
+
+            const postSlug = post.slug || String(post.id);
 
             return (
               <article
@@ -132,15 +100,25 @@ export default function BlogSection() {
 
                   {/* Meta */}
                   <div className="mt-4 flex items-center justify-between border-t border-slate-50 pt-3">
-                    <span className="text-xs text-slate-400">{formattedDate}</span>
-                    <span className="text-xs font-medium text-slate-500">
-                      {post.readTime || "4 min read"}
+                    <div className="flex items-center gap-2 text-xs text-slate-400">
+                      <span>{formattedDate}</span>
+                      <span>•</span>
+                      <span>{post.readTime || "4 min read"}</span>
+                    </div>
+                    <span className="flex items-center gap-1 text-xs font-semibold text-[#0a7ae6] group-hover:text-[#025bb5] transition-colors">
+                      Read story
+                      <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
                     </span>
                   </div>
                 </div>
 
                 {/* Full-card clickable overlay */}
-                <a href="#" className="absolute inset-0 z-10" aria-label={`Read: ${post.title}`} />
+                <Link
+                  prefetch={false}
+                  href={`/blog/${postSlug}`}
+                  className="absolute inset-0 z-10"
+                  aria-label={`Read: ${post.title}`}
+                />
               </article>
             );
           })}

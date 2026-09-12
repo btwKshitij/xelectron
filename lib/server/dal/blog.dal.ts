@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { defaultBlogPosts } from "@/lib/shared/default-blog-posts";
 
 export type CreateBlogPostInput = {
   title: string;
@@ -73,44 +74,23 @@ export function deleteBlogPost(id: string) {
 export async function seedDefaultBlogPostsIfEmpty() {
   const count = await db.blogPost.count();
   if (count === 0) {
-    const defaults = [
-      {
-        title: "Why XElectron Speakers Are Dominating the Market in 2026",
-        slug: "why-xelectron-speakers-are-dominating-the-market-in-2026",
-        excerpt: "Discover what makes XElectron the fastest-growing audio brand in India and why audiophiles are making the switch.",
-        content: "Discover what makes XElectron the fastest-growing audio brand in India and why audiophiles are making the switch.\n\nFrom high fidelity acoustics to durable engineering, XElectron brings studio-grade sound directly to your living space.",
-        category: "Insights",
-        image: "/blog-1.png",
-        readTime: "4 min read",
-        accentColor: "#0a7ae6",
-        sortOrder: 0,
-      },
-      {
-        title: "The Ultimate Guide to Choosing Your First Bluetooth Speaker",
-        slug: "the-ultimate-guide-to-choosing-your-first-bluetooth-speaker",
-        excerpt: "Battery life, bass response, waterproofing — we break down every spec that matters so you buy smart.",
-        content: "Battery life, bass response, waterproofing — we break down every spec that matters so you buy smart.\n\nLearn how to evaluate drivers, connectivity standards, and battery capacity before purchasing your next audio device.",
-        category: "Guide",
-        image: "/blog-2.png",
-        readTime: "6 min read",
-        accentColor: "#025bb5",
-        sortOrder: 1,
-      },
-      {
-        title: "Behind the Sound: How We Engineer Deep Bass in Compact Bodies",
-        slug: "behind-the-sound-how-we-engineer-deep-bass-in-compact-bodies",
-        excerpt: "A peek inside our R&D lab — from driver design to acoustic chambers, the science behind XElectron's signature sound.",
-        content: "A peek inside our R&D lab — from driver design to acoustic chambers, the science behind XElectron's signature sound.\n\nExplore how passive radiators and DSP tuning allow compact speakers to deliver rich, room-filling low frequencies.",
-        category: "Technology",
-        image: "/blog-3.png",
-        readTime: "5 min read",
-        accentColor: "#0284c7",
-        sortOrder: 2,
-      },
-    ];
-
-    for (const post of defaults) {
-      await db.blogPost.create({ data: post });
+    for (const post of defaultBlogPosts) {
+      await db.blogPost.create({
+        data: {
+          title: post.title,
+          slug: post.slug,
+          excerpt: post.excerpt,
+          content: post.content,
+          category: post.category,
+          image: post.image,
+          readTime: post.readTime,
+          accentColor: post.accentColor,
+          sortOrder: post.sortOrder,
+          publishedAt: new Date(post.publishedAt),
+          isActive: post.isActive,
+        },
+      });
     }
   }
 }
+

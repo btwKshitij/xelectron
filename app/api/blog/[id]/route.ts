@@ -32,6 +32,7 @@ export async function PUT(
     const post = await blogController.updateBlogPost(id, body);
     revalidatePath("/dashboard/blog");
     revalidatePath("/");
+    revalidatePath("/blog");
     return NextResponse.json({ success: true, data: post });
   } catch (error) {
     if (error instanceof AuthError) {
@@ -52,6 +53,7 @@ export async function DELETE(
     await blogController.deleteBlogPost(id);
     revalidatePath("/dashboard/blog");
     revalidatePath("/");
+    revalidatePath("/blog");
     return NextResponse.json({ success: true });
   } catch (error) {
     if (error instanceof AuthError) {
