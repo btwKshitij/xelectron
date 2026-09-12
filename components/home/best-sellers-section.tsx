@@ -456,13 +456,13 @@ export default function BestSellersSection({ additionalItems = [] }: { additiona
 
   const titleRailStyle = {
     WebkitMaskImage:
-      "linear-gradient(90deg, transparent 0, black 6%, black 94%, transparent 100%)",
+      "linear-gradient(90deg, transparent 0%, black 1%, black 99%, transparent 100%)",
     maskImage:
-      "linear-gradient(90deg, transparent 0, black 6%, black 94%, transparent 100%)",
+      "linear-gradient(90deg, transparent 0%, black 1%, black 99%, transparent 100%)",
   } as const;
 
   const titleClass =
-    "shrink-0 whitespace-nowrap text-[clamp(1.4rem,2.6vw,2.8rem)] xl:text-[clamp(1.8rem,3.2vw,3.6rem)] font-bold leading-tight tracking-[-0.03em] will-change-transform cursor-pointer transition-opacity duration-300 hover:opacity-100 select-none py-0.5";
+    "shrink-0 whitespace-nowrap text-[clamp(1.05rem,1.7vw,1.9rem)] xl:text-[clamp(1.2rem,2.1vw,2.35rem)] font-bold leading-tight tracking-[-0.02em] will-change-transform cursor-pointer transition-opacity duration-300 hover:opacity-100 select-none py-1";
 
   if (items.length === 0) return null;
 
@@ -478,7 +478,7 @@ export default function BestSellersSection({ additionalItems = [] }: { additiona
 
       <div
         ref={viewportRef}
-        className="mx-auto flex h-full max-w-[1600px] flex-col justify-between px-4 pb-4 pt-20 sm:px-6 sm:pb-5 sm:pt-24 lg:px-10 lg:pb-6 lg:pt-24 xl:px-12 xl:pb-8 xl:pt-28"
+        className="mx-auto flex h-full max-w-[1600px] flex-col justify-between px-4 pb-4 pt-16 sm:px-6 sm:pb-5 sm:pt-18 lg:px-8 lg:pb-6 lg:pt-20 xl:px-12 xl:pb-8 xl:pt-22"
       >
         {/* TOP HEADER BLOCK: Badge + Giant Title Rail */}
         <div className="relative z-20 shrink-0 flex flex-col items-center mb-2 sm:mb-3 lg:mb-4 xl:mb-5">
@@ -508,7 +508,7 @@ export default function BestSellersSection({ additionalItems = [] }: { additiona
         </div>
 
         {/* BOTTOM PRODUCT SHOWCASE GRID */}
-        <div className="relative z-10 grid w-full flex-1 min-h-0 items-center gap-6 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-8 xl:gap-12">
+        <div className="relative z-10 grid w-full flex-1 min-h-0 items-center gap-6 sm:gap-8 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.25fr)] lg:gap-8 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.35fr)] xl:gap-12">
           <div className="relative order-2 h-full min-h-0 lg:order-1 flex items-center">
             {items.map((item, index) => (
               <div
@@ -566,7 +566,7 @@ export default function BestSellersSection({ additionalItems = [] }: { additiona
           </div>
 
           <div className="relative order-1 flex items-center justify-center lg:order-2 lg:justify-end h-full min-h-0">
-            <div className="relative h-full max-h-[340px] sm:max-h-[400px] lg:max-h-[450px] xl:max-h-[540px] w-full max-w-[750px] flex items-center justify-center">
+            <div className="relative h-full max-h-[420px] sm:max-h-[480px] lg:max-h-[560px] xl:max-h-[660px] w-full max-w-[850px] xl:max-w-[980px] flex items-center justify-center">
               {items.map((item, index) => (
                 <div
                   key={item.id}
@@ -579,15 +579,15 @@ export default function BestSellersSection({ additionalItems = [] }: { additiona
                     ref={(node) => {
                       glowRefs.current[index] = node;
                     }}
-                    className="absolute inset-0 rounded-full bg-[radial-gradient(circle,_rgba(10,122,230,0.18)_0%,_rgba(10,122,230,0.08)_30%,_rgba(10,122,230,0)_68%)] blur-2xl pointer-events-none will-change-[opacity]"
+                    className="absolute inset-0 rounded-full bg-[radial-gradient(circle,_rgba(10,122,230,0.22)_0%,_rgba(10,122,230,0.09)_35%,_rgba(10,122,230,0)_70%)] blur-3xl pointer-events-none will-change-[opacity]"
                   />
-                  <div className="relative w-full h-full p-2 lg:p-4 flex items-center justify-center">
+                  <div className="relative w-full h-full p-1 lg:p-2 flex items-center justify-center">
                     <Image
                       src={item.image}
                       alt={item.imageAlt}
                       fill
-                      className="object-contain filter drop-shadow-[0_15px_35px_rgba(15,23,42,0.12)] scale-95 sm:scale-100 lg:scale-100 xl:scale-105"
-                      sizes="(min-width: 1024px) 50vw, 100vw"
+                      className="object-contain filter drop-shadow-[0_20px_45px_rgba(15,23,42,0.16)] scale-105 sm:scale-110 lg:scale-115 xl:scale-125"
+                      sizes="(min-width: 1024px) 60vw, 100vw"
                       priority={index === 0}
                     />
                   </div>
