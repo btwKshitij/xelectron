@@ -27,6 +27,10 @@ function CategoryCardImage({ category }: { category: StorefrontCategory }) {
   const resolved = resolveCategoryImage(category.image, category.slug, category.title);
   const [imgSrc, setImgSrc] = useState(resolved);
 
+  useEffect(() => {
+    setImgSrc(resolved);
+  }, [resolved]);
+
   return (
     <Image
       src={imgSrc}
@@ -38,7 +42,7 @@ function CategoryCardImage({ category }: { category: StorefrontCategory }) {
           setImgSrc(fallback);
         }
       }}
-      className="mix-blend-multiply object-contain filter drop-shadow-[0_4px_10px_rgba(15,23,42,0.08)]"
+      className="object-contain"
       sizes="200px"
     />
   );
@@ -65,7 +69,7 @@ export default function CategorySection({ categories }: { categories?: Storefron
 
   const displayCategories = sourceCategories.map(category => {
     const index = getCategoryOrder(category);
-    return { ...category, title: orderedTopics[index]?.title ?? category.title, order: index };
+    return { ...category, title: category.title, order: index };
   }).sort((a, b) => a.order - b.order);
 
   // Auto-pause when not in viewport
@@ -191,7 +195,7 @@ export default function CategorySection({ categories }: { categories?: Storefron
               {displayCategories.map(category => (
                 <CarouselItem key={category.id} className="basis-1/2 pl-3 sm:basis-1/4 sm:pl-4">
                   <Link href={`/shop?filter=${encodeURIComponent(category.slug)}`} prefetch={false} className="group flex h-[190px] flex-col items-center justify-between rounded-2xl border border-slate-200 bg-white p-3 text-center transition-colors hover:border-[#0a7ae6] sm:h-[230px] sm:p-5">
-                    <div className="relative h-[120px] w-full sm:h-[155px]">
+                    <div className="relative h-[120px] w-full bg-white sm:h-[155px]">
                       <CategoryCardImage category={category} />
                     </div>
                     <h3 className="mt-2 text-xs font-semibold leading-snug text-slate-800 group-hover:text-[#0a7ae6] sm:text-sm">{category.title}</h3>

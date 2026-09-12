@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import * as categoriesController from "@/lib/server/controllers/categories.controller";
 import { requireAdmin, AuthError } from "@/lib/server/dal/auth";
 
@@ -20,6 +20,11 @@ export async function POST(request: NextRequest) {
     await requireAdmin();
     const body = await request.json();
     const category = await categoriesController.createCategory(body);
+    revalidatePath("/dashboard/products/categories");
+    revalidatePath("/dashboard/products");
+    revalidatePath("/dashboard/products/navbar");
+    revalidatePath("/");
+    revalidatePath("/shop");
     return NextResponse.json({ success: true, data: category }, { status: 201 });
   } catch (error) {
     if (error instanceof AuthError) {

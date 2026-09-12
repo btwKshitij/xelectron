@@ -44,11 +44,7 @@ export function resolveCategoryImage(image?: string | null, slug?: string, title
     return fallback;
   }
   const cleanImage = image.trim();
-  if (
-    cleanImage.includes("xelectron.com/wp-content") ||
-    cleanImage.startsWith("http://") ||
-    cleanImage.startsWith("https://")
-  ) {
+  if (cleanImage.includes("xelectron.com/wp-content")) {
     return fallback;
   }
   return cleanImage;

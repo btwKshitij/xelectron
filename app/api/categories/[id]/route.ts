@@ -27,6 +27,11 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const { id } = await params;
     const body = await request.json();
     const category = await categoriesController.updateCategory(id, body);
+    revalidatePath("/dashboard/products/categories");
+    revalidatePath("/dashboard/products");
+    revalidatePath("/dashboard/products/navbar");
+    revalidatePath("/");
+    revalidatePath("/shop");
     return NextResponse.json({ success: true, data: category });
   } catch (error) {
     if (error instanceof AuthError) {
