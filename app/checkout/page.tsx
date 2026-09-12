@@ -18,7 +18,6 @@ import {
   Truck,
   X,
   Zap,
-  Sparkles,
   CheckCircle2,
   Smartphone,
   RefreshCw,
@@ -1563,14 +1562,52 @@ function CheckoutContent() {
                   </div>
                 )}
 
-                {/* Compact Velocity EMI Information Line */}
+                {/* Improved Velocity No-Cost EMI Section */}
                 {paymentMethod === "velocity" && (
-                  <div className="mt-2.5 flex items-center justify-between rounded-lg bg-sky-50/70 border border-sky-100 px-2.5 sm:px-3 py-1.5 text-[10px] text-slate-600 gap-1.5">
-                    <span className="flex items-center gap-1.5 font-medium min-w-0 truncate">
-                      <Sparkles className="size-3 text-[#0a7ae6] shrink-0" />
-                      <span className="truncate">Your {selectedEmiTenure}-month EMI preference sent to Velocity</span>
-                    </span>
-                    <span className="font-bold text-[#0a7ae6] shrink-0 whitespace-nowrap text-[9.5px] sm:text-[10px]">No Hidden Charges</span>
+                  <div className="mt-3 rounded-xl border border-sky-200/80 bg-gradient-to-b from-sky-50/80 to-blue-50/30 p-2.5 sm:p-3 text-slate-700 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] sm:text-xs font-semibold text-slate-800">
+                        Choose No-Cost EMI Plan
+                      </span>
+                      <span className="rounded-full bg-emerald-100/90 text-emerald-800 px-2 py-0.5 text-[9.5px] sm:text-[10px] font-bold tracking-tight whitespace-nowrap">
+                        0% Interest • No Hidden Charges
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {EMI_TENURES.map((tenure) => {
+                        const monthly = Math.ceil(total / tenure);
+                        const isSelected = selectedEmiTenure === tenure;
+                        return (
+                          <button
+                            key={tenure}
+                            type="button"
+                            onClick={() => setSelectedEmiTenure(tenure)}
+                            className={`flex flex-col items-center justify-center rounded-lg border py-1.5 px-1 text-center transition-all cursor-pointer ${
+                              isSelected
+                                ? "border-[#0a7ae6] bg-[#0a7ae6] text-white shadow-xs font-bold"
+                                : "border-slate-200/90 bg-white text-slate-700 hover:border-sky-300 hover:bg-sky-50/60"
+                            }`}
+                          >
+                            <span className="text-[11px] sm:text-xs leading-tight">{tenure} Mo</span>
+                            <span
+                              className={`text-[9.5px] sm:text-[10px] leading-tight mt-0.5 ${
+                                isSelected ? "text-white/90" : "text-slate-500 font-normal"
+                              }`}
+                            >
+                              ₹{monthly.toLocaleString("en-IN")}/m
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="flex items-center justify-between text-[10.5px] sm:text-[11px] text-slate-600 pt-1 border-t border-sky-100/80">
+                      <span className="font-medium">
+                        Pay ₹{Math.ceil(total / selectedEmiTenure).toLocaleString("en-IN")}/mo for {selectedEmiTenure} months
+                      </span>
+                      <span className="font-semibold text-[#0a7ae6]">Zero Down Payment</span>
+                    </div>
                   </div>
                 )}
 
