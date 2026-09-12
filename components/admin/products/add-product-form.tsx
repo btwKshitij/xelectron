@@ -54,6 +54,22 @@ function slugify(value: string) {
     .join("-");
 }
 
+function parseCleanNumber(value: string | number | null | undefined): number {
+  if (value === null || value === undefined) return NaN;
+  const cleaned = String(value).replace(/[^\d.]/g, "");
+  if (!cleaned) return NaN;
+  const num = Number(cleaned);
+  return Number.isFinite(num) ? num : NaN;
+}
+
+function parseCleanInteger(value: string | number | null | undefined): number {
+  if (value === null || value === undefined) return 0;
+  const cleaned = String(value).replace(/[^\d]/g, "");
+  if (!cleaned) return 0;
+  const num = Number(cleaned);
+  return Number.isSafeInteger(num) && num >= 0 ? num : 0;
+}
+
 export function AddProductForm({ categories }: { categories: ProductCategoryOption[] }) {
   const router = useRouter();
   const [title, setTitle] = useState("");
@@ -89,6 +105,7 @@ export function AddProductForm({ categories }: { categories: ProductCategoryOpti
 
   function handleTitleChange(newTitle: string) {
     setTitle(newTitle);
+    if (message) setMessage("");
     if (!isSlugTouched) {
       setSlug(slugify(newTitle));
     }
@@ -96,25 +113,51 @@ export function AddProductForm({ categories }: { categories: ProductCategoryOpti
 
   async function saveProduct(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const numericPrice = Number(price);
-    const numericCompareAtPrice = compareAtPrice.trim() ? Number(compareAtPrice) : undefined;
-    const numericQuantity = Number(quantity);
 
-    if (!title.trim() || !description.trim() || !categoryId || !Number.isFinite(numericPrice) || numericPrice < 0 || !Number.isSafeInteger(numericQuantity) || numericQuantity < 0) {
-      setMessage("Add a title, category, description, valid price, and whole-number quantity before saving.");
+    if (!title.trim()) {
+      setMessage("Please enter a product title.");
+      if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
-    if (numericCompareAtPrice !== undefined && (!Number.isFinite(numericCompareAtPrice) || numericCompareAtPrice < 0)) {
-      setMessage("Enter a valid compare-at price or leave it blank.");
+    if (!categoryId) {
+      setMessage("Please select a category.");
+      if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
-    const finalSlug = slug.trim() || slugify(title);
+    const numericPrice = parseCleanNumber(price);
+    if (isNaN(numericPrice) || numericPrice < 0) {
+      setMessage("Please enter a valid price (e.g. 19999).");
+      if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    let numericCompareAtPrice: number | undefined = undefined;
+    if (compareAtPrice.trim()) {
+      const parsed = parseCleanNumber(compareAtPrice);
+      if (isNaN(parsed) || parsed < 0) {
+        setMessage("Enter a valid compare-at price or leave it blank.");
+        if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
+      numericCompareAtPrice = parsed;
+    }
+
+    const numericQuantity = parseCleanInteger(quantity);
+
+    const finalSlug = (slug.trim() || slugify(title)).trim();
     if (!finalSlug) {
       setMessage("Use letters or numbers in the product title or URL slug.");
+      if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
+
+    const finalDescription =
+      description.trim() ||
+      shippingNotice.trim() ||
+      title.trim() ||
+      "High quality XElectron product with premium build and official brand warranty.";
 
     setIsSaving(true);
     setMessage("");
@@ -137,7 +180,7 @@ export function AddProductForm({ categories }: { categories: ProductCategoryOpti
           categoryId,
           price: `₹${numericPrice.toFixed(2)}`,
           oldPrice: numericCompareAtPrice !== undefined ? `₹${numericCompareAtPrice.toFixed(2)}` : undefined,
-          description: description.trim(),
+          description: finalDescription,
           mainImage,
           shippingNotice: shippingNotice.trim() || "Cinema-grade theater projection, vibrant 4K support, Android Smart OS & immersive stereo audio.",
           quantity: numericQuantity,
@@ -279,7 +322,10 @@ export function AddProductForm({ categories }: { categories: ProductCategoryOpti
                 <select
                   aria-label="Category"
                   value={categoryId}
-                  onChange={(event) => setCategoryId(event.target.value)}
+                  onChange={(event) => {
+                    setCategoryId(event.target.value);
+                    if (message) setMessage("");
+                  }}
                   className={inputClass}
                 >
                   <option value="">Select category</option>
@@ -294,7 +340,15 @@ export function AddProductForm({ categories }: { categories: ProductCategoryOpti
           </Card>
 
           <Card title="Description" className="mt-4">
-            <div className="px-4 pb-4"><ProductDescriptionEditor value={description} onChange={setDescription} /></div>
+            <div className="px-4 pb-4">
+              <ProductDescriptionEditor
+                value={description}
+                onChange={(val) => {
+                  setDescription(val);
+                  if (message) setMessage("");
+                }}
+              />
+            </div>
           </Card>
           
           <ProductSpecsSection specs={specs} onChange={setSpecs} />
@@ -326,8 +380,39 @@ export function AddProductForm({ categories }: { categories: ProductCategoryOpti
 
           <Card title="Price" className="mt-4">
             <div className="grid gap-4 px-4 pb-4 sm:grid-cols-2">
-              <label className="grid gap-1.5 text-sm text-black/75"><span>Price</span><span className="relative block"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-black/65">₹</span><input aria-label="Price" value={price} onChange={(event) => setPrice(event.target.value)} inputMode="decimal" className={`${inputClass} pl-7`} /></span></label>
-              <label className="grid gap-1.5 text-sm text-black/75"><span>Compare-at price</span><span className="relative block"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-black/65">₹</span><input aria-label="Compare-at price" value={compareAtPrice} onChange={(event) => setCompareAtPrice(event.target.value)} inputMode="decimal" placeholder="0.00" className={`${inputClass} pl-7`} /></span></label>
+              <label className="grid gap-1.5 text-sm text-black/75">
+                <span>Price</span>
+                <span className="relative block">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-black/65">₹</span>
+                  <input
+                    aria-label="Price"
+                    value={price}
+                    onChange={(event) => {
+                      setPrice(event.target.value);
+                      if (message) setMessage("");
+                    }}
+                    inputMode="decimal"
+                    className={`${inputClass} pl-7`}
+                  />
+                </span>
+              </label>
+              <label className="grid gap-1.5 text-sm text-black/75">
+                <span>Compare-at price</span>
+                <span className="relative block">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-black/65">₹</span>
+                  <input
+                    aria-label="Compare-at price"
+                    value={compareAtPrice}
+                    onChange={(event) => {
+                      setCompareAtPrice(event.target.value);
+                      if (message) setMessage("");
+                    }}
+                    inputMode="decimal"
+                    placeholder="0.00"
+                    className={`${inputClass} pl-7`}
+                  />
+                </span>
+              </label>
             </div>
             {parsePriceNumber(price) > parsePriceNumber(compareAtPrice) && parsePriceNumber(compareAtPrice) > 0 && (
               <div className="px-4 pb-4">
@@ -342,7 +427,19 @@ export function AddProductForm({ categories }: { categories: ProductCategoryOpti
             <div className="px-4 pb-4">
               <label className="grid gap-1.5 text-sm text-black/75">
                 <span>Quantity</span>
-                <input aria-label="Quantity" type="number" min="0" step="1" value={quantity} onChange={(event) => setQuantity(event.target.value)} inputMode="numeric" className={`${inputClass} ${Number(quantity) <= 5 ? "border-red-400 bg-red-50 text-red-700 focus:border-red-500 focus:ring-red-500/20" : ""}`} />
+                <input
+                  aria-label="Quantity"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={quantity}
+                  onChange={(event) => {
+                    setQuantity(event.target.value);
+                    if (message) setMessage("");
+                  }}
+                  inputMode="numeric"
+                  className={`${inputClass} ${Number(quantity) <= 5 ? "border-red-400 bg-red-50 text-red-700 focus:border-red-500 focus:ring-red-500/20" : ""}`}
+                />
               </label>
               <p className={`mt-2 text-xs ${Number(quantity) <= 5 ? "text-red-600 font-medium" : "text-black/55"}`}>
                 {Number(quantity) <= 5 ? (Number(quantity) === 0 ? "Out of stock!" : "Low stock warning.") : "Number of units currently available for sale."}

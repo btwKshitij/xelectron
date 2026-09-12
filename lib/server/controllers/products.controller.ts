@@ -96,7 +96,13 @@ export async function createProduct(data: CreateProductInput) {
     }
   }
 
-  return productsDal.createProduct({ ...data, slug });
+  const description =
+    data.description ||
+    data.shippingNotice ||
+    data.name ||
+    "High quality XElectron product with premium build and official brand warranty.";
+
+  return productsDal.createProduct({ ...data, description, slug });
 }
 
 // ─── Update ──────────────────────────────────────────────────────────────────

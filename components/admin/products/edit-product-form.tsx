@@ -60,8 +60,26 @@ function inputValueForPrice(value: string | null) {
   return value?.replace(/[^0-9.]/g, "") ?? "";
 }
 
-function formatPrice(value: string) {
-  return `₹${Number(value).toFixed(2)}`;
+function parseCleanNumber(value: string | number | null | undefined): number {
+  if (value === null || value === undefined) return NaN;
+  const cleaned = String(value).replace(/[^\d.]/g, "");
+  if (!cleaned) return NaN;
+  const num = Number(cleaned);
+  return Number.isFinite(num) ? num : NaN;
+}
+
+function parseCleanInteger(value: string | number | null | undefined): number {
+  if (value === null || value === undefined) return 0;
+  const cleaned = String(value).replace(/[^\d]/g, "");
+  if (!cleaned) return 0;
+  const num = Number(cleaned);
+  return Number.isSafeInteger(num) && num >= 0 ? num : 0;
+}
+
+function formatPrice(value: string | number | null | undefined) {
+  if (value === null || value === undefined || value === "") return "₹0.00";
+  const num = parseCleanNumber(value);
+  return `₹${(Number.isFinite(num) ? num : 0).toFixed(2)}`;
 }
 
 function slugify(value: string) {
@@ -335,19 +353,52 @@ export function EditProductForm({ product, categories }: { product: EditableProd
 
   async function saveProduct(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const numericPrice = Number(price);
-    const numericCompareAtPrice = compareAtPrice.trim() ? Number(compareAtPrice) : undefined;
-    const numericQuantity = Number(quantity);
-    const finalSlug = slug.trim() || slugify(title);
 
-    if (!title.trim() || !description.trim() || !categoryId || !finalSlug || !Number.isFinite(numericPrice) || numericPrice < 0 || !Number.isSafeInteger(numericQuantity) || numericQuantity < 0) {
-      setMessage("Add a title, category, description, valid price, and whole-number quantity before saving.");
+    if (!title.trim()) {
+      setMessage("Please enter a product title.");
+      if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
-    if (numericCompareAtPrice !== undefined && (!Number.isFinite(numericCompareAtPrice) || numericCompareAtPrice < 0)) {
-      setMessage("Enter a valid compare-at price or leave it blank.");
+
+    if (!categoryId) {
+      setMessage("Please select a category.");
+      if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
+
+    const numericPrice = parseCleanNumber(price);
+    if (isNaN(numericPrice) || numericPrice < 0) {
+      setMessage("Please enter a valid price (e.g. 19999).");
+      if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    let numericCompareAtPrice: number | undefined = undefined;
+    if (compareAtPrice.trim()) {
+      const parsed = parseCleanNumber(compareAtPrice);
+      if (isNaN(parsed) || parsed < 0) {
+        setMessage("Enter a valid compare-at price or leave it blank.");
+        if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
+      numericCompareAtPrice = parsed;
+    }
+
+    const numericQuantity = parseCleanInteger(quantity);
+
+    const finalSlug = (slug.trim() || slugify(title)).trim();
+    if (!finalSlug) {
+      setMessage("Use letters or numbers in the product title or URL slug.");
+      if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    const finalDescription =
+      description.trim() ||
+      shippingNotice.trim() ||
+      title.trim() ||
+      product.description ||
+      "High quality XElectron product with premium build and official brand warranty.";
 
     setIsSaving(true);
     setMessage("");
@@ -375,7 +426,7 @@ export function EditProductForm({ product, categories }: { product: EditableProd
           slug: finalSlug,
           shippingNotice: shippingNotice.trim(),
           categoryId,
-          description: description.trim(),
+          description: finalDescription,
           price: formatPrice(price),
           oldPrice: numericCompareAtPrice === undefined ? null : formatPrice(compareAtPrice),
           quantity: numericQuantity,

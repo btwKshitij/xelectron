@@ -8,10 +8,10 @@ import {
   Carousel,
   CarouselContent,
   CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
   type CarouselApi,
 } from "@/components/ui/carousel";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { categories as defaultCategories } from "@/components/home/content";
 import { resolveCategoryImage, getCategoryFallbackImage } from "@/lib/shared/category-utils";
 
@@ -49,6 +49,7 @@ export default function CategorySection({ categories }: { categories?: Storefron
   const [isPaused, setIsPaused] = useState(false);
   const [isInView, setIsInView] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
   const sectionRef = useRef<HTMLElement>(null);
   const resumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -120,10 +121,14 @@ export default function CategorySection({ categories }: { categories?: Storefron
   // Track slide index changes to reset timer
   useEffect(() => {
     if (!api) return;
+    setScrollSnaps(api.scrollSnapList());
     const onSelect = () => {
       setSelectedIndex(api.selectedScrollSnap());
     };
     api.on("select", onSelect);
+    api.on("reInit", () => {
+      setScrollSnaps(api.scrollSnapList());
+    });
     return () => {
       api.off("select", onSelect);
     };
@@ -153,7 +158,7 @@ export default function CategorySection({ categories }: { categories?: Storefron
   if (!displayCategories || displayCategories.length === 0) return null;
 
   return (
-    <section ref={sectionRef} className="bg-white px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
+    <section ref={sectionRef} className="bg-white px-4 pt-8 pb-5 sm:px-6 sm:py-14 lg:px-8">
       <div className="mx-auto max-w-[1400px]">
         {/* SECTION HEADER */}
         <div className="mb-8 flex flex-col items-center text-center sm:mb-10">
@@ -194,10 +199,57 @@ export default function CategorySection({ categories }: { categories?: Storefron
                 </CarouselItem>
               ))}
             </CarouselContent>
-            <div className="mt-4 flex items-center justify-center gap-3 sm:hidden">
-              <CarouselPrevious className="static size-11 translate-y-0" />
-              <span className="text-xs text-slate-500">Explore categories</span>
-              <CarouselNext className="static size-11 translate-y-0" />
+            <div className="mt-3.5 flex w-full items-center justify-between px-1 sm:hidden">
+              <button
+                type="button"
+                onClick={() => {
+                  if (resumeTimeoutRef.current) clearTimeout(resumeTimeoutRef.current);
+                  setIsPaused(true);
+                  api?.scrollPrev();
+                  resumeTimeoutRef.current = setTimeout(() => setIsPaused(false), 2000);
+                }}
+                aria-label="Previous categories"
+                className="group flex size-9.5 items-center justify-center rounded-full border border-slate-200/90 bg-white text-slate-700 shadow-sm transition-all hover:border-[#0a7ae6] hover:bg-slate-50 hover:text-[#0a7ae6] active:scale-90 active:bg-slate-100 cursor-pointer"
+              >
+                <ChevronLeft className="size-4.5 stroke-[2.5] transition-transform group-hover:-translate-x-0.5" />
+              </button>
+
+              {/* SLIDE INDICATOR DOTS */}
+              <div className="flex items-center gap-1.5" aria-hidden="true">
+                {(scrollSnaps.length > 0 ? scrollSnaps : displayCategories).map((_, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      if (resumeTimeoutRef.current) clearTimeout(resumeTimeoutRef.current);
+                      setIsPaused(true);
+                      api?.scrollTo(idx);
+                      resumeTimeoutRef.current = setTimeout(() => setIsPaused(false), 2000);
+                    }}
+                    aria-label={`Go to category ${idx + 1}`}
+                    className={cn(
+                      "h-1.5 rounded-full transition-all duration-300 cursor-pointer",
+                      selectedIndex === idx
+                        ? "w-5 bg-[#0a7ae6]"
+                        : "w-1.5 bg-slate-200 hover:bg-slate-300"
+                    )}
+                  />
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (resumeTimeoutRef.current) clearTimeout(resumeTimeoutRef.current);
+                  setIsPaused(true);
+                  api?.scrollNext();
+                  resumeTimeoutRef.current = setTimeout(() => setIsPaused(false), 2000);
+                }}
+                aria-label="Next categories"
+                className="group flex size-9.5 items-center justify-center rounded-full border border-slate-200/90 bg-white text-slate-700 shadow-sm transition-all hover:border-[#0a7ae6] hover:bg-slate-50 hover:text-[#0a7ae6] active:scale-90 active:bg-slate-100 cursor-pointer"
+              >
+                <ChevronRight className="size-4.5 stroke-[2.5] transition-transform group-hover:translate-x-0.5" />
+              </button>
             </div>
           </Carousel>
         </div>
