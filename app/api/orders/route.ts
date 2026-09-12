@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const all = searchParams.get("all") === "true";
 
     if (queryUserId) {
-      const orders = await ordersController.listOrders(queryUserId);
+      const orders = await ordersController.listOrders(queryUserId, undefined, user.email, user.phone || undefined);
       return NextResponse.json({ success: true, data: orders });
     }
 
@@ -48,6 +48,9 @@ export async function POST(request: NextRequest) {
       ? "Payment method: COD\nStatus: Cash on Delivery Verified"
       : (body.internalNotes || undefined);
 
+    const cleanEmail = (body.customerEmail || body.email || user?.email)?.toLowerCase().trim();
+    const cleanPhone = (body.customerPhone || body.phone || user?.phone)?.replace(/[^0-9]/g, "");
+
     const order = await ordersController.createOrder({
       ...body,
       status: "PENDING",
@@ -55,8 +58,8 @@ export async function POST(request: NextRequest) {
       internalNotes,
       userId: user?.id || body.userId || null,
       customerName: body.customerName || (body.firstName ? `${body.firstName} ${body.lastName || ""}`.trim() : user?.name),
-      customerEmail: body.customerEmail || body.email || user?.email,
-      customerPhone: body.customerPhone || body.phone,
+      customerEmail: cleanEmail,
+      customerPhone: cleanPhone,
     });
 
     // If an account was automatically created during order placement, set session cookie

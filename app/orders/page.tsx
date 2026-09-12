@@ -58,6 +58,7 @@ function OrdersContent() {
   const [loading, setLoading] = useState(true);
   const [isUnauthorized, setIsUnauthorized] = useState(false);
   const [copiedAwb, setCopiedAwb] = useState<string | null>(null);
+  const [guestEmail, setGuestEmail] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -82,6 +83,11 @@ function OrdersContent() {
           setLoading(false);
         }
       }
+    }
+
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("xelectron_guest_email");
+      if (stored) setGuestEmail(stored);
     }
 
     fetchOrders();
@@ -162,16 +168,26 @@ function OrdersContent() {
             Please sign in to your XElectron account to view your purchase history, live fulfillment status, and courier tracking.
           </p>
 
-          <div className="mt-8 space-y-3">
+          {guestEmail && (
+            <div className="mt-4 rounded-2xl bg-blue-50/70 border border-blue-200/60 p-3.5 text-xs text-slate-700 text-left">
+              <span className="text-slate-500">Order email detected: </span>
+              <strong className="text-slate-900 font-semibold">{guestEmail}</strong>
+              <p className="mt-1 text-[11.5px] text-slate-600">
+                Sign in with this email to automatically see all orders placed under this address.
+              </p>
+            </div>
+          )}
+
+          <div className="mt-6 space-y-3">
             <Link prefetch={false}
-              href="/login?redirectTo=/orders"
+              href={guestEmail ? `/login?email=${encodeURIComponent(guestEmail)}&redirectTo=/orders` : `/login?redirectTo=/orders`}
               className="block w-full rounded-xl bg-[#0a7ae6] py-3.5 text-center text-sm font-semibold text-white shadow-md shadow-[#0a7ae6]/20 transition-all hover:bg-[#086ac9]"
             >
               Sign In to Your Account
             </Link>
 
             <Link prefetch={false}
-              href="/login?mode=signup&redirectTo=/orders"
+              href={guestEmail ? `/login?mode=signup&email=${encodeURIComponent(guestEmail)}&redirectTo=/orders` : `/login?mode=signup&redirectTo=/orders`}
               className="block w-full rounded-xl border border-slate-200 bg-white py-3.5 text-center text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all"
             >
               Create an Account

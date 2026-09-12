@@ -62,8 +62,8 @@ export async function POST(request: NextRequest) {
       customerName:
         orderDetails?.customerName ||
         (orderDetails?.firstName ? `${orderDetails.firstName} ${orderDetails.lastName || ""}`.trim() : user?.name),
-      customerEmail: orderDetails?.customerEmail || orderDetails?.email || user?.email,
-      customerPhone: orderDetails?.customerPhone || orderDetails?.phone,
+      customerEmail: (orderDetails?.customerEmail || orderDetails?.email || user?.email)?.toLowerCase().trim(),
+      customerPhone: (orderDetails?.customerPhone || orderDetails?.phone)?.replace(/[^0-9]/g, ""),
       internalNotes,
       paymentMethod: "ONLINE_RAZORPAY",
     });

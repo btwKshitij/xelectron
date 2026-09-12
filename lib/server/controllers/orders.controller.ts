@@ -35,11 +35,24 @@ export async function createOrder(data: ordersDal.CreateOrderInput) {
 
   let finalUserId = data.userId || null;
   let sessionToken: string | null = null;
+  const cleanEmail = data.customerEmail ? data.customerEmail.toLowerCase().trim() : undefined;
+  const cleanPhone = (data.customerPhone || data.phone)?.replace(/[^0-9]/g, "");
 
-  // Handle on-the-fly Account Creation during Order placement if requested
-  if (data.createAccount && data.password && data.customerEmail) {
+  // 1. If an existing registered user has this email, link the order directly
+  if (!finalUserId && cleanEmail) {
     try {
-      const cleanEmail = data.customerEmail.toLowerCase().trim();
+      const existingUser = await usersDal.getUserByEmail(cleanEmail);
+      if (existingUser) {
+        finalUserId = existingUser.id;
+      }
+    } catch (err) {
+      console.warn("Could not match existing user by email:", err);
+    }
+  }
+
+  // 2. Handle on-the-fly Account Creation during Order placement if requested
+  if (data.createAccount && data.password && cleanEmail) {
+    try {
       let user = await usersDal.getUserByEmail(cleanEmail);
       if (!user) {
         const passwordHash = await bcrypt.hash(data.password, 10);
@@ -47,11 +60,25 @@ export async function createOrder(data: ordersDal.CreateOrderInput) {
           name: data.customerName?.trim() || cleanEmail.split("@")[0] || "Valued Customer",
           email: cleanEmail,
           passwordHash,
-          phone: data.customerPhone || data.phone || undefined,
+          phone: cleanPhone || undefined,
           role: "CUSTOMER",
         });
       }
       finalUserId = user.id;
+
+      // Link any prior guest orders with this email to the user
+      try {
+        const { db } = await import("@/lib/db");
+        await db.order.updateMany({
+          where: {
+            userId: null,
+            customerEmail: { equals: cleanEmail, mode: "insensitive" },
+          },
+          data: {
+            userId: user.id,
+          },
+        });
+      } catch {}
 
       // Create login session for immediate seamless access to "My Orders"
       const session = await sessionsDal.createSession(user.id);
@@ -108,6 +135,8 @@ export async function createOrder(data: ordersDal.CreateOrderInput) {
 
   const createdOrder = await ordersDal.createOrder({
     ...data,
+    customerEmail: cleanEmail,
+    customerPhone: cleanPhone || data.customerPhone || data.phone,
     userId: finalUserId,
     items: resolvedItems,
     total: finalTotal,

@@ -37,8 +37,24 @@ export async function getOrderById(id: string) {
 }
 
 export async function getOrdersByUserId(userId: string, email?: string, phone?: string) {
-  const cleanEmail = email?.trim().toLowerCase();
-  const cleanPhone = phone?.replace(/[^0-9]/g, "");
+  let cleanEmail = email?.trim().toLowerCase();
+  let cleanPhone = phone?.replace(/[^0-9]/g, "");
+
+  // If email was not passed, look up user record to get their email and phone
+  if (!cleanEmail) {
+    try {
+      const userRecord = await db.user.findUnique({
+        where: { id: userId },
+        select: { email: true, phone: true },
+      });
+      if (userRecord?.email) {
+        cleanEmail = userRecord.email.trim().toLowerCase();
+      }
+      if (userRecord?.phone && !cleanPhone) {
+        cleanPhone = userRecord.phone.replace(/[^0-9]/g, "");
+      }
+    } catch {}
+  }
 
   // Link any unlinked orders with this email/phone to the user ID
   if (cleanEmail || (cleanPhone && cleanPhone.length >= 10)) {
@@ -142,14 +158,17 @@ export type CreateOrderInput = {
 };
 
 export async function createOrder(data: CreateOrderInput) {
+  const cleanEmail = data.customerEmail ? data.customerEmail.toLowerCase().trim() : undefined;
+  const cleanPhone = (data.customerPhone || data.phone)?.trim();
+
   return db.order.create({
     data: {
       userId: data.userId || null,
       total: data.total,
       shippingAddress: data.shippingAddress,
       customerName: data.customerName,
-      customerEmail: data.customerEmail,
-      customerPhone: data.customerPhone || data.phone,
+      customerEmail: cleanEmail,
+      customerPhone: cleanPhone,
       city: data.city,
       state: data.state,
       pincode: data.pincode,

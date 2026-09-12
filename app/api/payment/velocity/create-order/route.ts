@@ -84,11 +84,20 @@ export async function POST(request: NextRequest) {
     // Validate credentials before creating an internal order.
     assertVelocityConfig();
 
-    // 1. Account creation if requested
+    // 1. Account matching / creation if requested
     let finalUserId = userId || null;
-    if (!finalUserId && createAccount && customerEmail && password) {
+    const cleanEmail = customerEmail?.toLowerCase().trim();
+    if (!finalUserId && cleanEmail) {
       try {
-        const cleanEmail = customerEmail.toLowerCase().trim();
+        const existingUser = await usersDal.getUserByEmail(cleanEmail);
+        if (existingUser) {
+          finalUserId = existingUser.id;
+        }
+      } catch {}
+    }
+
+    if (!finalUserId && createAccount && cleanEmail && password) {
+      try {
         let user = await usersDal.getUserByEmail(cleanEmail);
         if (!user) {
           const bcrypt = await import("bcryptjs");
@@ -102,6 +111,18 @@ export async function POST(request: NextRequest) {
           });
         }
         finalUserId = user.id;
+
+        // Link prior orders
+        try {
+          const { db } = await import("@/lib/db");
+          await db.order.updateMany({
+            where: {
+              userId: null,
+              customerEmail: { equals: cleanEmail, mode: "insensitive" },
+            },
+            data: { userId: user.id },
+          });
+        } catch {}
       } catch (err) {
         console.warn("Auto-account creation skipped during Velocity checkout:", err);
       }

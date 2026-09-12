@@ -50,12 +50,19 @@ function AuthForm() {
     fullName: "",
     phone: "",
     otp: "",
-    email: "",
+    email: searchParams.get("email") || "",
     password: "",
     confirmPassword: "",
     rememberMe: false,
     agreeTerms: false,
   });
+
+  useEffect(() => {
+    const emailParam = searchParams.get("email");
+    if (emailParam) {
+      setFormData((prev) => (prev.email ? prev : { ...prev, email: emailParam }));
+    }
+  }, [searchParams]);
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);

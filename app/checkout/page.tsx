@@ -539,8 +539,8 @@ function CheckoutContent() {
                   orderDetails: {
                     userId: currentUser?.id,
                     customerName: `${firstName} ${lastName}`.trim(),
-                    customerEmail: email,
-                    customerPhone: phone,
+                    customerEmail: email.trim().toLowerCase(),
+                    customerPhone: phone.trim(),
                     city,
                     state,
                     pincode: postalCode,
@@ -572,12 +572,17 @@ function CheckoutContent() {
               setOrderId(newOrderId);
               setPaidTotal(total);
 
-              if (typeof window !== "undefined" && rawId) {
+              if (typeof window !== "undefined") {
                 try {
-                  const existing = JSON.parse(localStorage.getItem("xelectron_guest_orders") || "[]");
-                  if (!existing.includes(rawId)) {
-                    existing.unshift(rawId);
-                    localStorage.setItem("xelectron_guest_orders", JSON.stringify(existing.slice(0, 20)));
+                  if (email) {
+                    localStorage.setItem("xelectron_guest_email", email.trim().toLowerCase());
+                  }
+                  if (rawId) {
+                    const existing = JSON.parse(localStorage.getItem("xelectron_guest_orders") || "[]");
+                    if (!existing.includes(rawId)) {
+                      existing.unshift(rawId);
+                      localStorage.setItem("xelectron_guest_orders", JSON.stringify(existing.slice(0, 20)));
+                    }
                   }
                 } catch {}
               }
@@ -618,8 +623,8 @@ function CheckoutContent() {
           body: JSON.stringify({
             userId: currentUser?.id,
             customerName: `${firstName} ${lastName}`.trim(),
-            customerEmail: email,
-            customerPhone: phone,
+            customerEmail: email.trim().toLowerCase(),
+            customerPhone: phone.trim(),
             city,
             state,
             pincode: postalCode,
@@ -711,8 +716,8 @@ function CheckoutContent() {
         body: JSON.stringify({
           userId: currentUser?.id,
           customerName: `${firstName} ${lastName}`.trim(),
-          customerEmail: email,
-          customerPhone: phone,
+          customerEmail: email.trim().toLowerCase(),
+          customerPhone: phone.trim(),
           city,
           state,
           pincode: postalCode,
@@ -744,13 +749,18 @@ function CheckoutContent() {
       setOrderId(newOrderId);
       setPaidTotal(total);
 
-      // Save order id to localStorage so guests can track their orders without logging in
-      if (typeof window !== "undefined" && rawId) {
+      // Save order id and email to localStorage so guests can track their orders
+      if (typeof window !== "undefined") {
         try {
-          const existing = JSON.parse(localStorage.getItem("xelectron_guest_orders") || "[]");
-          if (!existing.includes(rawId)) {
-            existing.unshift(rawId);
-            localStorage.setItem("xelectron_guest_orders", JSON.stringify(existing.slice(0, 20)));
+          if (email) {
+            localStorage.setItem("xelectron_guest_email", email.trim().toLowerCase());
+          }
+          if (rawId) {
+            const existing = JSON.parse(localStorage.getItem("xelectron_guest_orders") || "[]");
+            if (!existing.includes(rawId)) {
+              existing.unshift(rawId);
+              localStorage.setItem("xelectron_guest_orders", JSON.stringify(existing.slice(0, 20)));
+            }
           }
         } catch {}
       }
@@ -832,6 +842,10 @@ function CheckoutContent() {
               <span className="text-slate-500">Customer:</span>
               <span className="font-medium text-slate-900">{firstName} {lastName}</span>
             </div>
+            <div className="flex justify-between py-1 border-b border-slate-200/60">
+              <span className="text-slate-500">Linked Email:</span>
+              <span className="font-semibold text-slate-900">{email}</span>
+            </div>
             <div className="flex justify-between gap-4 py-1 border-b border-slate-200/60">
               <span className="text-slate-500 shrink-0">Shipping to:</span>
               <span className="font-medium text-slate-900 text-right">{[addressLine1, addressLine2, city, state, postalCode].filter(Boolean).join(", ")}</span>
@@ -850,6 +864,16 @@ function CheckoutContent() {
               <span>Total Paid:</span>
               <span className="text-[#0a7ae6]">₹{paidTotal.toLocaleString("en-IN")}</span>
             </div>
+          </div>
+
+          <div className="mt-4 rounded-xl bg-blue-50/80 border border-blue-200/70 p-3.5 text-xs text-slate-700 text-left flex items-start gap-2.5">
+            <CheckCircle2 className="size-4 text-[#0a7ae6] shrink-0 mt-0.5" />
+            <p className="leading-relaxed">
+              Order saved to <strong className="text-slate-900">{email}</strong>.
+              {currentUser || createAccountOnCheckout
+                ? " You can track shipment and view all past invoices anytime under My Orders."
+                : " Simply sign in or create an account with this email address anytime to track fulfillment and view your order history."}
+            </p>
           </div>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">

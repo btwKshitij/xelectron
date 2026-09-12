@@ -18,7 +18,8 @@ const SALT_ROUNDS = 12;
  * Throws on invalid credentials.
  */
 export async function loginUser(email: string, password: string) {
-  const user = await usersDal.getUserByEmail(email.toLowerCase().trim());
+  const cleanEmail = email.toLowerCase().trim();
+  const user = await usersDal.getUserByEmail(cleanEmail);
   if (!user) {
     throw new InvalidCredentialsError();
   }
@@ -28,11 +29,31 @@ export async function loginUser(email: string, password: string) {
     throw new InvalidCredentialsError();
   }
 
+  // Link any unlinked past orders placed with this email (or phone) to this user
+  try {
+    const { db } = await import("@/lib/db");
+    const cleanPhone = user.phone?.replace(/[^0-9]/g, "");
+    await db.order.updateMany({
+      where: {
+        userId: null,
+        OR: [
+          { customerEmail: { equals: cleanEmail, mode: "insensitive" } },
+          ...(cleanPhone && cleanPhone.length >= 10 ? [{ customerPhone: { contains: cleanPhone } }] : []),
+        ],
+      },
+      data: {
+        userId: user.id,
+      },
+    });
+  } catch (err) {
+    console.warn("Could not link orders on login:", err);
+  }
+
   // Create DB session
   const { token } = await sessionsDal.createSession(user.id);
 
   // Compute redirect server-side (frontend never sees the role)
-  const redirectTo = user.role === "ADMIN" ? "/dashboard" : "/";
+  const redirectTo = user.role === "ADMIN" ? "/dashboard" : "/orders";
 
   return {
     token,
@@ -91,12 +112,31 @@ export async function registerUser(
     role: "CUSTOMER", // Always CUSTOMER — admin is provisioned separately
   });
 
+  // Automatically link all past orders placed with this email (or phone) to this new user account!
+  try {
+    const { db } = await import("@/lib/db");
+    await db.order.updateMany({
+      where: {
+        userId: null,
+        OR: [
+          { customerEmail: { equals: cleanEmail, mode: "insensitive" } },
+          ...(cleanPhone && cleanPhone.length >= 10 ? [{ customerPhone: { contains: cleanPhone } }] : []),
+        ],
+      },
+      data: {
+        userId: newUser.id,
+      },
+    });
+  } catch (err) {
+    console.warn("Could not link past orders on registration:", err);
+  }
+
   // Create DB session
   const { token } = await sessionsDal.createSession(newUser.id);
 
   return {
     token,
-    redirectTo: "/",
+    redirectTo: "/orders",
     user: {
       id: newUser.id,
       name: newUser.name,

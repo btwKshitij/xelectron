@@ -11,6 +11,7 @@
  */
 
 export function isOrderPaidOrCod(order: {
+  status?: string | null;
   paymentVerified?: boolean | null;
   shippingAddress?: string | null;
   internalNotes?: string | null;
@@ -20,7 +21,13 @@ export function isOrderPaidOrCod(order: {
     return true;
   }
 
-  // 2. If it is Cash on Delivery, it is a valid placed order awaiting payment on delivery
+  // 2. Any order in confirmed, processing, shipped or delivered status
+  const status = (order.status || "").toUpperCase();
+  if (["CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"].includes(status)) {
+    return true;
+  }
+
+  // 3. If it is Cash on Delivery, it is a valid placed order awaiting payment on delivery
   const address = order.shippingAddress || "";
   const notes = order.internalNotes || "";
 
@@ -33,11 +40,12 @@ export function isOrderPaidOrCod(order: {
 }
 
 /**
- * Prisma WHERE clause filter to query only orders that are Paid or COD.
+ * Prisma WHERE clause filter to query only orders that are Paid, Confirmed, or COD.
  */
 export const paidOrCodOrderPrismaFilter = {
   OR: [
     { paymentVerified: true },
+    { status: { in: ["CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"] as any } },
     { shippingAddress: { contains: "[Payment: COD", mode: "insensitive" as const } },
     { shippingAddress: { contains: "COD Verified", mode: "insensitive" as const } },
     { internalNotes: { contains: "Payment method: COD", mode: "insensitive" as const } },
