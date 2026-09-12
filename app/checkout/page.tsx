@@ -1395,10 +1395,10 @@ function CheckoutContent() {
 
                 <div className="flex justify-between items-baseline border-t border-slate-200/80 pt-3 text-slate-900">
                   <div>
-                    <span className="text-base sm:text-lg font-bold block leading-tight">Total</span>
+                    <span className="text-base sm:text-lg font-semibold block leading-tight">Total</span>
                     <span className="text-[10px] text-slate-400 font-normal block">Free delivery & taxes included</span>
                   </div>
-                  <span className="text-lg sm:text-xl font-extrabold text-[#0a7ae6]">
+                  <span className="text-lg sm:text-xl font-semibold text-[#0a7ae6]">
                     ₹{total.toLocaleString("en-IN", {
                       minimumFractionDigits: total % 1 !== 0 ? 2 : 0,
                       maximumFractionDigits: 2,
