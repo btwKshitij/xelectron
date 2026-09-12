@@ -3,6 +3,9 @@ import { revalidatePath } from "next/cache";
 import * as productsController from "@/lib/server/controllers/products.controller";
 import { requireAdmin, AuthError } from "@/lib/server/dal/auth";
 
+export const dynamic = "force-dynamic";
+export const maxDuration = 60;
+
 type RouteParams = { params: Promise<{ id: string }> };
 
 // GET /api/products/:id

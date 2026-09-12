@@ -10,7 +10,7 @@ import { HomeShowcaseToggle } from "@/components/admin/products/home-showcase-to
 import { NavbarShowcaseToggle } from "@/components/admin/products/navbar-showcase-toggle";
 import { ProductMediaUploader } from "@/components/admin/products/product-media-uploader";
 import { ProductVariantsSection } from "@/components/admin/products/product-variants-section";
-import { uploadProductImage } from "@/lib/client/upload-product-image";
+import { uploadProductImage, uploadProductImagesBatch } from "@/lib/client/upload-product-image";
 import { parsePriceNumber } from "@/lib/format-price";
 import { ProductSpecsSection, type SpecItem } from "@/components/admin/products/product-specs-section";
 import { ProductFaqsSection, type FaqItem } from "@/components/admin/products/product-faqs-section";
@@ -96,6 +96,7 @@ export function AddProductForm({ categories }: { categories: ProductCategoryOpti
   const [sliderPosition, setSliderPosition] = useState<string>("after");
   const [creatorVideos, setCreatorVideos] = useState<ProductCreatorVideoItem[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [savingStatus, setSavingStatus] = useState("");
   const [message, setMessage] = useState("");
 
   const selectedCategory = useMemo(
@@ -160,69 +161,95 @@ export function AddProductForm({ categories }: { categories: ProductCategoryOpti
       "High quality XElectron product with premium build and official brand warranty.";
 
     setIsSaving(true);
+    setSavingStatus("Preparing product…");
     setMessage("");
     try {
-      const uploadedMedia = await Promise.all(
-        mediaFiles.map(async (file, sortOrder) => ({
-          ...(await uploadProductImage(file)),
-          mimeType: file.type,
-          sortOrder,
-        }))
-      );
-      const mainImage = uploadedMedia[0]?.url || "/category-smartphone.png";
-      const response = await fetch("/api/products", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: title.trim(),
-          sku: sku.trim() || null,
-          slug: finalSlug,
-          categoryId,
-          price: `₹${numericPrice.toFixed(2)}`,
-          oldPrice: numericCompareAtPrice !== undefined ? `₹${numericCompareAtPrice.toFixed(2)}` : undefined,
-          description: finalDescription,
-          mainImage,
-          shippingNotice: shippingNotice.trim() || "Cinema-grade theater projection, vibrant 4K support, Android Smart OS & immersive stereo audio.",
-          quantity: numericQuantity,
-          showInBestSellers,
-          showInNavbar,
-          media: uploadedMedia,
-          variants,
-          colors,
-          features: features.map(f => f.trim()).filter(f => f !== ""),
-          specs: specs.filter(s => s.label.trim() || s.value.trim()),
-          faqs: faqs.filter(f => f.question.trim() || f.answer.trim()),
-          banners: [
-            ...showcaseBanners
-              .filter((b) => b.imageUrl?.trim())
-              .map((b, idx) => ({
-                imageUrl: b.imageUrl.trim(),
-                mobileImageUrl: b.mobileImageUrl?.trim() || null,
-                title: b.title?.trim() || null,
-                sortOrder: idx,
-              })),
-            ...sliderBanners
-              .filter((b) => b.imageUrl?.trim())
-              .map((b, idx) => ({
-                imageUrl: b.imageUrl.trim(),
-                mobileImageUrl: b.mobileImageUrl?.trim() || null,
-                title: b.title?.trim() ? `[slider:pos:${sliderPosition}] ${b.title.trim()}` : `[slider:pos:${sliderPosition}]`,
-                sortOrder: 1000 + idx,
-              })),
-          ],
-          creatorVideos: creatorVideos
-            .filter((v) => v.videoUrl?.trim())
-            .map((v, idx) => ({
-              title: v.title?.trim() || null,
-              videoUrl: v.videoUrl?.trim() || null,
-              thumbnailUrl: v.thumbnailUrl?.trim() || "/creator-projector.png",
-              sortOrder: typeof v.sortOrder === "number" ? v.sortOrder : idx,
-              isActive: v.isActive ?? true,
-            })),
-        }),
-      });
+      let uploadedMedia: Array<{ key: string; url: string; mimeType: string; sortOrder: number }> = [];
 
-      const result = await response.json();
+      if (mediaFiles.length > 0) {
+        setSavingStatus(`Uploading images (0/${mediaFiles.length})…`);
+        const uploadedResults = await uploadProductImagesBatch(mediaFiles, {
+          concurrency: 2,
+          onProgress: (done, total, currentName) => {
+            setSavingStatus(`Uploading image ${Math.min(done + 1, total)} of ${total}: ${currentName}`);
+          },
+        });
+
+        uploadedMedia = uploadedResults.map((item, sortOrder) => ({
+          ...item,
+          mimeType: mediaFiles[sortOrder]?.type || "image/jpeg",
+          sortOrder,
+        }));
+      }
+
+      setSavingStatus("Saving product listing…");
+      const mainImage = uploadedMedia[0]?.url || "/category-smartphone.png";
+      let response: Response;
+      try {
+        response = await fetch("/api/products", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: title.trim(),
+            sku: sku.trim() || null,
+            slug: finalSlug,
+            categoryId,
+            price: `₹${numericPrice.toFixed(2)}`,
+            oldPrice: numericCompareAtPrice !== undefined ? `₹${numericCompareAtPrice.toFixed(2)}` : undefined,
+            description: finalDescription,
+            mainImage,
+            shippingNotice: shippingNotice.trim() || "Cinema-grade theater projection, vibrant 4K support, Android Smart OS & immersive stereo audio.",
+            quantity: numericQuantity,
+            showInBestSellers,
+            showInNavbar,
+            media: uploadedMedia,
+            variants,
+            colors,
+            features: features.map(f => f.trim()).filter(f => f !== ""),
+            specs: specs.filter(s => s.label.trim() || s.value.trim()),
+            faqs: faqs.filter(f => f.question.trim() || f.answer.trim()),
+            banners: [
+              ...showcaseBanners
+                .filter((b) => b.imageUrl?.trim())
+                .map((b, idx) => ({
+                  imageUrl: b.imageUrl.trim(),
+                  mobileImageUrl: b.mobileImageUrl?.trim() || null,
+                  title: b.title?.trim() || null,
+                  sortOrder: idx,
+                })),
+              ...sliderBanners
+                .filter((b) => b.imageUrl?.trim())
+                .map((b, idx) => ({
+                  imageUrl: b.imageUrl.trim(),
+                  mobileImageUrl: b.mobileImageUrl?.trim() || null,
+                  title: b.title?.trim() ? `[slider:pos:${sliderPosition}] ${b.title.trim()}` : `[slider:pos:${sliderPosition}]`,
+                  sortOrder: 1000 + idx,
+                })),
+            ],
+            creatorVideos: creatorVideos
+              .filter((v) => v.videoUrl?.trim())
+              .map((v, idx) => ({
+                title: v.title?.trim() || null,
+                videoUrl: v.videoUrl?.trim() || null,
+                thumbnailUrl: v.thumbnailUrl?.trim() || "/creator-projector.png",
+                sortOrder: typeof v.sortOrder === "number" ? v.sortOrder : idx,
+                isActive: v.isActive ?? true,
+              })),
+          }),
+        });
+      } catch {
+        throw new Error(
+          "Unable to save product: Network connection lost while communicating with the server. Please check your connection and try again."
+        );
+      }
+
+      let result: any;
+      try {
+        result = await response.json();
+      } catch {
+        throw new Error(`Server returned an invalid response (${response.status}). Please try again.`);
+      }
+
       if (!response.ok || !result.success) {
         throw new Error(result.error || "Unable to create product");
       }
@@ -231,8 +258,10 @@ export function AddProductForm({ categories }: { categories: ProductCategoryOpti
       router.refresh();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to create product");
+      if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setIsSaving(false);
+      setSavingStatus("");
     }
   }
 
@@ -249,7 +278,7 @@ export function AddProductForm({ categories }: { categories: ProductCategoryOpti
             disabled={isSaving}
             className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-black px-4 text-sm font-medium text-white hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-black/15"
           >
-            {isSaving ? "Saving…" : "Save product"}
+            {isSaving ? (savingStatus || "Saving…") : "Save product"}
           </button>
         </div>
       </div>

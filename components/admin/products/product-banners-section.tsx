@@ -19,7 +19,7 @@ import {
   Link as LinkIcon,
   X,
 } from "lucide-react";
-import { uploadProductImage } from "@/lib/client/upload-product-image";
+import { uploadProductImage, uploadProductImagesBatch } from "@/lib/client/upload-product-image";
 import {
   isYouTubeUrl,
   getYouTubeThumbnail,
@@ -99,17 +99,14 @@ export function ProductBannersSection({
           updateBanner(uploadIndex, "imageUrl", res.url);
         }
       } else {
-        // Adding new banner(s) in cascade
-        const uploadPromises = files.map(async (file, idx) => {
-          const res = await uploadProductImage(file);
-          return {
-            imageUrl: res.url,
-            title: file.name.replace(/\.[^/.]+$/, "").replace(/[-_]+/g, " "),
-            sortOrder: banners.length + idx,
-          } as BannerItem;
-        });
+        // Adding new banner(s) in cascade with bounded concurrency
+        const uploaded = await uploadProductImagesBatch(files, { concurrency: 2 });
+        const newBanners = uploaded.map((res, idx) => ({
+          imageUrl: res.url,
+          title: files[idx].name.replace(/\.[^/.]+$/, "").replace(/[-_]+/g, " "),
+          sortOrder: banners.length + idx,
+        } as BannerItem));
 
-        const newBanners = await Promise.all(uploadPromises);
         onChange([...banners, ...newBanners]);
       }
     } catch (err: any) {

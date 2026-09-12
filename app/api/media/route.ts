@@ -4,6 +4,7 @@ import { requireAdmin, AuthError } from "@/lib/server/dal/auth";
 import { deleteProductMedia, uploadProductImage } from "@/lib/server/r2";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 export async function POST(request: Request) {
   try {

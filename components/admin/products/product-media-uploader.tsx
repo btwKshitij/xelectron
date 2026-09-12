@@ -11,6 +11,7 @@ type MediaItem = {
 };
 
 const MIN_PRODUCT_IMAGE_DIMENSION = 600;
+const MAX_IMAGE_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB
 
 async function getImageDimensions(file: File) {
   const sourceUrl = URL.createObjectURL(file);
@@ -49,8 +50,21 @@ export function ProductMediaUploader({ onFilesChange }: { onFilesChange?: (files
       return;
     }
 
+    const oversizedFiles = supportedFiles.filter((file) => file.size > MAX_IMAGE_FILE_SIZE_BYTES);
+    const validSizeFiles = supportedFiles.filter(
+      (file) => file.size > 0 && file.size <= MAX_IMAGE_FILE_SIZE_BYTES
+    );
+
+    if (validSizeFiles.length === 0 && oversizedFiles.length > 0) {
+      setNotice({
+        text: `Selected files exceed the maximum allowed size of 50 MB.`,
+        tone: "error",
+      });
+      return;
+    }
+
     const checks = await Promise.all(
-      supportedFiles.map(async (file) => {
+      validSizeFiles.map(async (file) => {
         try {
           const { width, height } = await getImageDimensions(file);
           return {
@@ -77,7 +91,12 @@ export function ProductMediaUploader({ onFilesChange }: { onFilesChange?: (files
       return;
     }
 
-    if (smallFiles.length > 0) {
+    if (oversizedFiles.length > 0) {
+      setNotice({
+        text: `${oversizedFiles.map((f) => f.name).join(", ")} exceed 50 MB and were skipped.`,
+        tone: "warning",
+      });
+    } else if (smallFiles.length > 0) {
       setNotice({
         text: `${smallFiles.join(", ")} uploaded, but may look blurry when enlarged. For best quality, use images at least ${MIN_PRODUCT_IMAGE_DIMENSION}×${MIN_PRODUCT_IMAGE_DIMENSION} px.`,
         tone: "warning",

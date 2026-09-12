@@ -10,7 +10,7 @@ import { ProductDescriptionEditor } from "@/components/admin/products/product-de
 import { HomeShowcaseToggle } from "@/components/admin/products/home-showcase-toggle";
 import { NavbarShowcaseToggle } from "@/components/admin/products/navbar-showcase-toggle";
 import { ProductMediaUploader } from "@/components/admin/products/product-media-uploader";
-import { uploadProductImage } from "@/lib/client/upload-product-image";
+import { uploadProductImage, uploadProductImagesBatch } from "@/lib/client/upload-product-image";
 import { parsePriceNumber } from "@/lib/format-price";
 import { ProductSpecsSection, type SpecItem } from "@/components/admin/products/product-specs-section";
 import { ProductFaqsSection, type FaqItem } from "@/components/admin/products/product-faqs-section";
@@ -183,6 +183,7 @@ export function EditProductForm({ product, categories }: { product: EditableProd
     }));
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [savingStatus, setSavingStatus] = useState("");
   const [message, setMessage] = useState("");
   const isRestoringHistoryRef = useRef(false);
 
@@ -401,81 +402,108 @@ export function EditProductForm({ product, categories }: { product: EditableProd
       "High quality XElectron product with premium build and official brand warranty.";
 
     setIsSaving(true);
+    setSavingStatus("Preparing updates…");
     setMessage("");
     try {
       const nextMediaSortOrder = Math.max(
         orderedMedia.length,
         ...product.media.map((media) => media.sortOrder + 1)
       );
-      const uploadedMedia = await Promise.all(
-        mediaFiles.map(async (file, index) => ({
-          ...(await uploadProductImage(file)),
-          mimeType: file.type,
+      let uploadedMedia: Array<{ key: string; url: string; mimeType: string; sortOrder: number }> = [];
+
+      if (mediaFiles.length > 0) {
+        setSavingStatus(`Uploading images (0/${mediaFiles.length})…`);
+        const uploadedResults = await uploadProductImagesBatch(mediaFiles, {
+          concurrency: 2,
+          onProgress: (done, total, currentName) => {
+            setSavingStatus(`Uploading image ${Math.min(done + 1, total)} of ${total}: ${currentName}`);
+          },
+        });
+        uploadedMedia = uploadedResults.map((item, index) => ({
+          ...item,
+          mimeType: mediaFiles[index]?.type || "image/jpeg",
           sortOrder: nextMediaSortOrder + index,
-        }))
-      );
+        }));
+      }
+
+      setSavingStatus("Saving product updates…");
       const removedMediaIds = product.media
         .filter((media) => !orderedMedia.some((currentMedia) => currentMedia.id === media.id))
         .map((media) => media.id);
-      const response = await fetch(`/api/products/${encodeURIComponent(product.id)}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: title.trim(),
-          sku: sku.trim() || null,
-          slug: finalSlug,
-          shippingNotice: shippingNotice.trim(),
-          categoryId,
-          description: finalDescription,
-          price: formatPrice(price),
-          oldPrice: numericCompareAtPrice === undefined ? null : formatPrice(compareAtPrice),
-          quantity: numericQuantity,
-          showInBestSellers,
-          showInNavbar,
-          mainImage: orderedMedia[0]?.url ?? uploadedMedia[0]?.url ?? "",
-          newMedia: uploadedMedia,
-          removeMediaIds: removedMediaIds,
-          mediaOrder: orderedMedia.flatMap((media, sortOrder) =>
-            media.id ? [{ id: media.id, sortOrder }] : []
-          ),
-          variants,
-          colors,
-          features: features.map(f => f.trim()).filter(f => f !== ""),
-          specs: specs.filter(s => s.label.trim() || s.value.trim()),
-          faqs: faqs.filter(f => f.question.trim() || f.answer.trim()),
-          banners: [
-            ...showcaseBanners
-              .filter((b) => b.imageUrl?.trim())
-              .map((b, idx) => ({
-                id: b.id,
-                imageUrl: b.imageUrl.trim(),
-                mobileImageUrl: b.mobileImageUrl?.trim() || null,
-                title: b.title?.trim() || null,
-                sortOrder: idx,
+
+      let response: Response;
+      try {
+        response = await fetch(`/api/products/${encodeURIComponent(product.id)}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: title.trim(),
+            sku: sku.trim() || null,
+            slug: finalSlug,
+            shippingNotice: shippingNotice.trim(),
+            categoryId,
+            description: finalDescription,
+            price: formatPrice(price),
+            oldPrice: numericCompareAtPrice === undefined ? null : formatPrice(compareAtPrice),
+            quantity: numericQuantity,
+            showInBestSellers,
+            showInNavbar,
+            mainImage: orderedMedia[0]?.url ?? uploadedMedia[0]?.url ?? "",
+            newMedia: uploadedMedia,
+            removeMediaIds: removedMediaIds,
+            mediaOrder: orderedMedia.flatMap((media, sortOrder) =>
+              media.id ? [{ id: media.id, sortOrder }] : []
+            ),
+            variants,
+            colors,
+            features: features.map(f => f.trim()).filter(f => f !== ""),
+            specs: specs.filter(s => s.label.trim() || s.value.trim()),
+            faqs: faqs.filter(f => f.question.trim() || f.answer.trim()),
+            banners: [
+              ...showcaseBanners
+                .filter((b) => b.imageUrl?.trim())
+                .map((b, idx) => ({
+                  id: b.id,
+                  imageUrl: b.imageUrl.trim(),
+                  mobileImageUrl: b.mobileImageUrl?.trim() || null,
+                  title: b.title?.trim() || null,
+                  sortOrder: idx,
+                })),
+              ...sliderBanners
+                .filter((b) => b.imageUrl?.trim())
+                .map((b, idx) => ({
+                  id: b.id,
+                  imageUrl: b.imageUrl.trim(),
+                  mobileImageUrl: b.mobileImageUrl?.trim() || null,
+                  title: b.title?.trim() ? `[slider:pos:${sliderPosition}] ${b.title.trim()}` : `[slider:pos:${sliderPosition}]`,
+                  sortOrder: 1000 + idx,
+                })),
+            ],
+            creatorVideos: creatorVideos
+              .filter((v) => v.videoUrl?.trim())
+              .map((v, idx) => ({
+                id: v.id,
+                title: v.title?.trim() || null,
+                videoUrl: v.videoUrl?.trim() || null,
+                thumbnailUrl: v.thumbnailUrl?.trim() || "/creator-projector.png",
+                sortOrder: typeof v.sortOrder === "number" ? v.sortOrder : idx,
+                isActive: v.isActive ?? true,
               })),
-            ...sliderBanners
-              .filter((b) => b.imageUrl?.trim())
-              .map((b, idx) => ({
-                id: b.id,
-                imageUrl: b.imageUrl.trim(),
-                mobileImageUrl: b.mobileImageUrl?.trim() || null,
-                title: b.title?.trim() ? `[slider:pos:${sliderPosition}] ${b.title.trim()}` : `[slider:pos:${sliderPosition}]`,
-                sortOrder: 1000 + idx,
-              })),
-          ],
-          creatorVideos: creatorVideos
-            .filter((v) => v.videoUrl?.trim())
-            .map((v, idx) => ({
-              id: v.id,
-              title: v.title?.trim() || null,
-              videoUrl: v.videoUrl?.trim() || null,
-              thumbnailUrl: v.thumbnailUrl?.trim() || "/creator-projector.png",
-              sortOrder: typeof v.sortOrder === "number" ? v.sortOrder : idx,
-              isActive: v.isActive ?? true,
-            })),
-        }),
-      });
-      const result = await response.json();
+          }),
+        });
+      } catch {
+        throw new Error(
+          "Unable to save changes: Network connection lost while communicating with the server. Please check your connection and try again."
+        );
+      }
+
+      let result: any;
+      try {
+        result = await response.json();
+      } catch {
+        throw new Error(`Server returned an invalid response (${response.status}). Please try again.`);
+      }
+
       if (!response.ok || !result.success) {
         throw new Error(result.error || "Unable to save changes");
       }
@@ -484,8 +512,10 @@ export function EditProductForm({ product, categories }: { product: EditableProd
       router.refresh();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to save changes");
+      if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setIsSaving(false);
+      setSavingStatus("");
     }
   }
 
@@ -499,7 +529,7 @@ export function EditProductForm({ product, categories }: { product: EditableProd
         <div className="flex items-center gap-2">
           <Link prefetch={false} href={`/product/${product.slug}`} target="_blank" className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-black/[0.06] px-3 text-sm font-medium hover:bg-black/10"><ExternalLink className="size-3.5" /> Store</Link>
           {isDirty ? <span aria-live="polite" className="hidden text-xs font-medium text-amber-700 sm:inline">Unsaved changes</span> : null}
-          <button type="submit" disabled={isSaving || !isDirty} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-black px-4 text-sm font-medium text-white hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-black/15"><Save className="size-3.5" /> {isSaving ? "Saving…" : "Save changes"}</button>
+          <button type="submit" disabled={isSaving || !isDirty} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-black px-4 text-sm font-medium text-white hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-black/15"><Save className="size-3.5" /> {isSaving ? (savingStatus || "Saving…") : "Save changes"}</button>
         </div>
       </div>
 

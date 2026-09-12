@@ -4,6 +4,7 @@ import * as productsController from "@/lib/server/controllers/products.controlle
 import { requireAdmin, AuthError } from "@/lib/server/dal/auth";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 // GET /api/products?search=&category=
 export async function GET(request: NextRequest) {
