@@ -7,6 +7,8 @@ import {
   Check,
   ChevronDown,
   CreditCard,
+  Eye,
+  EyeOff,
   HelpCircle,
   Lock,
   Package,
@@ -252,6 +254,7 @@ function CheckoutContent() {
   // Account creation while placing order
   const [createAccountOnCheckout, setCreateAccountOnCheckout] = useState(false);
   const [accountPassword, setAccountPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   // Payment State
   const [paymentMethod, setPaymentMethod] = useState<"razorpay" | "velocity" | "cod">("razorpay");
@@ -457,7 +460,7 @@ function CheckoutContent() {
       return;
     }
 
-    if (!firstName || !phone || !email || !addressLine1 || !city || !postalCode) {
+    if (!firstName || !phone || !email || !addressLine1 || !city || !state || !postalCode) {
       alert("Please fill in all required billing and address fields (*)");
       return;
     }
@@ -959,8 +962,23 @@ function CheckoutContent() {
               )}
             </div>
 
-            {/* Billing Fields */}
+            {/* Contact Details Section */}
             <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg sm:text-xl font-bold tracking-tight text-slate-900">
+                  Contact details
+                </h2>
+                {!currentUser && (
+                  <Link
+                    prefetch={false}
+                    href="/login?redirectTo=/checkout"
+                    className="text-xs font-semibold text-[#0a7ae6] hover:underline"
+                  >
+                    Already have an account? Sign in
+                  </Link>
+                )}
+              </div>
+
               {/* First & Last Name - 2 per line */}
               <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 <div>
@@ -973,7 +991,7 @@ function CheckoutContent() {
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     placeholder="First name"
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3 sm:px-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0a7ae6] focus:outline-none focus:ring-2 focus:ring-[#0a7ae6]/15"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 sm:px-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0a7ae6] focus:outline-none focus:ring-2 focus:ring-[#0a7ae6]/15 transition-all"
                   />
                 </div>
                 <div>
@@ -986,7 +1004,7 @@ function CheckoutContent() {
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     placeholder="Last name"
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3 sm:px-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0a7ae6] focus:outline-none focus:ring-2 focus:ring-[#0a7ae6]/15"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 sm:px-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0a7ae6] focus:outline-none focus:ring-2 focus:ring-[#0a7ae6]/15 transition-all"
                   />
                 </div>
               </div>
@@ -1003,7 +1021,7 @@ function CheckoutContent() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="+91 98765 43210"
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3 sm:px-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0a7ae6] focus:outline-none focus:ring-2 focus:ring-[#0a7ae6]/15"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 sm:px-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0a7ae6] focus:outline-none focus:ring-2 focus:ring-[#0a7ae6]/15 transition-all"
                   />
                 </div>
                 <div>
@@ -1016,7 +1034,75 @@ function CheckoutContent() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="johndoe@gmail.com"
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3 sm:px-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0a7ae6] focus:outline-none focus:ring-2 focus:ring-[#0a7ae6]/15"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 sm:px-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0a7ae6] focus:outline-none focus:ring-2 focus:ring-[#0a7ae6]/15 transition-all"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <hr className="border-slate-200/80" />
+
+            {/* Delivery Address Section */}
+            <div className="space-y-4">
+              <h2 className="text-lg sm:text-xl font-bold tracking-tight text-slate-900">
+                Delivery address
+              </h2>
+
+              {/* Street Address */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Street Address / House No. <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={addressLine1}
+                  onChange={(e) => setAddressLine1(e.target.value)}
+                  placeholder="House number, apartment name, street"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 sm:px-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0a7ae6] focus:outline-none focus:ring-2 focus:ring-[#0a7ae6]/15 transition-all"
+                />
+              </div>
+
+              {/* Apartment / Landmark */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Apartment, suite, landmark (optional)
+                </label>
+                <input
+                  type="text"
+                  value={addressLine2}
+                  onChange={(e) => setAddressLine2(e.target.value)}
+                  placeholder="Near landmark or building wing"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 sm:px-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0a7ae6] focus:outline-none focus:ring-2 focus:ring-[#0a7ae6]/15 transition-all"
+                />
+              </div>
+
+              {/* Town / City & PIN Code - 2 per line */}
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    Town / City <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="e.g. Mumbai"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 sm:px-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0a7ae6] focus:outline-none focus:ring-2 focus:ring-[#0a7ae6]/15 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    PIN Code <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={postalCode}
+                    onChange={(e) => setPostalCode(e.target.value)}
+                    placeholder="e.g. 400001"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 sm:px-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0a7ae6] focus:outline-none focus:ring-2 focus:ring-[#0a7ae6]/15 transition-all"
                   />
                 </div>
               </div>
@@ -1031,7 +1117,7 @@ function CheckoutContent() {
                     required
                     value={state}
                     onChange={(e) => setState(e.target.value)}
-                    className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 sm:px-4 py-2.5 text-xs sm:text-sm text-slate-900 focus:border-[#0a7ae6] focus:outline-none focus:ring-2 focus:ring-[#0a7ae6]/15"
+                    className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 sm:px-4 py-2.5 text-xs sm:text-sm text-slate-900 focus:border-[#0a7ae6] focus:outline-none focus:ring-2 focus:ring-[#0a7ae6]/15 transition-all"
                   >
                     <option value="" disabled>Select your state</option>
                     <option value="Andhra Pradesh">Andhra Pradesh</option>
@@ -1068,152 +1154,86 @@ function CheckoutContent() {
                 </div>
               </div>
 
-              {/* Account Creation Option for Guests */}
-              {!currentUser && (
-                <div className="rounded-2xl border border-blue-200 bg-blue-50/50 p-4 sm:p-5 space-y-3">
-                  <label className="flex items-start gap-3 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={createAccountOnCheckout}
-                      onChange={(e) => setCreateAccountOnCheckout(e.target.checked)}
-                      className="mt-0.5 size-4.5 rounded border-slate-300 text-[#0a7ae6] focus:ring-[#0a7ae6] accent-[#0a7ae6]"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs sm:text-sm font-bold text-slate-900">
-                          Create an account while placing this order
-                        </span>
-                        <span className="text-[10px] font-semibold text-[#0a7ae6] bg-blue-100/70 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                          Recommended
-                        </span>
-                      </div>
-                      <p className="mt-0.5 text-xs text-slate-600">
-                        Track live delivery progress, access invoices, and enable instant product warranty.
-                      </p>
-                    </div>
-                  </label>
+              {/* Order Notes */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Order notes (optional)
+                </label>
+                <textarea
+                  rows={2}
+                  value={orderNotes}
+                  onChange={(e) => setOrderNotes(e.target.value)}
+                  placeholder="Notes about your order, e.g. special delivery instructions."
+                  className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0a7ae6] focus:outline-none focus:ring-2 focus:ring-[#0a7ae6]/15 transition-all"
+                />
+              </div>
+            </div>
 
-                  {createAccountOnCheckout && (
-                    <div className="pt-3 border-t border-blue-200/60 space-y-2 animate-in fade-in duration-200">
-                      <label className="block text-xs font-semibold text-slate-700">
-                        Set a Password for your account <span className="text-red-500">*</span>
-                      </label>
+            {/* Account Creation Option for Guests */}
+            {!currentUser && (
+              <div
+                className={`rounded-2xl border p-4 sm:p-5 transition-all duration-200 ${
+                  createAccountOnCheckout
+                    ? "border-[#0a7ae6]/40 bg-[#0a7ae6]/[0.03] ring-1 ring-[#0a7ae6]/10"
+                    : "border-slate-200/90 bg-[#f8fafc] hover:border-slate-300"
+                }`}
+              >
+                <label className="flex items-start gap-3.5 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={createAccountOnCheckout}
+                    onChange={(e) => setCreateAccountOnCheckout(e.target.checked)}
+                    className="mt-0.5 size-4.5 rounded border-slate-300 text-[#0a7ae6] focus:ring-[#0a7ae6] accent-[#0a7ae6] cursor-pointer"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-xs sm:text-sm font-bold text-slate-900">
+                        Create an account with this order
+                      </span>
+                      <span className="inline-flex items-center text-[10px] font-semibold text-[#0a7ae6] bg-blue-100/70 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                        Recommended
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-slate-600 leading-relaxed">
+                      Save your details to track live deliveries, access invoices, and claim instant warranty.
+                    </p>
+                  </div>
+                </label>
+
+                {createAccountOnCheckout && (
+                  <div className="mt-4 pt-4 border-t border-slate-200/80 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <label className="block text-xs font-semibold text-slate-700">
+                      Set a password for your account <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
                       <input
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         required={createAccountOnCheckout}
                         value={accountPassword}
                         onChange={(e) => setAccountPassword(e.target.value)}
-                        placeholder="Choose password (6+ characters)"
-                        className="w-full rounded-xl border border-slate-200 bg-white px-3 sm:px-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0a7ae6] focus:outline-none focus:ring-2 focus:ring-[#0a7ae6]/15"
+                        placeholder="Choose password (at least 6 characters)"
+                        className="w-full rounded-xl border border-slate-200 bg-white px-3.5 sm:px-4 py-2.5 pr-10 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0a7ae6] focus:outline-none focus:ring-2 focus:ring-[#0a7ae6]/15"
                       />
-                      <p className="text-[11px] text-slate-500">
-                        Already have an account?{" "}
-                        <Link prefetch={false} href="/login?redirectTo=/checkout" className="font-bold text-[#0a7ae6] hover:underline">
-                          Sign in here
-                        </Link>
-                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+                        tabIndex={-1}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      </button>
                     </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <hr className="border-slate-200/80" />
-
-            {/* Address Information Section */}
-            <div>
-              <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl mb-4">
-                Address information
-              </h2>
-
-              {/* Ship to a different address checkbox */}
-              <label className="flex items-center gap-3 cursor-pointer group mb-5">
-                <input
-                  type="checkbox"
-                  checked={shipToDifferent}
-                  onChange={(e) => setShipToDifferent(e.target.checked)}
-                  className="size-4.5 rounded border-slate-300 text-[#0a7ae6] focus:ring-[#0a7ae6] accent-[#0a7ae6]"
-                />
-                <span className="text-xs sm:text-sm font-medium text-slate-700 group-hover:text-slate-900 transition-colors">
-                  Ship to a different address
-                </span>
-              </label>
-
-              <div className="space-y-4">
-                {/* Street Address */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    Street Address / House No. <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={addressLine1}
-                    onChange={(e) => setAddressLine1(e.target.value)}
-                    placeholder="House number, apartment name, street"
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3 sm:px-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0a7ae6] focus:outline-none focus:ring-2 focus:ring-[#0a7ae6]/15"
-                  />
-                </div>
-
-                {/* Apartment / Landmark */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    Apartment, suite, landmark (optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={addressLine2}
-                    onChange={(e) => setAddressLine2(e.target.value)}
-                    placeholder="Near landmark or building wing"
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3 sm:px-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0a7ae6] focus:outline-none focus:ring-2 focus:ring-[#0a7ae6]/15"
-                  />
-                </div>
-
-                {/* City & PIN Code - 2 per line */}
-                <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                      Town / City <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      placeholder="e.g. Mumbai"
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 sm:px-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0a7ae6] focus:outline-none focus:ring-2 focus:ring-[#0a7ae6]/15"
-                    />
+                    <p className="text-[11px] text-slate-500">
+                      Already have an account?{" "}
+                      <Link prefetch={false} href="/login?redirectTo=/checkout" className="font-bold text-[#0a7ae6] hover:underline">
+                        Sign in here
+                      </Link>
+                    </p>
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                      PIN Code <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={postalCode}
-                      onChange={(e) => setPostalCode(e.target.value)}
-                      placeholder="e.g. 400001"
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 sm:px-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0a7ae6] focus:outline-none focus:ring-2 focus:ring-[#0a7ae6]/15"
-                    />
-                  </div>
-                </div>
-
-                {/* Order Notes */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    Order notes (optional)
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={orderNotes}
-                    onChange={(e) => setOrderNotes(e.target.value)}
-                    placeholder="Notes about your order, e.g. special delivery instructions."
-                    className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0a7ae6] focus:outline-none focus:ring-2 focus:ring-[#0a7ae6]/15"
-                  />
-                </div>
+                )}
               </div>
-            </div>
+            )}
           </div>
 
           {/* ─── RIGHT COLUMN: YOUR ORDER & PAYMENT METHOD ─── */}
