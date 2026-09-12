@@ -7,7 +7,7 @@ import Navbar from "@/components/navbar/navbar";
 import Footer from "@/components/footer/footer";
 import {
   Building2,
-  Sparkles,
+  Hotel,
   CheckCircle2,
   ArrowRight,
   Phone,
@@ -79,7 +79,7 @@ const PURPOSE_OPTIONS = [
   { id: "office", label: "Office & Conference", icon: Briefcase },
   { id: "education", label: "School / Coaching", icon: Building2 },
   { id: "reseller", label: "Reselling / Retail", icon: Layers },
-  { id: "other", label: "Hospitality & Other", icon: Sparkles },
+  { id: "other", label: "Hospitality & Other", icon: Hotel },
 ];
 
 const ADVANTAGES = [
@@ -177,7 +177,7 @@ export default function BulkOrderPage() {
       }
 
       setSubmittedReference(data.reference);
-      toast.success("Bulk order inquiry submitted successfully!");
+      toast.success("Bulk order inquiry sent directly to Corporate Sales (sales@xelectron.com)!");
     } catch (err: any) {
       toast.error(err.message || "An unexpected error occurred. Please contact our corporate desk.");
     } finally {
@@ -220,7 +220,7 @@ export default function BulkOrderPage() {
                   <span>XElectron For Business</span>
                 </div>
 
-                <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-950 sm:text-5xl sm:leading-[1.15] lg:text-6xl">
+                <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 sm:text-5xl sm:leading-[1.15] lg:text-6xl">
                   Bulk Procurement &{" "}
                   <span className="text-[#0a7ae6]">Corporate Gifting</span>
                 </h1>
@@ -364,7 +364,7 @@ export default function BulkOrderPage() {
                     </span>
                     <Flame className="size-3.5 text-amber-500" />
                   </div>
-                  <p className="mt-2.5 text-base font-extrabold text-slate-900">{tier.label}</p>
+                  <p className="mt-2.5 text-base font-semibold text-slate-900">{tier.label}</p>
                   <p className="mt-1 text-xs font-semibold text-emerald-700">{tier.perk}</p>
                 </div>
               ))}
@@ -415,14 +415,20 @@ export default function BulkOrderPage() {
               <div className="lg:col-span-7">
                 <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-100 sm:p-9">
                   <div className="mb-6">
-                    <span className="inline-block rounded-md bg-blue-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-[#0a7ae6]">
-                      Official Quotation Form
-                    </span>
-                    <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="inline-block rounded-md bg-blue-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-[#0a7ae6]">
+                        Official Quotation Form
+                      </span>
+                      <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+                        <Mail className="size-3 text-emerald-600" />
+                        Dispatches directly to: sales@xelectron.com
+                      </span>
+                    </div>
+                    <h2 className="mt-2.5 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
                       Request Commercial Quotation
                     </h2>
                     <p className="mt-1 text-xs text-slate-600 sm:text-sm">
-                      Fill in your institutional requirements. Our sales desk guarantees a formal quote within 2–4 hours.
+                      Fill in your institutional requirements. Your request is sent directly to our Sales Desk at <a href="mailto:sales@xelectron.com" className="font-semibold text-[#0a7ae6] hover:underline">sales@xelectron.com</a> with a guaranteed formal quote within 2–4 hours.
                     </p>
                   </div>
 
@@ -432,16 +438,16 @@ export default function BulkOrderPage() {
                         <CheckCircle2 className="size-8" />
                       </div>
                       <h3 className="mt-4 text-xl font-bold text-emerald-950">
-                        Inquiry Received Successfully!
+                        Inquiry Sent to Sales Desk!
                       </h3>
                       <p className="mt-2 text-xs text-emerald-800 sm:text-sm">
-                        Your corporate inquiry reference number is:
+                        Your commercial inquiry has been routed directly to <strong>sales@xelectron.com</strong> under reference:
                       </p>
-                      <div className="mx-auto mt-3 inline-block rounded-xl border border-emerald-300 bg-white px-5 py-2.5 font-mono text-sm font-extrabold text-emerald-900 shadow-xs">
+                      <div className="mx-auto mt-3 inline-block rounded-xl border border-emerald-300 bg-white px-5 py-2.5 font-mono text-sm font-semibold text-emerald-900 shadow-xs">
                         #{submittedReference.slice(-8).toUpperCase()}
                       </div>
                       <p className="mt-3.5 text-xs text-emerald-700">
-                        An acknowledgment email was sent to <strong>{formData.email}</strong>. Our dedicated account specialist will call you directly.
+                        A lead copy has been dispatched to <strong>sales@xelectron.com</strong>, and a confirmation email was sent to <strong>{formData.email}</strong>. Our dedicated account specialist will call you directly.
                       </p>
 
                       <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
@@ -636,7 +642,7 @@ export default function BulkOrderPage() {
                         ) : (
                           <>
                             <Send className="size-4" />
-                            <span>Request Official Wholesale Quotation</span>
+                            <span>Send Request to Sales Desk (sales@xelectron.com)</span>
                           </>
                         )}
                       </button>
@@ -648,61 +654,61 @@ export default function BulkOrderPage() {
               {/* RIGHT: DIRECT CORPORATE SALES DESK CARD */}
               <div className="space-y-6 lg:col-span-5">
                 {/* DIRECT DESK */}
-                <div className="rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-900 to-slate-950 p-6 text-white shadow-xl sm:p-7">
+                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-100 sm:p-7">
                   <div className="flex items-center gap-3">
-                    <div className="flex size-10 items-center justify-center rounded-xl bg-blue-500/20 text-blue-400">
+                    <div className="flex size-10 items-center justify-center rounded-xl border border-blue-100 bg-blue-50 text-[#0a7ae6]">
                       <Headphones className="size-5" />
                     </div>
                     <div>
-                      <h3 className="text-base font-bold text-white">Direct Corporate Sales Desk</h3>
-                      <p className="text-xs text-slate-400">Need an immediate price quote or tender specs?</p>
+                      <h3 className="text-base font-bold text-slate-950">Direct Corporate Sales Desk</h3>
+                      <p className="text-xs text-slate-500">Need an immediate price quote or tender specs?</p>
                     </div>
                   </div>
 
-                  <div className="mt-5 space-y-3.5 border-t border-slate-800 pt-5 text-xs">
+                  <div className="mt-5 space-y-3.5 border-t border-slate-100 pt-5 text-xs">
                     <div className="flex items-start gap-3">
-                      <Phone className="mt-0.5 size-4 text-blue-400 shrink-0" />
+                      <Phone className="mt-0.5 size-4 text-[#0a7ae6] shrink-0" />
                       <div>
-                        <p className="text-slate-400 font-medium">Direct Sales Hotline</p>
-                        <a href="tel:9870293008" className="text-sm font-bold text-white hover:text-blue-300">
+                        <p className="text-slate-500 font-medium">Direct Sales Hotline</p>
+                        <a href="tel:9870293008" className="text-sm font-bold text-slate-900 hover:text-[#0a7ae6] transition">
                           +91 9870293008
                         </a>
                       </div>
                     </div>
 
                     <div className="flex items-start gap-3">
-                      <Mail className="mt-0.5 size-4 text-blue-400 shrink-0" />
+                      <Mail className="mt-0.5 size-4 text-[#0a7ae6] shrink-0" />
                       <div>
-                        <p className="text-slate-400 font-medium">Institutional Email</p>
-                        <a href="mailto:sales@xelectron.com" className="text-sm font-bold text-white hover:text-blue-300">
+                        <p className="text-slate-500 font-medium">Institutional Email</p>
+                        <a href="mailto:sales@xelectron.com" className="text-sm font-bold text-[#0a7ae6] hover:underline transition">
                           sales@xelectron.com
                         </a>
                       </div>
                     </div>
 
                     <div className="flex items-start gap-3">
-                      <Clock className="mt-0.5 size-4 text-blue-400 shrink-0" />
+                      <Clock className="mt-0.5 size-4 text-[#0a7ae6] shrink-0" />
                       <div>
-                        <p className="text-slate-400 font-medium">Business Desk Hours</p>
-                        <p className="text-sm font-semibold text-slate-200">Mon – Sat: 10:00 AM – 06:00 PM</p>
+                        <p className="text-slate-500 font-medium">Business Desk Hours</p>
+                        <p className="text-sm font-semibold text-slate-800">Mon – Sat: 10:00 AM – 06:00 PM</p>
                       </div>
                     </div>
                   </div>
 
                   {/* WHATSAPP ACTION */}
-                  <div className="mt-6 rounded-2xl bg-slate-800/80 p-4 border border-slate-700/60">
+                  <div className="mt-6 rounded-2xl border border-emerald-200/80 bg-emerald-50/70 p-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-emerald-400">Instant WhatsApp Quotes</span>
-                      <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="text-xs font-bold text-emerald-900">Instant WhatsApp Quotes</span>
+                      <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
                     </div>
-                    <p className="mt-1 text-xs text-slate-300 leading-relaxed">
+                    <p className="mt-1 text-xs text-emerald-800/90 leading-relaxed">
                       Connect directly with an authorized Key Account Manager for rapid model selection and invoice samples.
                     </p>
                     <a
                       href="https://wa.me/919870293008?text=Hello%20XElectron%20Corporate%20Sales,%20I%20am%20interested%20in%20a%20bulk%20order%20quotation."
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] py-2.5 text-xs font-bold text-white transition hover:bg-[#20bd5a]"
+                      className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#20bd5a] active:scale-[0.99]"
                     >
                       <span>Chat on WhatsApp Now</span>
                     </a>

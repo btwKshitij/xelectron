@@ -37,7 +37,11 @@ export async function POST(request: NextRequest) {
       message,
     } = parsed.data;
 
-    const targetEmail = "sales@xelectron.com";
+    const salesEmail = process.env.SALES_EMAIL?.trim() || "sales@xelectron.com";
+    const backupAdminEmail =
+      process.env.SMTP_USER?.trim() && process.env.SMTP_USER.trim() !== salesEmail
+        ? process.env.SMTP_USER.trim()
+        : undefined;
 
     // 1. Save to SupportRequest table with kind "BULK_ORDER"
     const saved = await db.supportRequest.create({
@@ -53,7 +57,8 @@ export async function POST(request: NextRequest) {
           requirementType,
           deliveryLocation: deliveryLocation || "Not specified",
           message,
-          routedToEmail: targetEmail,
+          routedToEmail: salesEmail,
+          backupEmail: backupAdminEmail || null,
         },
       },
     });
@@ -71,7 +76,7 @@ export async function POST(request: NextRequest) {
           <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
             <div style="background: linear-gradient(135deg, #0a7ae6 0%, #034d98 100%); color: white; padding: 24px;">
               <h2 style="margin: 0; font-size: 20px; color: #ffffff;">📦 New Bulk Order Inquiry</h2>
-              <p style="margin: 6px 0 0 0; color: #e0f2fe; font-size: 13px;">Reference: #${saved.id.slice(-8).toUpperCase()} · Routed to: ${targetEmail}</p>
+              <p style="margin: 6px 0 0 0; color: #e0f2fe; font-size: 13px;">Reference: #${saved.id.slice(-8).toUpperCase()} · Routed to: ${salesEmail}</p>
             </div>
             <div style="padding: 24px;">
               <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
@@ -123,15 +128,20 @@ export async function POST(request: NextRequest) {
       </html>
     `;
 
-    await sendEmail({
-      to: targetEmail,
+    const salesDelivery = await sendEmail({
+      to: salesEmail,
+      cc: backupAdminEmail,
       subject: `[Bulk Order Inquiry] ${company ? `${company} - ` : ""}${name} (${quantity})`,
       html: adminNotificationHtml,
       text: `New Bulk Order Inquiry\n\nClient: ${name}\nCompany: ${company}\nEmail: ${email}\nPhone: ${phone}\nCategory: ${productCategory}\nQuantity: ${quantity}\nType: ${requirementType}\nLocation: ${deliveryLocation}\n\nMessage:\n${message}`,
       replyTo: email,
-    }).catch((err) => {
-      console.warn("Could not dispatch sales email notification:", err);
     });
+
+    if (!salesDelivery.success) {
+      console.error("[BulkOrder] Could not dispatch sales email notification:", salesDelivery.error);
+    } else {
+      console.log(`[BulkOrder] Dispatched quotation request successfully to ${salesEmail} (ID: ${salesDelivery.messageId})`);
+    }
 
     // 3. Customer Acknowledgement Email
     const customerAcknowledgementHtml = `
@@ -146,14 +156,14 @@ export async function POST(request: NextRequest) {
             <div style="padding: 24px;">
               <p style="margin-top: 0; font-size: 14px;">Dear <strong>${escapeHtml(name)}</strong>,</p>
               <p style="font-size: 14px; color: #334155;">Thank you for your bulk order inquiry with XElectron. We have received your request for <strong>${escapeHtml(productCategory)}</strong> (${escapeHtml(quantity)}).</p>
-              <p style="font-size: 14px; color: #334155;">A dedicated Corporate Key Account Manager from our team has been assigned to your request and will contact you within <strong>2 to 4 business hours</strong> with special wholesale pricing, volume tier slabs, and delivery timelines.</p>
+              <p style="font-size: 14px; color: #334155;">Your request has been routed directly to our Corporate Sales Desk at <strong>sales@xelectron.com</strong>. A dedicated Corporate Key Account Manager has been assigned to your request and will contact you within <strong>2 to 4 business hours</strong> with wholesale volume tier slabs and delivery timelines.</p>
               
               <div style="background: #eff6ff; border-radius: 8px; padding: 16px; margin: 20px 0;">
                 <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 13px; color: #1e40af;">Need immediate assistance?</p>
-                <p style="margin: 0; font-size: 13px; color: #1e3a8a;">Call our Corporate Desk at <strong>+91 9870293008</strong> or WhatsApp us at <strong>9870293008</strong>.</p>
+                <p style="margin: 0; font-size: 13px; color: #1e3a8a;">Call our Corporate Sales Desk at <strong>+91 9870293008</strong> or WhatsApp us at <strong>9870293008</strong>.</p>
               </div>
 
-              <p style="font-size: 13px; color: #64748b; margin-bottom: 0;">Warm regards,<br><strong>Corporate & Institutional Sales Team</strong><br>XElectron Technologies Pvt. Ltd.</p>
+              <p style="font-size: 13px; color: #64748b; margin-bottom: 0;">Warm regards,<br><strong>Corporate & Institutional Sales Team</strong><br>XElectron Technologies Pvt. Ltd.<br><a href="mailto:sales@xelectron.com" style="color: #0a7ae6; text-decoration: none;">sales@xelectron.com</a></p>
             </div>
           </div>
         </body>
@@ -173,7 +183,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       reference: saved.id,
-      message: "Your bulk order inquiry has been submitted successfully.",
+      salesEmail,
+      message: `Your bulk order inquiry has been sent to our corporate sales desk (${salesEmail}).`,
     });
   } catch (error) {
     console.error("Bulk order submission error:", error);

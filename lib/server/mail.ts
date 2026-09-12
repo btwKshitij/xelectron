@@ -24,12 +24,14 @@ export function getMailTransporter() {
 }
 
 export interface SendMailOptions {
-  to: string;
+  to: string | string[];
   subject: string;
   html?: string;
   text?: string;
   from?: string;
   replyTo?: string;
+  cc?: string | string[];
+  bcc?: string | string[];
 }
 
 // Keep the queue across development hot reloads. Each server process sends one
@@ -54,6 +56,8 @@ async function sendEmailNow(options: SendMailOptions) {
     const info = await transporter.sendMail({
       from: fromAddress,
       to: options.to,
+      cc: options.cc,
+      bcc: options.bcc,
       subject: options.subject,
       text: options.text || options.html?.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(),
       html: options.html,
