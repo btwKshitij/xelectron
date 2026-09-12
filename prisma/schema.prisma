@@ -521,3 +521,28 @@ model FestivePopupSettings {
 
   @@map("festive_popup_settings")
 }
+
+// ─── Verified Buyer Reviews (Homepage) ──────────────────────────────────────
+
+model VerifiedBuyerReview {
+  id          String   @id @default(cuid())
+  name        String
+  product     String
+  avatar      String
+  text        String
+  rating      Int      @default(5)
+  size        String   @default("md") // "sm" | "md" | "lg"
+  cardSide    String   @default("right") @map("card_side") // "left" | "right"
+  desktopTop  String   @default("50%") @map("desktop_top")
+  desktopLeft String   @default("50%") @map("desktop_left")
+  mobileTop   String   @default("50%") @map("mobile_top")
+  mobileLeft  String   @default("50%") @map("mobile_left")
+  sortOrder   Int      @default(0) @map("sort_order")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive, sortOrder])
+  @@map("verified_buyer_reviews")
+}
+

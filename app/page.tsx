@@ -20,6 +20,7 @@ import * as dealOfTheDayController from "@/lib/server/controllers/deal-of-the-da
 import * as brandShowcaseController from "@/lib/server/controllers/brand-showcase.controller";
 import * as brandMarqueeController from "@/lib/server/controllers/brand-marquee.controller";
 import * as bannersController from "@/lib/server/controllers/banners.controller";
+import * as verifiedReviewsController from "@/lib/server/controllers/verified-reviews.controller";
 import { defaultDealOfTheDay } from "@/lib/shared/default-deal-of-the-day";
 import { resolveCategoryImage } from "@/lib/shared/category-utils";
 
@@ -175,6 +176,13 @@ export default async function Home() {
     // Falls back to default items
   }
 
+  let verifiedReviews: any[] = [];
+  try {
+    verifiedReviews = await verifiedReviewsController.listActiveVerifiedReviews();
+  } catch {
+    // Falls back to default items
+  }
+
   return (
     <div className="min-h-screen w-full bg-white text-[#1d1d1f]">
       <Navbar />
@@ -187,7 +195,7 @@ export default async function Home() {
         <BrandSetupSection items={brandShowcaseItems} />
         <CreatorVideosSection />
         <BrandMarqueeSection items={brandMarqueeItems} />
-        <VerifiedReviewsSection />
+        <VerifiedReviewsSection initialReviews={verifiedReviews} />
         <FaqSection />
         <BlogSection />
         <WhatsAppSupportBanner />

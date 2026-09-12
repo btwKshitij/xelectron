@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import Navbar from "@/components/navbar/navbar";
 import Footer from "@/components/footer/footer";
 import {
@@ -11,6 +12,8 @@ import {
   Phone,
   Clock,
   CheckCircle2,
+  Truck,
+  ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -64,6 +67,7 @@ export default function RepairReplacementPage() {
     <main className="min-h-screen bg-slate-50/50 text-slate-900">
       <Navbar />
 
+      {/* HERO SECTION */}
       <section className="border-b border-slate-200/80 bg-white">
         <div className="mx-auto grid max-w-6xl items-center gap-8 px-5 py-12 sm:px-8 sm:py-16 lg:grid-cols-[1fr_360px]">
           <div className="max-w-2xl">
@@ -82,24 +86,36 @@ export default function RepairReplacementPage() {
             <div className="mt-4 space-y-3 text-sm text-slate-200">
               <p className="flex items-start gap-2"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-sky-300" />Free 7-day replacement for eligible issues</p>
               <p className="flex items-start gap-2"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-sky-300" />Official warranty repairs from trained technicians</p>
+              <p className="flex items-start gap-2"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-sky-300" />Free doorstep pickup & drop service across India</p>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="bg-[#f7fbff] py-7 sm:py-9">
-        <div className="mx-auto grid max-w-6xl gap-4 px-5 sm:grid-cols-2 sm:px-8">
-          <div className="flex gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      {/* 3 BENEFIT CARDS */}
+      <section className="bg-[#f7fbff] py-7 sm:py-9 border-b border-slate-100">
+        <div className="mx-auto grid max-w-6xl gap-4 px-5 sm:grid-cols-3 sm:px-8">
+          <div className="flex gap-3.5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#0a7ae6]"><Truck className="size-5" /></div>
+            <div>
+              <h2 className="text-sm font-semibold text-[#071a38]">Free Pickup & Drop</h2>
+              <p className="mt-1 text-xs leading-5 text-slate-600">Doorstep reverse pickup arranged across all serviceable PIN codes.</p>
+              <Link href="/pickup-drop-service" className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-[#0a7ae6] hover:underline">
+                View Guidelines <ArrowRight className="size-3" />
+              </Link>
+            </div>
+          </div>
+          <div className="flex gap-3.5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#edf7ff] text-[#0a7ae6]"><RotateCcw className="size-5" /></div>
             <div>
-              <h2 className="text-sm font-bold text-[#071a38]">7-day replacement</h2>
+              <h2 className="text-sm font-semibold text-[#071a38]">7-day replacement</h2>
               <p className="mt-1 text-xs leading-5 text-slate-600">For delivery damage or verified hardware defects reported within seven days.</p>
             </div>
           </div>
-          <div className="flex gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex gap-3.5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600"><ShieldCheck className="size-5" /></div>
             <div>
-              <h2 className="text-sm font-bold text-[#071a38]">Official warranty repairs</h2>
+              <h2 className="text-sm font-semibold text-[#071a38]">Official warranty repairs</h2>
               <p className="mt-1 text-xs leading-5 text-slate-600">Repairs and eligible parts are handled during the one-year warranty period.</p>
             </div>
           </div>
@@ -282,6 +298,25 @@ export default function RepairReplacementPage() {
                   <p><span className="font-semibold">Mon–Sat</span><span className="mx-2 text-[#94a3b8]">·</span>10:00 AM – 6:00 PM</p>
                 </div>
               </aside>
+
+              {/* FREE PICKUP & DROP SERVICE CALLOUT */}
+              <div className="rounded-2xl border border-blue-200/80 bg-[#f4f9ff] p-6 text-slate-800 shadow-sm">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#0a7ae6]">
+                  <Truck className="size-4" /> Free Pickup & Drop Service
+                </div>
+                <h4 className="mt-2 text-base font-semibold text-[#071a38]">
+                  Doorstep Pickup Available
+                </h4>
+                <p className="mt-1.5 text-xs leading-relaxed text-slate-600">
+                  Now you don’t need to visit a service center—we’ll arrange to have your product picked up from your doorstep! Learn about our 6-step warranty service process and safe packaging instructions.
+                </p>
+                <Link
+                  href="/pickup-drop-service"
+                  className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-[#0a7ae6] hover:underline"
+                >
+                  View Free Pickup & Drop Process <ArrowRight className="size-3.5" />
+                </Link>
+              </div>
             </div>
           </div>
         </div>

@@ -14,7 +14,6 @@ import {
   ImageIcon,
   X,
   MessageSquare,
-  Sparkles,
   ShieldCheck,
   ShieldAlert,
 } from "lucide-react";
@@ -490,7 +489,7 @@ export function ReviewsManager({ initialReviews, products }: ReviewsManagerProps
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <Sparkles className="size-4 text-[#0a7ae6]" />
+                <Star className="size-4 text-amber-500 fill-amber-500" />
                 <h3 className="text-base font-bold text-slate-900">Add Customer Review</h3>
               </div>
               <button

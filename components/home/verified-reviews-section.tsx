@@ -4,79 +4,86 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Star } from "lucide-react";
 
 export type BuyerReview = {
-  id: number;
+  id: string | number;
   name: string;
   product: string;
   avatar: string;
   text: string;
+  rating?: number;
   size: "sm" | "md" | "lg";
   mobilePos: { top: string; left: string };
   desktopPos: { top: string; left: string };
   cardSide: "left" | "right";
 };
 
-const reviews: BuyerReview[] = [
+const defaultReviews: BuyerReview[] = [
   {
-    id: 0,
+    id: "default-0",
     name: "MUSKAN A., MUMBAI",
     product: "Arc Buds",
     avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
     text: "It is actually a good product just got it and it looks amazing connectivity is good and head moving sound is good.",
+    rating: 5,
     size: "md",
     mobilePos: { top: "18%", left: "25%" },
     desktopPos: { top: "25%", left: "28%" },
     cardSide: "right",
   },
   {
-    id: 1,
+    id: "default-1",
     name: "NIKHIL G., PUNE",
     product: "Blaze B1100",
     avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80",
     text: "Audio output is clean and powerful. Surround effect works nicely once speakers are placed properly. Took a bit of adjustment, but after that the experience is great.",
+    rating: 5,
     size: "sm",
     mobilePos: { top: "20%", left: "75%" },
     desktopPos: { top: "48%", left: "55%" },
     cardSide: "right",
   },
   {
-    id: 2,
+    id: "default-2",
     name: "ASIYA N., BANGALORE",
     product: "Lumex Pro",
     avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80",
     text: "The XElectron Lumex Pro offers great value with built-in streaming apps, autofocus, and a large projection size, making it ideal for casual movie nights in dark rooms. While the brightness and color accuracy aren't top-tier and the sound is basic, it delivers solid performance for its price.",
+    rating: 5,
     size: "lg",
     mobilePos: { top: "50%", left: "82%" },
     desktopPos: { top: "62%", left: "82%" },
     cardSide: "left",
   },
   {
-    id: 3,
+    id: "default-3",
     name: "DAVID R., DELHI",
     product: "iProjector 3",
     avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80",
     text: "Reliable and consistent. XElectron keeps getting better with every generation.",
+    rating: 5,
     size: "sm",
     mobilePos: { top: "50%", left: "18%" },
     desktopPos: { top: "25%", left: "76%" },
     cardSide: "left",
   },
   {
-    id: 4,
+    id: "default-4",
     name: "TARA S., HYDERABAD",
     product: "Techno Smart",
     avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80",
     text: "XElectron always delivers. Sound quality and picture sharpness is just next level.",
+    rating: 5,
     size: "sm",
     mobilePos: { top: "80%", left: "18%" },
     desktopPos: { top: "50%", left: "16%" },
     cardSide: "right",
   },
   {
-    id: 5,
+    id: "default-5",
     name: "RAMKUMAR T., CHENNAI",
     product: "Blaze B2000",
     avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80",
     text: "Been using it daily for movies and music. No complaints at all, truly premium.",
+    rating: 5,
     size: "lg",
     mobilePos: { top: "48%", left: "50%" },
     desktopPos: { top: "50%", left: "38%" },
@@ -84,7 +91,14 @@ const reviews: BuyerReview[] = [
   },
 ];
 
-export default function VerifiedReviewsSection() {
+export default function VerifiedReviewsSection({
+  initialReviews,
+}: {
+  initialReviews?: BuyerReview[];
+}) {
+  const reviews =
+    initialReviews && initialReviews.length > 0 ? initialReviews : defaultReviews;
+
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [mouseOffset, setMouseOffset] = useState({ x: 0, y: 0 });
   const [typedText, setTypedText] = useState("");
@@ -186,7 +200,7 @@ export default function VerifiedReviewsSection() {
 
         {/* ── PHONE / MOBILE VIEW: VERTICAL LIST OF CLEAN REVIEW CARDS (< md) ── */}
         <div className="block md:hidden space-y-3.5">
-          {reviews.slice(0, 3).map((rev) => (
+          {reviews.slice(0, 4).map((rev) => (
             <div
               key={rev.id}
               className="rounded-[20px] bg-white border border-slate-200/80 p-5 shadow-xs"
@@ -201,9 +215,9 @@ export default function VerifiedReviewsSection() {
                 </span>
               </div>
 
-              {/* 5 STARS */}
+              {/* STARS */}
               <div className="my-2.5 flex items-center gap-1 text-amber-500">
-                {[...Array(5)].map((_, i) => (
+                {[...Array(rev.rating ?? 5)].map((_, i) => (
                   <Star key={i} className="size-3.5 fill-amber-400 text-amber-400" />
                 ))}
               </div>
@@ -223,8 +237,8 @@ export default function VerifiedReviewsSection() {
           onMouseLeave={() => setMouseOffset({ x: 0, y: 0 })}
           className="hidden md:block relative min-h-[360px] w-full rounded-3xl bg-transparent p-2 overflow-hidden cursor-pointer"
         >
-          {reviews.map((rev) => {
-            const isActive = rev.id === activeIndex;
+          {reviews.map((rev, idx) => {
+            const isActive = idx === activeIndex;
             const pos = rev.desktopPos;
 
             let circleSize = "w-12 h-12";
@@ -263,9 +277,9 @@ export default function VerifiedReviewsSection() {
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setActiveIndex(isActive ? null : rev.id);
+                    setActiveIndex(isActive ? null : idx);
                   }}
-                  onMouseEnter={() => setActiveIndex(rev.id)}
+                  onMouseEnter={() => setActiveIndex(idx)}
                   className={`relative overflow-hidden rounded-full border-2 bg-slate-100 shadow-lg transition-all duration-300 cursor-pointer ${circleSize} ${
                     isActive
                       ? "border-[#0a7ae6] ring-4 ring-blue-500/30 scale-110 shadow-blue-500/20 shadow-xl"
@@ -298,7 +312,7 @@ export default function VerifiedReviewsSection() {
                         </span>
                       </div>
                       <div className="flex items-center gap-0.5 text-amber-500 mb-2">
-                        {[...Array(5)].map((_, i) => (
+                        {[...Array(rev.rating ?? 5)].map((_, i) => (
                           <Star key={i} className="size-3 fill-amber-400 text-amber-400" />
                         ))}
                       </div>

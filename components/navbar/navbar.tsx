@@ -652,7 +652,8 @@ export default function Navbar() {
               />
             ))}
             <FlatNavLink label="ABOUT US" href="/about" onMouseEnter={() => handleOpenMenu(null)} />
-            <FlatNavLink label="CONTACT" href="/contact" onMouseEnter={() => handleOpenMenu(null)} />
+            <FlatNavLink label="CONTACT US" href="/contact" onMouseEnter={() => handleOpenMenu(null)} />
+            <FlatNavLink label="BULK ORDER" href="/bulk-order" onMouseEnter={() => handleOpenMenu(null)} />
           </nav>
 
           {/* Desktop Actions */}
@@ -933,6 +934,7 @@ export default function Navbar() {
                       </h4>
                       <div className="space-y-0.5">
                         {[
+                          { name: "Free Pickup & Drop Service", href: "/pickup-drop-service", badge: "FREE" },
                           { name: "Service Status Tracking", href: "/warranty" },
                           { name: "Replacement Claims", href: "/repair-replacement" },
                           { name: "Authorized Service Centers", href: "/service-centers" },
@@ -943,8 +945,13 @@ export default function Navbar() {
                             onClick={() => setOpenMenu(null)}
                             className="group flex items-center justify-between rounded-none px-3 py-2 text-xs font-normal uppercase tracking-wider text-slate-600 hover:bg-slate-50 hover:text-[#0a7ae6] transition-all duration-200"
                           >
-                            <span className="group-hover:translate-x-0.5 transition-transform">
+                            <span className="flex items-center gap-2 group-hover:translate-x-0.5 transition-transform">
                               {srv.name}
+                              {srv.badge && (
+                                <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 tracking-normal">
+                                  {srv.badge}
+                                </span>
+                              )}
                             </span>
                           </Link>
                         ))}
@@ -1000,6 +1007,8 @@ export default function Navbar() {
                       </h4>
                       <ul className="space-y-0.5">
                         {[
+                          { name: "Free Pickup & Drop Service", href: "/pickup-drop-service", badge: "FREE" },
+                          { name: "Repair & Replacement", href: "/repair-replacement" },
                           { name: "Contact Support", href: "/contact" },
                           { name: "Troubleshooting Guide", href: "/troubleshooting" },
                           { name: "Order Tracking", href: "/orders" },
@@ -1010,8 +1019,13 @@ export default function Navbar() {
                               onClick={() => setOpenMenu(null)}
                               className="group flex items-center justify-between rounded-none px-3 py-2 text-xs font-medium uppercase tracking-wider text-slate-800 hover:bg-slate-50 hover:text-[#0a7ae6] transition-all duration-200"
                             >
-                              <span className="group-hover:translate-x-1 transition-transform duration-200">
+                              <span className="flex items-center gap-2 group-hover:translate-x-1 transition-transform duration-200">
                                 {item.name}
+                                {item.badge && (
+                                  <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 tracking-normal">
+                                    {item.badge}
+                                  </span>
+                                )}
                               </span>
                               <ChevronRight className="size-3.5 text-slate-300 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
                             </Link>
@@ -1048,20 +1062,20 @@ export default function Navbar() {
                     {/* Column 3: Spotlight Image Cards */}
                     <div className="col-span-5 grid grid-cols-2 gap-4">
                       <Link prefetch={false}
-                        href="/contact"
+                        href="/pickup-drop-service"
                         onClick={() => setOpenMenu(null)}
                         className="group flex flex-col items-center justify-between rounded-xl p-2 transition-all duration-300 hover:-translate-y-0.5"
                       >
                         <div className="relative h-[135px] w-full overflow-hidden rounded-lg">
                           <Image
                             src="/creator-projector.png"
-                            alt="Repair Center"
+                            alt="Free Pickup & Drop"
                             fill
                             className="object-contain object-center transition-transform duration-300 group-hover:scale-105"
                           />
                         </div>
                         <h5 className="mt-2.5 w-full text-center text-xs font-bold uppercase tracking-wider text-slate-800 truncate group-hover:text-[#0a7ae6] transition-colors">
-                          Need Repair Help?
+                          Free Pickup & Drop
                         </h5>
                       </Link>
 
@@ -1140,6 +1154,7 @@ export default function Navbar() {
                       ]
                       : group.label === "WARRANTY"
                         ? [
+                          { key: "pickup-drop-service", label: "Free Pickup & Drop Service", href: "/pickup-drop-service" },
                           { key: "check-coverage", label: "Check Coverage", href: "/warranty" },
                           { key: "register-product", label: "Register Product", href: "/warranty" },
                           { key: "terms-policy", label: "Terms & Policy", href: "/terms-policy" },
@@ -1148,8 +1163,9 @@ export default function Navbar() {
                         ]
                         : group.label === "SUPPORT & SERVICE"
                           ? [
-                            { key: "contact-support", label: "Contact Support", href: "/contact" },
+                            { key: "pickup-drop-service", label: "Free Pickup & Drop Service", href: "/pickup-drop-service" },
                             { key: "repair-request", label: "Repair & Replacement", href: "/repair-replacement" },
+                            { key: "contact-support", label: "Contact Support", href: "/contact" },
                             { key: "service-centers", label: "Service Center Locations", href: "/service-centers" },
                             { key: "troubleshooting", label: "Troubleshooting Guide", href: "/troubleshooting" },
                             { key: "order-tracking", label: "Order Tracking", href: "/orders" },
@@ -1217,7 +1233,16 @@ export default function Navbar() {
                     className="flex items-center gap-3 rounded-xl px-3.5 py-3 text-[14px] font-semibold text-slate-800 hover:bg-slate-100 hover:text-[#0a7ae6]"
                   >
                     <PhoneCall className="size-4 text-slate-500" />
-                    <span>Contact</span>
+                    <span>Contact Us</span>
+                  </Link>
+
+                  <Link prefetch={false}
+                    href="/bulk-order"
+                    onClick={handleNavigate}
+                    className="flex items-center gap-3 rounded-xl px-3.5 py-3 text-[14px] font-semibold text-slate-800 hover:bg-slate-100 hover:text-[#0a7ae6]"
+                  >
+                    <Package className="size-4 text-slate-500" />
+                    <span>Bulk Order</span>
                   </Link>
 
                   <Link prefetch={false}

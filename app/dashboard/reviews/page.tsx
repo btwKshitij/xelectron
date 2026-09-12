@@ -4,19 +4,25 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { listReviews } from "@/lib/server/controllers/reviews.controller";
 import { listProducts } from "@/lib/server/controllers/products.controller";
-import { ReviewsManager } from "@/components/admin/reviews/reviews-manager";
+import { listVerifiedReviews } from "@/lib/server/controllers/verified-reviews.controller";
+import { ReviewsTabsWrapper } from "@/components/admin/reviews/reviews-tabs-wrapper";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export const metadata: Metadata = {
-  title: "Product Reviews | XElectron Admin",
+  title: "Reviews Management | XElectron Admin",
 };
 
-export default async function ReviewsPage() {
-  const [reviews, rawProducts] = await Promise.all([
+export default async function ReviewsPage(props: {
+  searchParams?: Promise<{ tab?: string }>;
+}) {
+  const searchParams = props.searchParams ? await props.searchParams : {};
+
+  const [reviews, rawProducts, verifiedReviews] = await Promise.all([
     listReviews().catch(() => []),
     listProducts().catch(() => []),
+    listVerifiedReviews().catch(() => []),
   ]);
 
   const sanitizedProducts = rawProducts.map((p: any) => ({
@@ -26,7 +32,7 @@ export default async function ReviewsPage() {
     mainImage: p.mainImage || (p.media && p.media[0]?.url) || "/category-projector.png",
   }));
 
-  const sanitizedReviews = reviews.map((r: any) => ({
+  const sanitizedProductReviews = reviews.map((r: any) => ({
     id: r.id,
     author: r.author,
     rating: r.rating,
@@ -54,8 +60,10 @@ export default async function ReviewsPage() {
       <SidebarProvider className="min-h-svh">
         <AppSidebar />
         <SidebarInset>
-          <ReviewsManager
-            initialReviews={sanitizedReviews}
+          <ReviewsTabsWrapper
+            initialTab={searchParams?.tab}
+            verifiedReviews={verifiedReviews}
+            productReviews={sanitizedProductReviews}
             products={sanitizedProducts}
           />
         </SidebarInset>

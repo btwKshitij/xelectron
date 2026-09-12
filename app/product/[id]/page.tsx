@@ -45,19 +45,32 @@ export default async function DynamicProductPage({ params }: DynamicProductPageP
             relatedProduct.category?.slug !== dbProduct.category?.slug,
         ),
       ]
-        .slice(0, 4)
-        .map((relatedProduct: any) => ({
-          id: relatedProduct.id,
-          slug: relatedProduct.slug,
-          name: relatedProduct.name,
-          category: relatedProduct.category?.title || "XElectron",
-          price: relatedProduct.price,
-          oldPrice: relatedProduct.oldPrice,
-          discount: relatedProduct.discount,
-          image: relatedProduct.mainImage || relatedProduct.media[0]?.url || "/category-smartphone.png",
-          alt: relatedProduct.name,
-          swatches: relatedProduct.colors.map((color: any) => color.bgHex).slice(0, 3),
-        }))
+        .slice(0, 8)
+        .map((relatedProduct: any) => {
+          const primaryImage =
+            relatedProduct.mainImage ||
+            relatedProduct.media?.[0]?.url ||
+            "/category-smartphone.png";
+          const hoverCandidate =
+            relatedProduct.media?.find((media: any) => media.url && media.url !== primaryImage)?.url ||
+            (relatedProduct.media?.[1]?.url && relatedProduct.media[1].url !== primaryImage
+              ? relatedProduct.media[1].url
+              : undefined);
+
+          return {
+            id: relatedProduct.id,
+            slug: relatedProduct.slug,
+            name: relatedProduct.name,
+            category: relatedProduct.category?.title || "XElectron",
+            price: relatedProduct.price,
+            oldPrice: relatedProduct.oldPrice,
+            discount: relatedProduct.discount,
+            image: primaryImage,
+            hoverImage: hoverCandidate || undefined,
+            alt: relatedProduct.name,
+            swatches: relatedProduct.colors?.map((color: any) => color.bgHex).slice(0, 3) || [],
+          };
+        })
     : [];
 
   const product = {

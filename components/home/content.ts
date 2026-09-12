@@ -17,15 +17,15 @@ export const dropdownItems: NavDropdownItem[] = [
   },
   {
     label: "WARRANTY",
-    items: ["Check Coverage", "Register Product", "Service Status"],
+    items: ["Free Pickup & Drop", "Check Coverage", "Register Product", "Service Status"],
   },
   {
     label: "SUPPORT & SERVICE",
-    items: ["Contact Support", "Repair Center", "Downloads"],
+    items: ["Free Pickup & Drop", "Contact Support", "Repair Center", "Downloads"],
   },
 ];
 
-export const flatItems = ["Home", "About Us", "Contact", "My Account"];
+export const flatItems = ["Home", "About Us", "Contact Us", "Bulk Order", "My Account"];
 
 export type BannerItem = {
   src: string;

@@ -63,6 +63,7 @@ function getDbInstance(): PrismaClient {
       typeof (globalForPrisma.prisma as any).draftOrder === "undefined" ||
       typeof (globalForPrisma.prisma as any).brandShowcaseItem === "undefined" ||
       typeof (globalForPrisma.prisma as any).brandMarqueeItem === "undefined" ||
+      typeof (globalForPrisma.prisma as any).verifiedBuyerReview === "undefined" ||
       !hasGeneratedProductField(globalForPrisma.prisma, "showInNavbar") ||
       !hasGeneratedProductField(globalForPrisma.prisma, "showInWarrantyMenu")
     ) {

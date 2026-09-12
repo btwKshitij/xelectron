@@ -14,12 +14,14 @@ export const productLinks: FooterLink[] = [
 ];
 
 export const customerServiceLinks: FooterLink[] = [
+  { label: "Free Pickup & Drop Service", href: "/pickup-drop-service" },
   { label: "Troubleshooting", href: "/troubleshooting" },
   { label: "Repair & Replacement", href: "/repair-replacement" },
   { label: "Order Tracking", href: "/orders" },
   { label: "Warranty Registration", href: "/warranty" },
   { label: "Warranty Terms & Conditions", href: "/warranty-terms" },
   { label: "Contact Us", href: "/contact" },
+  { label: "Bulk Orders & Corporate", href: "/bulk-order" },
 ];
 
 export const companyLinks: FooterLink[] = [

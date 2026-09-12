@@ -33,7 +33,14 @@ export const adminRoutes: AdminRoute[] = [
   },
   { label: "Customers", href: "/dashboard/customers" },
   { label: "Deal of the day", href: "/dashboard/deal-of-the-day" },
-  { label: "Reviews", href: "/dashboard/reviews" },
+  {
+    label: "Reviews",
+    href: "/dashboard/reviews",
+    children: [
+      { label: "Homepage reviews", href: "/dashboard/reviews?tab=homepage" },
+      { label: "Product reviews", href: "/dashboard/reviews?tab=products" },
+    ],
+  },
   { label: "Support requests", href: "/dashboard/support-requests" },
   { label: "Troubleshooting", href: "/dashboard/troubleshooting" },
   { label: "Blog", href: "/dashboard/blog" },
