@@ -43,6 +43,7 @@ const routeIcons: Record<string, React.ReactNode> = {
   "Deal of the day": <FlameIcon className="size-4 shrink-0" />,
   Reviews: <StarIcon className="size-4 shrink-0" />,
   "Support requests": <InboxIcon className="size-4 shrink-0" />,
+  "Homepage reviews": <StarIcon className="size-4 shrink-0" />,
   Troubleshooting: <BookOpen className="size-4 shrink-0" />,
   Blog: <BookOpen className="size-4 shrink-0" />,
   Discounts: <BadgePercentIcon className="size-4 shrink-0" />,

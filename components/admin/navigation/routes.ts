@@ -38,10 +38,11 @@ export const adminRoutes: AdminRoute[] = [
     label: "Reviews",
     href: "/dashboard/reviews",
     children: [
-      { label: "Homepage reviews", href: "/dashboard/reviews?tab=homepage" },
+      { label: "Homepage reviews", href: "/dashboard/homepage-reviews" },
       { label: "Product reviews", href: "/dashboard/reviews?tab=products" },
     ],
   },
+  { label: "Homepage reviews", href: "/dashboard/homepage-reviews" },
   { label: "Support requests", href: "/dashboard/support-requests" },
   { label: "Troubleshooting", href: "/dashboard/troubleshooting" },
   { label: "Blog", href: "/dashboard/blog" },

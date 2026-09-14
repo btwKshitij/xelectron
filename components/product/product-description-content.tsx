@@ -136,12 +136,12 @@ export function ProductDescriptionContent({ description = "", specs, title }: Pr
               return (
                 <div
                   key={`${spec.label}-${idx}`}
-                  className="grid grid-cols-[42%_58%] sm:grid-cols-[38%_62%] py-3.5 sm:py-4 items-baseline gap-3 sm:gap-6"
+                  className="grid grid-cols-[minmax(0,34%)_minmax(0,1fr)] py-3 sm:py-3.5 items-baseline gap-3 sm:gap-4 min-w-0"
                 >
-                  <span className="text-[14px] sm:text-sm font-bold text-slate-400">
+                  <span className="text-[13px] sm:text-sm font-bold text-slate-400 min-w-0 break-words">
                     {formattedLabel}
                   </span>
-                  <span className="text-[15px] sm:text-sm font-semibold text-slate-800 leading-snug whitespace-pre-line">
+                  <span className="text-[14px] sm:text-sm font-semibold text-slate-800 leading-snug whitespace-pre-line min-w-0 break-words">
                     {spec.value}
                   </span>
                 </div>

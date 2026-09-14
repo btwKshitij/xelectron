@@ -652,8 +652,8 @@ export default function Navbar() {
               />
             ))}
             <FlatNavLink label="ABOUT US" href="/about" onMouseEnter={() => handleOpenMenu(null)} />
-            <FlatNavLink label="CONTACT US" href="/contact" onMouseEnter={() => handleOpenMenu(null)} />
-            <FlatNavLink label="BULK ORDER" href="/bulk-order" onMouseEnter={() => handleOpenMenu(null)} />
+            <FlatNavLink label="CONTACT US" href="/contact-us" onMouseEnter={() => handleOpenMenu(null)} />
+            <FlatNavLink label="BULK ORDERS" href="/bulk-orders" onMouseEnter={() => handleOpenMenu(null)} />
           </nav>
 
           {/* Desktop Actions */}
@@ -1009,7 +1009,7 @@ export default function Navbar() {
                         {[
                           { name: "Free Pickup & Drop Service", href: "/pickup-drop-service", badge: "FREE" },
                           { name: "Repair & Replacement", href: "/repair-replacement" },
-                          { name: "Contact Support", href: "/contact" },
+                          { name: "Contact Us", href: "/contact-us" },
                           { name: "Troubleshooting Guide", href: "/troubleshooting" },
                           { name: "Order Tracking", href: "/orders" },
                         ].map((item) => (
@@ -1062,20 +1062,21 @@ export default function Navbar() {
                     {/* Column 3: Spotlight Image Cards */}
                     <div className="col-span-5 grid grid-cols-2 gap-4">
                       <Link prefetch={false}
-                        href="/pickup-drop-service"
+                        href="/repair-replacement"
                         onClick={() => setOpenMenu(null)}
                         className="group flex flex-col items-center justify-between rounded-xl p-2 transition-all duration-300 hover:-translate-y-0.5"
                       >
                         <div className="relative h-[135px] w-full overflow-hidden rounded-lg">
                           <Image
-                            src="/creator-projector.png"
-                            alt="Free Pickup & Drop"
+                            src="/stores/service-center.jpg"
+                            alt="Need Repair Help?"
                             fill
-                            className="object-contain object-center transition-transform duration-300 group-hover:scale-105"
+                            sizes="(min-width: 1024px) 240px, 0px"
+                            className="object-cover object-center transition-transform duration-300 group-hover:scale-105"
                           />
                         </div>
                         <h5 className="mt-2.5 w-full text-center text-xs font-bold uppercase tracking-wider text-slate-800 truncate group-hover:text-[#0a7ae6] transition-colors">
-                          Free Pickup & Drop
+                          Need Repair Help?
                         </h5>
                       </Link>
 
@@ -1089,7 +1090,8 @@ export default function Navbar() {
                             src="/blog-3.png"
                             alt="Manuals"
                             fill
-                            className="object-contain object-center transition-transform duration-300 group-hover:scale-105"
+                            sizes="(min-width: 1024px) 240px, 0px"
+                            className="object-cover object-center transition-transform duration-300 group-hover:scale-105"
                           />
                         </div>
                         <h5 className="mt-2.5 w-full text-center text-xs font-bold uppercase tracking-wider text-slate-800 truncate group-hover:text-[#0a7ae6] transition-colors">
@@ -1165,7 +1167,7 @@ export default function Navbar() {
                           ? [
                             { key: "pickup-drop-service", label: "Free Pickup & Drop Service", href: "/pickup-drop-service" },
                             { key: "repair-request", label: "Repair & Replacement", href: "/repair-replacement" },
-                            { key: "contact-support", label: "Contact Support", href: "/contact" },
+                            { key: "contact-support", label: "Contact Us", href: "/contact-us" },
                             { key: "service-centers", label: "Service Center Locations", href: "/service-centers" },
                             { key: "troubleshooting", label: "Troubleshooting Guide", href: "/troubleshooting" },
                             { key: "order-tracking", label: "Order Tracking", href: "/orders" },
@@ -1228,7 +1230,7 @@ export default function Navbar() {
                   </Link>
 
                   <Link prefetch={false}
-                    href="/contact"
+                    href="/contact-us"
                     onClick={handleNavigate}
                     className="flex items-center gap-3 rounded-xl px-3.5 py-3 text-[14px] font-semibold text-slate-800 hover:bg-slate-100 hover:text-[#0a7ae6]"
                   >
@@ -1237,12 +1239,12 @@ export default function Navbar() {
                   </Link>
 
                   <Link prefetch={false}
-                    href="/bulk-order"
+                    href="/bulk-orders"
                     onClick={handleNavigate}
                     className="flex items-center gap-3 rounded-xl px-3.5 py-3 text-[14px] font-semibold text-slate-800 hover:bg-slate-100 hover:text-[#0a7ae6]"
                   >
                     <Package className="size-4 text-slate-500" />
-                    <span>Bulk Order</span>
+                    <span>Bulk Orders</span>
                   </Link>
 
                   <Link prefetch={false}

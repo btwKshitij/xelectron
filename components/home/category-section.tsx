@@ -72,6 +72,8 @@ export default function CategorySection({ categories }: { categories?: Storefron
     return { ...category, title: category.title, order: index };
   }).sort((a, b) => a.order - b.order);
 
+  const categoryCount = displayCategories.length;
+
   // Auto-pause when not in viewport
   useEffect(() => {
     const el = sectionRef.current;
@@ -113,41 +115,67 @@ export default function CategorySection({ categories }: { categories?: Storefron
       }, 1500);
     };
 
-    api.on("pointerDown", onPointerDown);
-    api.on("pointerUp", onPointerUp);
+    try {
+      api.on("pointerDown", onPointerDown);
+      api.on("pointerUp", onPointerUp);
+    } catch {}
 
     return () => {
-      api.off("pointerDown", onPointerDown);
-      api.off("pointerUp", onPointerUp);
+      try {
+        api.off("pointerDown", onPointerDown);
+        api.off("pointerUp", onPointerUp);
+      } catch {}
     };
   }, [api]);
 
   // Track slide index changes to reset timer
   useEffect(() => {
     if (!api) return;
-    setScrollSnaps(api.scrollSnapList());
+
+    try {
+      if (typeof api.scrollSnapList === "function") {
+        setScrollSnaps(api.scrollSnapList() || []);
+      }
+    } catch {}
+
     const onSelect = () => {
-      setSelectedIndex(api.selectedScrollSnap());
+      try {
+        if (typeof api.selectedScrollSnap === "function") {
+          setSelectedIndex(api.selectedScrollSnap() ?? 0);
+        }
+      } catch {}
     };
-    api.on("select", onSelect);
-    api.on("reInit", () => {
-      setScrollSnaps(api.scrollSnapList());
-    });
+
+    try {
+      api.on("select", onSelect);
+      api.on("reInit", () => {
+        try {
+          if (typeof api.scrollSnapList === "function") {
+            setScrollSnaps(api.scrollSnapList() || []);
+          }
+        } catch {}
+      });
+    } catch {}
+
     return () => {
-      api.off("select", onSelect);
+      try {
+        api.off("select", onSelect);
+      } catch {}
     };
   }, [api]);
 
-  // Auto-move carousel timer
+  // Auto-move carousel timer (mobile / scrollable screens only)
   useEffect(() => {
     if (!api || isPaused || !isInView) return;
 
     const timer = setInterval(() => {
-      if (api.canScrollNext()) {
-        api.scrollNext();
-      } else {
-        api.scrollTo(0);
-      }
+      try {
+        if (typeof api.canScrollNext === "function" && api.canScrollNext()) {
+          api.scrollNext();
+        } else if (typeof api.canScrollPrev === "function" && api.canScrollPrev()) {
+          api.scrollTo(0);
+        }
+      } catch {}
     }, 3000);
 
     return () => clearInterval(timer);
@@ -160,6 +188,13 @@ export default function CategorySection({ categories }: { categories?: Storefron
   }, []);
 
   if (!displayCategories || displayCategories.length === 0) return null;
+
+  const itemBasisClass =
+    categoryCount <= 3
+      ? "basis-1/2 sm:basis-1/3"
+      : categoryCount === 4
+      ? "basis-1/2 sm:basis-1/3 md:basis-1/4"
+      : "basis-1/2 sm:basis-1/3 md:basis-1/4 lg:basis-1/5";
 
   return (
     <section ref={sectionRef} className="bg-white px-4 pt-8 pb-5 sm:px-6 sm:py-14 lg:px-8">
@@ -185,16 +220,15 @@ export default function CategorySection({ categories }: { categories?: Storefron
             setApi={setApi}
             opts={{
               align: "start",
-              loop: true,
-              slidesToScroll: 1,
-              breakpoints: { "(min-width: 640px)": { active: false } },
+              loop: false,
+              watchDrag: categoryCount > 5,
             }}
             aria-label="Shop by category"
           >
-            <CarouselContent className="-ml-3 py-2 sm:-ml-4 sm:flex-wrap">
+            <CarouselContent className="-ml-3 py-2 sm:-ml-4">
               {displayCategories.map(category => (
-                <CarouselItem key={category.id} className="basis-1/2 pl-3 sm:basis-1/4 sm:pl-4">
-                  <Link href={`/shop?filter=${encodeURIComponent(category.slug)}`} prefetch={false} className="group flex h-[190px] flex-col items-center justify-between rounded-2xl border border-slate-200 bg-white p-3 text-center transition-colors hover:border-[#0a7ae6] sm:h-[230px] sm:p-5">
+                <CarouselItem key={category.id} className={cn("pl-3 sm:pl-4", itemBasisClass)}>
+                  <Link href={`/shop?filter=${encodeURIComponent(category.slug)}`} prefetch={false} className="group flex h-[190px] flex-col items-center justify-between rounded-2xl border border-slate-200 bg-white p-3 text-center transition-all duration-200 hover:border-[#0a7ae6] hover:shadow-sm sm:h-[230px] sm:p-5">
                     <div className="relative h-[120px] w-full bg-white sm:h-[155px]">
                       <CategoryCardImage category={category} />
                     </div>
