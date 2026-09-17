@@ -27,6 +27,11 @@ export async function createCategory(data: Prisma.CategoryCreateInput) {
     throw new Error(`Category with slug "${data.slug}" already exists`);
   }
 
+  if (typeof data.sortOrder !== "number") {
+    const all = await categoriesDal.getAllCategories();
+    data.sortOrder = all.length;
+  }
+
   return categoriesDal.createCategory(data);
 }
 
@@ -41,6 +46,22 @@ export async function updateCategory(
     throw new Error("Category not found");
   }
   return categoriesDal.updateCategory(id, data);
+}
+
+// ─── Reorder ─────────────────────────────────────────────────────────────────
+
+export async function reorderCategories(items: { id: string; sortOrder: number }[]) {
+  if (!Array.isArray(items) || items.length === 0) {
+    throw new Error("Invalid reorder payload: items array is required");
+  }
+
+  for (const item of items) {
+    if (!item.id || typeof item.sortOrder !== "number") {
+      throw new Error("Each item must have an id and a numeric sortOrder");
+    }
+  }
+
+  return categoriesDal.reorderCategories(items);
 }
 
 // ─── Delete ──────────────────────────────────────────────────────────────────

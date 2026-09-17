@@ -144,6 +144,7 @@ export default async function Home() {
         id: category.id,
         title: category.title,
         slug: category.slug,
+        sortOrder: category.sortOrder ?? 0,
         image: resolveCategoryImage(
           category.image || category.products[0]?.mainImage,
           category.slug,

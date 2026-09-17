@@ -26,6 +26,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     await requireAdmin();
     const { id } = await params;
     const body = await request.json();
+    if (body.sortOrder !== undefined) {
+      body.sortOrder = Number(body.sortOrder);
+    }
     const category = await categoriesController.updateCategory(id, body);
     revalidatePath("/dashboard/products/categories");
     revalidatePath("/dashboard/products");

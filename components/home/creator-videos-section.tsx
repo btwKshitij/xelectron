@@ -8,6 +8,7 @@ import {
   ArrowRight,
   ChevronLeft,
   ChevronRight,
+  MousePointer2,
   Pause,
   Play,
   RotateCcw,
@@ -37,6 +38,9 @@ type CreatorVideoType = {
   } | null;
 };
 
+const FLIP_HINT_STORAGE_KEY = "xelectron:creator-videos:flip-hint-seen";
+let flipHintSeen = false;
+
 function extractYouTubeId(url?: string | null): string | null {
   if (!url) return null;
   const trimmed = url.trim();
@@ -62,7 +66,39 @@ export default function CreatorVideosSection() {
   const [flippedCards, setFlippedCards] = useState<Record<string, boolean>>({});
   const [isMuted, setIsMuted] = useState(true);
   const [isPlaying, setIsPlaying] = useState(true);
+  const [showFlipHint, setShowFlipHint] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (isLoading || videoList.length === 0 || !scrollRef.current || flipHintSeen) return;
+
+    try {
+      if (window.localStorage.getItem(FLIP_HINT_STORAGE_KEY)) return;
+    } catch {
+      // Keep the hint once per page lifetime when browser storage is unavailable.
+    }
+
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting || flipHintSeen) return;
+
+      flipHintSeen = true;
+      try {
+        window.localStorage.setItem(FLIP_HINT_STORAGE_KEY, "1");
+      } catch {
+        // The in-memory flag still prevents repeats during client navigation.
+      }
+      setShowFlipHint(true);
+      timeoutId = setTimeout(() => setShowFlipHint(false), 5000);
+      observer.disconnect();
+    }, { threshold: 0.25 });
+
+    observer.observe(scrollRef.current);
+    return () => {
+      observer.disconnect();
+      clearTimeout(timeoutId);
+    };
+  }, [isLoading, videoList.length]);
 
   useEffect(() => {
     async function fetchVideos() {
@@ -214,6 +250,18 @@ export default function CreatorVideosSection() {
 
                     {/* TRANSPARENT INTERACTION SHIELD & SUBTLE BOTTOM GRADIENT */}
                     <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-auto cursor-pointer select-none" />
+
+                    {showFlipHint && !isFlipped && (
+                      <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
+                        <span className="flex items-center gap-3 rounded-full border border-white/30 bg-black/75 px-4 py-3 text-sm font-medium text-white shadow-lg backdrop-blur-sm">
+                          <span aria-hidden="true" className="relative flex size-8 items-center justify-center">
+                            <span className="absolute left-0 top-0 size-4 rounded-full border-2 border-sky-300 motion-safe:animate-ping" />
+                            <MousePointer2 className="relative size-6 fill-white stroke-slate-950 origin-top-left motion-safe:animate-bounce" />
+                          </span>
+                          Click to flip
+                        </span>
+                      </div>
+                    )}
 
                     {/* IN-CARD NAVIGATION ARROWS (PHONE ONLY: sm:hidden) */}
                     <button

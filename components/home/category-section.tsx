@@ -10,7 +10,6 @@ import {
   CarouselItem,
   type CarouselApi,
 } from "@/components/ui/carousel";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { categories as defaultCategories } from "@/components/home/content";
 import { resolveCategoryImage, getCategoryFallbackImage } from "@/lib/shared/category-utils";
@@ -20,6 +19,7 @@ export type StorefrontCategory = {
   title: string;
   slug: string;
   image: string;
+  sortOrder?: number;
 };
 
 function CategoryCardImage({ category }: { category: StorefrontCategory }) {
@@ -237,23 +237,9 @@ export default function CategorySection({ categories }: { categories?: Storefron
                 </CarouselItem>
               ))}
             </CarouselContent>
-            <div className="mt-3.5 flex w-full items-center justify-between px-1 sm:hidden">
-              <button
-                type="button"
-                onClick={() => {
-                  if (resumeTimeoutRef.current) clearTimeout(resumeTimeoutRef.current);
-                  setIsPaused(true);
-                  api?.scrollPrev();
-                  resumeTimeoutRef.current = setTimeout(() => setIsPaused(false), 2000);
-                }}
-                aria-label="Previous categories"
-                className="group flex size-9.5 items-center justify-center rounded-full border border-slate-200/90 bg-white text-slate-700 shadow-sm transition-all hover:border-[#0a7ae6] hover:bg-slate-50 hover:text-[#0a7ae6] active:scale-90 active:bg-slate-100 cursor-pointer"
-              >
-                <ChevronLeft className="size-4.5 stroke-[2.5] transition-transform group-hover:-translate-x-0.5" />
-              </button>
-
-              {/* SLIDE INDICATOR DOTS */}
-              <div className="flex items-center gap-1.5" aria-hidden="true">
+            {/* SLIDE INDICATOR DOTS */}
+            <div className="mt-3.5 flex w-full items-center justify-center sm:hidden" aria-hidden="true">
+              <div className="flex items-center gap-1.5">
                 {(scrollSnaps.length > 0 ? scrollSnaps : displayCategories).map((_, idx) => (
                   <button
                     key={idx}
@@ -274,20 +260,6 @@ export default function CategorySection({ categories }: { categories?: Storefron
                   />
                 ))}
               </div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  if (resumeTimeoutRef.current) clearTimeout(resumeTimeoutRef.current);
-                  setIsPaused(true);
-                  api?.scrollNext();
-                  resumeTimeoutRef.current = setTimeout(() => setIsPaused(false), 2000);
-                }}
-                aria-label="Next categories"
-                className="group flex size-9.5 items-center justify-center rounded-full border border-slate-200/90 bg-white text-slate-700 shadow-sm transition-all hover:border-[#0a7ae6] hover:bg-slate-50 hover:text-[#0a7ae6] active:scale-90 active:bg-slate-100 cursor-pointer"
-              >
-                <ChevronRight className="size-4.5 stroke-[2.5] transition-transform group-hover:translate-x-0.5" />
-              </button>
             </div>
           </Carousel>
         </div>

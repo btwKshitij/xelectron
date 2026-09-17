@@ -54,6 +54,7 @@ model Category {
   image        String?
   visible      Boolean @default(true)
   productCount Int     @default(0) @map("product_count")
+  sortOrder    Int     @default(0) @map("sort_order")
 
   createdAt DateTime @default(now()) @map("created_at")
 

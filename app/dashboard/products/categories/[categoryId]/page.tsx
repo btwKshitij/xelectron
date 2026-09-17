@@ -20,6 +20,6 @@ export default async function EditCategoryPage({ params }: PageProps<"/dashboard
 
   if (!category) notFound()
 
-  return <TooltipProvider><SidebarProvider className="min-h-svh"><AppSidebar /><SidebarInset><CategoryEditor category={{ id: category.id, title: category.title, slug: category.slug, parentId: category.parentId, visible: category.visible, description: category.description, image: category.image, productIds: category.products.map((product: any) => product.id) }} products={products.map((product: any) => ({ id: product.id, title: product.name, slug: product.slug, price: product.price, image: product.mainImage }))} categories={categories.map((item: any) => ({ id: item.id, title: item.title }))} /></SidebarInset></SidebarProvider></TooltipProvider>
+  return <TooltipProvider><SidebarProvider className="min-h-svh"><AppSidebar /><SidebarInset><CategoryEditor category={{ id: category.id, title: category.title, slug: category.slug, parentId: category.parentId, visible: category.visible, description: category.description, image: category.image, sortOrder: category.sortOrder ?? 0, productIds: category.products.map((product: any) => product.id) }} products={products.map((product: any) => ({ id: product.id, title: product.name, slug: product.slug, price: product.price, image: product.mainImage }))} categories={categories.map((item: any) => ({ id: item.id, title: item.title }))} /></SidebarInset></SidebarProvider></TooltipProvider>
 }
 

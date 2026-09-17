@@ -17,6 +17,14 @@ function hasGeneratedProductField(client: PrismaClient, fieldName: string) {
   return runtimeDataModel?.models?.Product?.fields?.some((field) => field.name === fieldName) ?? false;
 }
 
+function hasGeneratedCategoryField(client: PrismaClient, fieldName: string) {
+  const runtimeDataModel = (client as unknown as {
+    _runtimeDataModel?: { models?: Record<string, RuntimeModel> };
+  })._runtimeDataModel;
+
+  return runtimeDataModel?.models?.Category?.fields?.some((field) => field.name === fieldName) ?? false;
+}
+
 function getDatabaseUrl() {
   let databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
@@ -65,7 +73,8 @@ function getDbInstance(): PrismaClient {
       typeof (globalForPrisma.prisma as any).brandMarqueeItem === "undefined" ||
       typeof (globalForPrisma.prisma as any).verifiedBuyerReview === "undefined" ||
       !hasGeneratedProductField(globalForPrisma.prisma, "showInNavbar") ||
-      !hasGeneratedProductField(globalForPrisma.prisma, "showInWarrantyMenu")
+      !hasGeneratedProductField(globalForPrisma.prisma, "showInWarrantyMenu") ||
+      !hasGeneratedCategoryField(globalForPrisma.prisma, "sortOrder")
     ) {
       globalForPrisma.prisma = undefined;
     }

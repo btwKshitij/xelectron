@@ -19,6 +19,9 @@ export async function POST(request: NextRequest) {
   try {
     await requireAdmin();
     const body = await request.json();
+    if (body.sortOrder !== undefined) {
+      body.sortOrder = Number(body.sortOrder);
+    }
     const category = await categoriesController.createCategory(body);
     revalidatePath("/dashboard/products/categories");
     revalidatePath("/dashboard/products");

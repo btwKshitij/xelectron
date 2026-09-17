@@ -29,6 +29,7 @@ export type EditableCategory = {
   visible: boolean;
   description: string | null;
   image: string | null;
+  sortOrder?: number;
   productIds: string[];
 };
 
@@ -59,6 +60,7 @@ export function CategoryEditor({
   const [image, setImage] = useState(category?.image ?? "");
   const [parentId, setParentId] = useState(category?.parentId ?? "");
   const [visible, setVisible] = useState(category?.visible ?? true);
+  const [sortOrder, setSortOrder] = useState<number | string>(category?.sortOrder ?? (isNew ? categories.length : 0));
   const [status, setStatus] = useState(category?.visible === false ? "draft" : "active");
   const [pickerOpen, setPickerOpen] = useState(false);
   const [productQuery, setProductQuery] = useState("");
@@ -115,6 +117,7 @@ export function CategoryEditor({
         image: image || null,
         parentId: parentId || null,
         visible: status === "active" && visible,
+        sortOrder: Number(sortOrder) || 0,
       };
       const response = await fetch(isNew ? "/api/categories" : `/api/categories/${category.id}`, {
         method: isNew ? "POST" : "PUT",
@@ -163,7 +166,45 @@ export function CategoryEditor({
 
           <aside className="space-y-4">
             <SectionCard title="Status"><div className="px-4 pb-4"><Select value={status} onValueChange={(value) => { if (value) setStatus(value); }}><SelectTrigger className="w-full rounded-lg border-black/25 !bg-white text-black shadow-none"><SelectValue /></SelectTrigger><SelectContent className="bg-white text-black"><SelectItem value="active">Active</SelectItem><SelectItem value="draft">Draft</SelectItem></SelectContent></Select></div></SectionCard>
-            <SectionCard title="Category organization"><div className="space-y-4 px-4 pb-4"><div className="grid gap-1.5 text-sm text-black/75"><span>Parent category</span><Select value={parentId || "root"} onValueChange={(value) => setParentId(value === "root" ? "" : value || "")}><SelectTrigger className="w-full rounded-lg border-black/25 !bg-white text-black shadow-none"><SelectValue /></SelectTrigger><SelectContent className="bg-white text-black"><SelectItem value="root">No parent category</SelectItem>{categories.filter((option) => option.id !== category?.id).map((option) => <SelectItem key={option.id} value={option.id}>{option.title}</SelectItem>)}</SelectContent></Select></div><label className="flex items-center justify-between gap-3 rounded-lg border border-black/10 px-3 py-2.5 text-sm"><span><span className="block font-medium">Store visibility</span><span className="mt-0.5 block text-xs text-black/55">Customers can browse this category.</span></span><Switch checked={visible} onCheckedChange={setVisible} aria-label="Toggle store visibility" /></label></div></SectionCard>
+            <SectionCard title="Category organization">
+              <div className="space-y-4 px-4 pb-4">
+                <div className="grid gap-1.5 text-sm text-black/75">
+                  <span>Parent category</span>
+                  <Select value={parentId || "root"} onValueChange={(value) => setParentId(value === "root" ? "" : value || "")}>
+                    <SelectTrigger className="w-full rounded-lg border-black/25 !bg-white text-black shadow-none">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white text-black">
+                      <SelectItem value="root">No parent category</SelectItem>
+                      {categories.filter((option) => option.id !== category?.id).map((option) => (
+                        <SelectItem key={option.id} value={option.id}>{option.title}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <label className="grid gap-1.5 text-sm text-black/75">
+                  <span>Display position</span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={sortOrder}
+                    onChange={(event) => setSortOrder(event.target.value)}
+                    placeholder="0"
+                    className={inputClass}
+                  />
+                  <span className="text-xs text-black/55">Lower numbers appear first on the storefront and categories list.</span>
+                </label>
+
+                <label className="flex items-center justify-between gap-3 rounded-lg border border-black/10 px-3 py-2.5 text-sm">
+                  <span>
+                    <span className="block font-medium">Store visibility</span>
+                    <span className="mt-0.5 block text-xs text-black/55">Customers can browse this category.</span>
+                  </span>
+                  <Switch checked={visible} onCheckedChange={setVisible} aria-label="Toggle store visibility" />
+                </label>
+              </div>
+            </SectionCard>
             <SectionCard title="Category summary"><div className="space-y-3 px-4 pb-4 text-sm"><div className="flex items-center justify-between"><span className="text-black/60">Products added</span><span className="font-semibold">{assignedProducts.length}</span></div><div className="flex items-center justify-between"><span className="text-black/60">Storefront</span><span className="font-medium">{visible ? "Visible" : "Hidden"}</span></div><div className="flex items-center justify-between"><span className="text-black/60">Status</span><span className="font-medium capitalize">{status}</span></div></div></SectionCard>
           </aside>
         </div>

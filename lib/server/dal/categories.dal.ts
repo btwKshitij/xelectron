@@ -4,14 +4,41 @@ import type { Prisma } from "@prisma/client";
 // ─── Queries ─────────────────────────────────────────────────────────────────
 
 export async function getAllCategories() {
-  return db.category.findMany({
-    include: {
-      _count: { select: { products: true } },
-      children: { select: { id: true, title: true, slug: true } },
-      products: { select: { mainImage: true }, take: 1, orderBy: { createdAt: "desc" } },
-    },
-    orderBy: { title: "asc" },
-  });
+  try {
+    return await db.category.findMany({
+      include: {
+        _count: { select: { products: true } },
+        children: { select: { id: true, title: true, slug: true } },
+        products: { select: { mainImage: true }, take: 1, orderBy: { createdAt: "desc" } },
+      },
+      orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
+    });
+  } catch {
+    // Gracefully handle in-memory Prisma client that hasn't reloaded sortOrder yet
+    const categories = await db.category.findMany({
+      include: {
+        _count: { select: { products: true } },
+        children: { select: { id: true, title: true, slug: true } },
+        products: { select: { mainImage: true }, take: 1, orderBy: { createdAt: "desc" } },
+      },
+      orderBy: { title: "asc" },
+    });
+
+    try {
+      const rawOrders: { id: string; sort_order: number }[] = await db.$queryRawUnsafe(
+        'SELECT "id", "sort_order" FROM "categories"'
+      );
+      const orderMap = new Map(rawOrders.map((r) => [r.id, Number(r.sort_order) || 0]));
+      return categories
+        .map((cat: any) => ({
+          ...cat,
+          sortOrder: orderMap.get(cat.id) ?? 0,
+        }))
+        .sort((a: any, b: any) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+    } catch {
+      return categories;
+    }
+  }
 }
 
 export async function getCategoryById(id: string) {
@@ -45,14 +72,68 @@ export async function getCategoryBySlug(slug: string) {
 export async function createCategory(
   data: Prisma.CategoryCreateInput
 ) {
-  return db.category.create({ data });
+  try {
+    return await db.category.create({ data });
+  } catch {
+    const { sortOrder, ...rest } = data as any;
+    const created = await db.category.create({ data: rest });
+    if (typeof sortOrder === "number") {
+      await db.$executeRawUnsafe(
+        'UPDATE "categories" SET "sort_order" = $1 WHERE "id" = $2',
+        sortOrder,
+        created.id
+      ).catch(() => {});
+      return { ...created, sortOrder };
+    }
+    return created;
+  }
 }
 
 export async function updateCategory(
   id: string,
   data: Prisma.CategoryUpdateInput
 ) {
-  return db.category.update({ where: { id }, data });
+  try {
+    return await db.category.update({ where: { id }, data });
+  } catch {
+    const { sortOrder, ...rest } = data as any;
+    const updated = Object.keys(rest).length > 0
+      ? await db.category.update({ where: { id }, data: rest })
+      : await db.category.findUnique({ where: { id } });
+    if (typeof sortOrder === "number") {
+      await db.$executeRawUnsafe(
+        'UPDATE "categories" SET "sort_order" = $1 WHERE "id" = $2',
+        sortOrder,
+        id
+      ).catch(() => {});
+      return { ...updated, sortOrder };
+    }
+    return updated;
+  }
+}
+
+export async function reorderCategories(items: { id: string; sortOrder: number }[]) {
+  try {
+    return await db.$transaction(
+      items.map((item) =>
+        db.category.update({
+          where: { id: item.id },
+          data: { sortOrder: item.sortOrder },
+        })
+      )
+    );
+  } catch {
+    // Fallback to raw SQL when running dev server has not reloaded generated Prisma client yet
+    return await db.$transaction(
+      items.map((item) =>
+        db.$executeRawUnsafe(
+          'UPDATE "categories" SET "sort_order" = $1 WHERE "id" = $2',
+          item.sortOrder,
+          item.id
+        )
+      )
+    );
+  }
 }
 
 export async function deleteCategory(id: string) {

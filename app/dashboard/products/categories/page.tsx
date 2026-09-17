@@ -27,6 +27,7 @@ export default async function CategoriesPage() {
               parentId: category.parentId,
               visible: category.visible,
               productCount: category._count.products,
+              sortOrder: category.sortOrder ?? 0,
               image: category.image ?? category.products[0]?.mainImage ?? null,
             }))}
           />
