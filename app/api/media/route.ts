@@ -4,7 +4,7 @@ import { requireAdmin, AuthError } from "@/lib/server/dal/auth";
 import { deleteProductMedia, uploadProductImage } from "@/lib/server/r2";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 export async function POST(request: Request) {
   try {
@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const file = formData.get("file");
     if (!(file instanceof File)) {
-      return NextResponse.json({ success: false, error: "Choose an image to upload." }, { status: 400 });
+      return NextResponse.json({ success: false, error: "Choose an image or video to upload." }, { status: 400 });
     }
 
     const media = await uploadProductImage(file);
@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     if (error instanceof AuthError) {
       return NextResponse.json({ success: false, error: error.message }, { status: error.status });
     }
-    const message = error instanceof Error ? error.message : "Unable to upload the image.";
+    const message = error instanceof Error ? error.message : "Unable to upload the media file.";
     return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }

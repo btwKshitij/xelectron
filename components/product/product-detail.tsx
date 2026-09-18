@@ -1,6 +1,7 @@
 "use client";
 
 import { ProductGallery } from "@/components/product/product-gallery";
+import { Facebook, Instagram } from "@/components/ui/social-icons";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
@@ -102,16 +103,12 @@ function toProductDetailItem(product: any, activeDeal?: any): ProductDetailItem 
               : feature.featureText || feature.text || feature.title || feature.name || String(feature)
           )
         : ["Official 1-Year Brand Warranty", "High Performance Optical Engine", "Fast Express Shipping Across India"],
-    specs:
-      Array.isArray(product.specs) && product.specs.length > 0
-        ? product.specs.map((spec: any) => ({
-            label: spec.label || "Specification",
-            value: spec.value || String(spec),
-          }))
-        : [
-            { label: "Category", value: product.category?.title || "Electronics" },
-            { label: "Model SKU", value: product.sku || product.id },
-          ],
+    specs: Array.isArray(product.specs)
+      ? product.specs.map((spec: { label: string; value: string }) => ({
+          label: spec.label,
+          value: spec.value,
+        }))
+      : [],
     shippingNotice: product.shippingNotice || "Free express delivery across India & Official Brand Warranty",
     quantity:
       typeof product.quantity === "number" && Number.isFinite(product.quantity)
@@ -302,16 +299,12 @@ export default function ProductDetail({
     }
   };
 
-  const handleShare = (platform: "facebook" | "twitter" | "whatsapp" | "email") => {
+  const handleShare = (platform: "whatsapp" | "email") => {
     if (typeof window === "undefined") return;
     const url = window.location.href;
     const title = product.name;
 
-    if (platform === "facebook") {
-      window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, "_blank", "noopener,noreferrer");
-    } else if (platform === "twitter") {
-      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out ${title} on XElectron`)}&url=${encodeURIComponent(url)}`, "_blank", "noopener,noreferrer");
-    } else if (platform === "whatsapp") {
+    if (platform === "whatsapp") {
       window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(`Check out ${title} on XElectron: ${url}`)}`, "_blank", "noopener,noreferrer");
     } else if (platform === "email") {
       window.location.href = `mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(`Check out ${title} on XElectron: ${url}`)}`;
@@ -512,7 +505,7 @@ export default function ProductDetail({
               {/* Delivery Doorstep Notice */}
               <div className="mt-4 flex items-center gap-2.5 text-xs sm:text-sm font-semibold text-slate-700">
                 <CheckCircle2 className="size-5 fill-emerald-600 text-white shrink-0" />
-                <span>Delivered to your doorstep within 24 hours (pincode based)</span>
+                <span>Delivery within 2–3 business days. Next-day delivery is available in Delhi NCR.</span>
               </div>
 
               {/* Services and Benefits Section */}
@@ -620,26 +613,28 @@ export default function ProductDetail({
                 )}
               </div>
 
-              {/* Social Sharing Icons (5 Square Buttons) */}
+              {/* Social accounts and sharing */}
               <div className="mt-4 flex items-center gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => handleShare("facebook")}
+                <a
+                  href="https://www.facebook.com/XElectron"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex size-11 items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-700 hover:text-blue-600 hover:border-slate-300 shadow-2xs transition cursor-pointer"
-                  title="Share on Facebook"
-                  aria-label="Share on Facebook"
+                  title="XElectron on Facebook"
+                  aria-label="XElectron on Facebook"
                 >
-                  <span className="font-bold text-sm">f</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleShare("twitter")}
+                  <Facebook className="size-4" />
+                </a>
+                <a
+                  href="https://www.instagram.com/xelectron_india/"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex size-11 items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-700 hover:text-slate-950 hover:border-slate-300 shadow-2xs transition cursor-pointer"
-                  title="Share on X"
-                  aria-label="Share on X"
+                  title="XElectron on Instagram"
+                  aria-label="XElectron on Instagram"
                 >
-                  <span className="font-bold text-sm">𝕏</span>
-                </button>
+                  <Instagram className="size-4" />
+                </a>
                 <button
                   type="button"
                   onClick={() => handleShare("whatsapp")}
@@ -1169,29 +1164,10 @@ export default function ProductDetail({
             );
           };
 
-          const rawSpecs =
-            Array.isArray(product.specs) && product.specs.length > 0
-              ? product.specs
-              : [
-                  { label: "Display Type", value: "Curved AMOLED / LED" },
-                  { label: "Resolution", value: "1080P Full HD & 4K Support" },
-                  { label: "Brightness / Lumens", value: "9000 Lumens" },
-                  { label: "Speaker / Audio", value: "Built-in Hi-Fi Stereo Speaker" },
-                  { label: "Operating System", value: "Android Smart OS (Built-in Apps)" },
-                  { label: "Focus / Keystone", value: "Electric Focus, Auto & 4D Keystone" },
-                  { label: "Screen / Projection Size", value: "Up to 200 inches" },
-                  { label: "Warranty", value: "1 Year Official Brand Warranty" },
-                  { label: "Typical Usage", value: "Up to 7 days" },
-                  { label: "Battery Life / Usage", value: "Up to 7 Days Battery" },
-                  { label: "Connectivity", value: "Dual Wi-Fi 6 + Bluetooth 5.2, HDMI, USB" },
-                  {
-                    label: "Smart Features",
-                    value:
-                      "Built-in WhatsApp\nChatGPT Integration\nDynamic Island\nMotion-sensing Games & Exercises\nNFC Support\nDual Voice Assistant\nVoice Recorder\nVideo Watch Faces\nEbook Reader\nAltimeter & Compass\nMulti-sports Mode with Dynamic Route Tracking",
-                  },
-                  { label: "Battery Type", value: "Li-Polymer" },
-                  { label: "Charging Type", value: "Wireless Magnetic Charger" },
-                ];
+          const rawSpecs = (product.specs || []).filter(
+            (spec: { label: string; value: string }) => spec.label.trim() && spec.value.trim(),
+          );
+          if (rawSpecs.length === 0) return null;
 
           const designSpecs = rawSpecs.filter((s: any) => !isConnectivityKey(s.label));
           const connectivitySpecs = rawSpecs.filter((s: any) => isConnectivityKey(s.label));
@@ -1202,7 +1178,7 @@ export default function ProductDetail({
                 {/* Column 1: Design, Display & Performance */}
                 <div className="space-y-3">
                   <h2 className="text-2xl sm:text-2xl font-bold text-slate-900 tracking-tight mb-2">
-                    Performance, Design & Lighting
+                    Design, Display & Performance
                   </h2>
                   {designSpecs.length > 0 ? (
                     <div className="divide-y divide-slate-100 border-t border-slate-100">
@@ -1231,7 +1207,7 @@ export default function ProductDetail({
                 {/* Column 2: Connectivity, Battery & Smart Features */}
                 <div className="space-y-3">
                   <h2 className="text-2xl sm:text-2xl font-bold text-slate-900 tracking-tight mb-2">
-                    Connectivity & Smart Features
+                    Connectivity, Battery & Smart Features
                   </h2>
                   {connectivitySpecs.length > 0 ? (
                     <div className="divide-y divide-slate-100 border-t border-slate-100">
@@ -1263,34 +1239,10 @@ export default function ProductDetail({
 
         {/* FULL-WIDTH FREQUENTLY ASKED QUESTIONS SECTION (MATCHING REFERENCE) */}
         {(() => {
-          const rawFaqs = product.faqs && product.faqs.length > 0
-            ? product.faqs.map((f: any) => ({ q: f.question, a: f.answer }))
-            : [
-                {
-                  q: "Getting Started",
-                  a: "Unbox the device, connect the power adapter, and press the power button for 3 seconds. Follow the on-screen setup assistant to connect to your Wi-Fi network.",
-                },
-                {
-                  q: "About the Product",
-                  a: "Engineered with native 1080P Full HD clarity, 4K video decoding, immersive stereo speakers, and built-in Android Smart OS with Netflix, YouTube, and Prime Video.",
-                },
-                {
-                  q: "Battery and Charging",
-                  a: "Equipped with high-efficiency power management and fast-charging support. Full recharge takes approximately 90–120 minutes.",
-                },
-                {
-                  q: "App",
-                  a: "Download the companion mobile application from Google Play Store or Apple App Store for wireless remote control, firmware updates, and settings customization.",
-                },
-                {
-                  q: "Health and Sensors",
-                  a: "Features precision multi-axis gyroscope, smart auto-keystone correction, intelligent obstacle avoidance, and dynamic heat dissipation sensors.",
-                },
-                {
-                  q: "Compatibility",
-                  a: "Seamlessly pairs with Android, iOS, Windows, Mac, gaming consoles (PS5/Xbox/Switch), TV sticks, USB drives, and Bluetooth audio systems.",
-                },
-              ];
+          const rawFaqs = (product.faqs || [])
+            .filter((faq: { question: string; answer: string }) => faq.question.trim() && faq.answer.trim())
+            .map((faq: { question: string; answer: string }) => ({ q: faq.question, a: faq.answer }));
+          if (rawFaqs.length === 0) return null;
 
           return (
             <section id="product-faqs" className="mt-8 sm:mt-20 pt-6 sm:pt-14 border-t border-slate-200 scroll-mt-24">

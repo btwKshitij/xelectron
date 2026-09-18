@@ -91,8 +91,8 @@ const ESSENTIALS = [
   },
   {
     icon: Hash,
-    title: "Serial Number / IMEI",
-    desc: "Product Serial Number or IMEI Number, wherever applicable on device label.",
+    title: "Serial Number",
+    desc: "Product Serial Number, as shown on the device label.",
   },
   {
     icon: AlertCircle,

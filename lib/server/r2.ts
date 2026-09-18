@@ -2,7 +2,9 @@ import "server-only";
 
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
-const maxProductImageSize = 50 * 1024 * 1024; // 50 MB max
+const maxImageFileSize = 50 * 1024 * 1024; // 50 MB max for images
+const maxVideoFileSize = 250 * 1024 * 1024; // 250 MB max for videos & banners
+const maxProductImageSize = maxImageFileSize; // Backward compatibility
 const allowedImageTypes = new Set([
   "image/avif",
   "image/gif",
@@ -148,9 +150,17 @@ export async function uploadProductImage(file: File) {
     throw new Error("The selected file is empty (0 bytes).");
   }
 
-  if (file.size > maxProductImageSize) {
+  const isVideo =
+    file.type.startsWith("video/") ||
+    ["mp4", "webm", "mov", "ogg", "mkv", "avi", "m4v", "flv", "3gp", "ts"].includes(ext);
+  const maxSize = isVideo ? maxVideoFileSize : maxImageFileSize;
+
+  if (file.size > maxSize) {
     const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
-    throw new Error(`Media file is ${sizeMB} MB. Maximum allowed size is 50 MB.`);
+    const maxMB = (maxSize / (1024 * 1024)).toFixed(0);
+    throw new Error(
+      `${isVideo ? "Video" : "Image"} file is ${sizeMB} MB. Maximum allowed size is ${maxMB} MB.`
+    );
   }
 
   const contentType = inferMimeType(file.name, file.type);

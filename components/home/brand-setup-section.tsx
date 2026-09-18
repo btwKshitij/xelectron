@@ -225,7 +225,7 @@ export default function BrandSetupSection({
             </span>
             <span className="block text-left">Built for India.</span>
             <span className="block text-left">
-              Tested for Indian conditions.
+              Designed in USA.
             </span>
             <span className="block text-left">
               Serviced across <span className="text-[#0a7ae6]">200+ Cities.</span>

@@ -154,7 +154,7 @@ export default function CreatorVideosSection() {
         <div className="mb-4 sm:mb-6 flex items-center justify-between gap-4">
           <div>
             <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-950">
-              Influencers Voice
+              Insta video
             </h2>
           </div>
 

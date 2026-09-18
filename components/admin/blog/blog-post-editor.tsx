@@ -59,7 +59,7 @@ const inputClass =
 
 const QUICK_CATEGORIES = [
   "Technology",
-  "Acoustics & Sound",
+  "Media review",
   "Smart Living",
   "Projectors",
   "Guides",

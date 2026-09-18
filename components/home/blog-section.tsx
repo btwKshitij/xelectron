@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import { defaultBlogPosts, type DefaultBlogPost } from "@/lib/shared/default-blog-posts";
+import { ArrowLeft, ArrowRight } from "lucide-react";
+import useEmblaCarousel from "embla-carousel-react";
+import { defaultBlogPosts } from "@/lib/shared/default-blog-posts";
 
 type BlogPost = {
   id: string | number;
@@ -22,6 +23,29 @@ type BlogPost = {
 
 export default function BlogSection() {
   const [posts, setPosts] = useState<BlogPost[]>(defaultBlogPosts);
+  const [carouselRef, carouselApi] = useEmblaCarousel({ align: "start", loop: true });
+  const [isHovered, setIsHovered] = useState(false);
+  const [hasFocus, setHasFocus] = useState(false);
+
+  useEffect(() => {
+    if (!carouselApi || isHovered || hasFocus) return;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let isDragging = false;
+    const onPointerDown = () => { isDragging = true; };
+    const onPointerUp = () => { isDragging = false; };
+    carouselApi.on("pointerDown", onPointerDown);
+    carouselApi.on("pointerUp", onPointerUp);
+    const timer = window.setInterval(() => {
+      if (document.hidden || reducedMotion.matches || isDragging) return;
+      if (carouselApi.canScrollNext()) carouselApi.scrollNext();
+      else carouselApi.scrollTo(0);
+    }, 4000);
+    return () => {
+      window.clearInterval(timer);
+      carouselApi.off("pointerDown", onPointerDown);
+      carouselApi.off("pointerUp", onPointerUp);
+    };
+  }, [carouselApi, isHovered, hasFocus]);
 
   useEffect(() => {
     fetch("/api/blog")
@@ -56,8 +80,19 @@ export default function BlogSection() {
           </Link>
         </div>
 
-        {/* Blog Cards Grid */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div
+          role="region"
+          aria-roledescription="carousel"
+          aria-label="Latest blog stories"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          onFocusCapture={() => setHasFocus(true)}
+          onBlurCapture={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget)) setHasFocus(false);
+          }}
+        >
+        <div ref={carouselRef} className="overflow-hidden py-2">
+        <div className="-ml-6 flex touch-pan-y">
           {posts.map((post) => {
             const formattedDate = post.publishedAt
               ? new Intl.DateTimeFormat("en-IN", {
@@ -70,9 +105,9 @@ export default function BlogSection() {
             const postSlug = post.slug || String(post.id);
 
             return (
+              <div key={post.id} className="flex min-w-0 shrink-0 grow-0 basis-full pl-6 sm:basis-1/2 lg:basis-1/3">
               <article
-                key={post.id}
-                className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-slate-200"
+                className="group relative flex w-full flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-slate-200"
               >
                 {/* Image */}
                 <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
@@ -120,8 +155,19 @@ export default function BlogSection() {
                   aria-label={`Read: ${post.title}`}
                 />
               </article>
+              </div>
             );
           })}
+        </div>
+        </div>
+        <div className="mt-4 flex justify-end gap-2">
+          <button type="button" onClick={() => carouselApi?.scrollPrev()} aria-label="Previous blogs" className="rounded-full border border-slate-200 p-2 text-slate-700 hover:bg-slate-100">
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <button type="button" onClick={() => carouselApi?.scrollNext()} aria-label="Next blogs" className="rounded-full border border-slate-200 p-2 text-slate-700 hover:bg-slate-100">
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        </div>
         </div>
       </div>
     </section>

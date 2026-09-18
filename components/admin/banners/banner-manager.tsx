@@ -52,7 +52,14 @@ export function isVideoUrl(url?: string | null): boolean {
     clean.endsWith(".ogg") ||
     clean.endsWith(".mov") ||
     clean.endsWith(".m4v") ||
-    clean.includes("video")
+    clean.endsWith(".mkv") ||
+    clean.endsWith(".avi") ||
+    clean.startsWith("data:video") ||
+    clean.startsWith("blob:") ||
+    clean.includes("video") ||
+    clean.includes(".mp4") ||
+    clean.includes(".webm") ||
+    clean.includes(".mov")
   )
 }
 
@@ -72,7 +79,11 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
   const [isBulkDeleting, setIsBulkDeleting] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isUploadingDesktop, setIsUploadingDesktop] = useState(false)
+  const [uploadProgressDesktop, setUploadProgressDesktop] = useState<number | null>(null)
   const [isUploadingMobile, setIsUploadingMobile] = useState(false)
+  const [uploadProgressMobile, setUploadProgressMobile] = useState<number | null>(null)
+  const [isDraggingDesktop, setIsDraggingDesktop] = useState(false)
+  const [isDraggingMobile, setIsDraggingMobile] = useState(false)
   const [showDesktopUrlInput, setShowDesktopUrlInput] = useState(false)
   const [showMobileUrlInput, setShowMobileUrlInput] = useState(false)
   const [categories, setCategories] = useState<CategoryOption[]>([])
@@ -288,6 +299,16 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
         else setDesktopMeta(meta)
         URL.revokeObjectURL(objectUrl)
       }
+      tempVideo.onerror = () => {
+        const meta: MediaMeta = {
+          fileSize: formattedSize,
+          type: "video",
+          format: formatName,
+        }
+        if (isMobile) setMobileMeta(meta)
+        else setDesktopMeta(meta)
+        URL.revokeObjectURL(objectUrl)
+      }
     } else {
       const tempImg = new window.Image()
       tempImg.src = objectUrl
@@ -295,6 +316,16 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
         const meta: MediaMeta = {
           fileSize: formattedSize,
           dimensions: `${tempImg.naturalWidth} × ${tempImg.naturalHeight} px`,
+          type: "image",
+          format: formatName,
+        }
+        if (isMobile) setMobileMeta(meta)
+        else setDesktopMeta(meta)
+        URL.revokeObjectURL(objectUrl)
+      }
+      tempImg.onerror = () => {
+        const meta: MediaMeta = {
+          fileSize: formattedSize,
           type: "image",
           format: formatName,
         }
@@ -407,34 +438,46 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
   async function handleDesktopFileUpload(file: File) {
     if (!file) return
     setIsUploadingDesktop(true)
+    setUploadProgressDesktop(0)
     inspectMediaFile(file, false)
 
     try {
-      const uploaded = await uploadProductImage(file)
+      const uploaded = await uploadProductImage(file, {
+        onProgress: (percent) => {
+          setUploadProgressDesktop(percent)
+        },
+      })
       setFormData((prev) => ({ ...prev, src: uploaded.url }))
       toast.success("Desktop media uploaded successfully")
     } catch (err: any) {
-      console.error(err)
+      console.error("Desktop media upload failed:", err)
       toast.error(err?.message || "Media upload failed")
     } finally {
       setIsUploadingDesktop(false)
+      setUploadProgressDesktop(null)
     }
   }
 
   async function handleMobileFileUpload(file: File) {
     if (!file) return
     setIsUploadingMobile(true)
+    setUploadProgressMobile(0)
     inspectMediaFile(file, true)
 
     try {
-      const uploaded = await uploadProductImage(file)
+      const uploaded = await uploadProductImage(file, {
+        onProgress: (percent) => {
+          setUploadProgressMobile(percent)
+        },
+      })
       setFormData((prev) => ({ ...prev, mobileSrc: uploaded.url }))
       toast.success("Mobile media uploaded successfully")
     } catch (err: any) {
-      console.error(err)
+      console.error("Mobile media upload failed:", err)
       toast.error(err?.message || "Mobile media upload failed")
     } finally {
       setIsUploadingMobile(false)
+      setUploadProgressMobile(null)
     }
   }
 
@@ -1032,7 +1075,34 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* --- DESKTOP BANNER UPLOAD SECTION --- */}
-                  <div className="flex flex-col rounded-xl border border-black/15 bg-neutral-50/70 p-3.5">
+                  <div
+                    onDragOver={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                    }}
+                    onDragEnter={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      setIsDraggingDesktop(true)
+                    }}
+                    onDragLeave={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      setIsDraggingDesktop(false)
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      setIsDraggingDesktop(false)
+                      const file = e.dataTransfer.files?.[0]
+                      if (file) handleDesktopFileUpload(file)
+                    }}
+                    className={`flex flex-col rounded-xl border p-3.5 transition-all ${
+                      isDraggingDesktop
+                        ? "border-black bg-black/[0.04] ring-2 ring-black/20"
+                        : "border-black/15 bg-neutral-50/70"
+                    }`}
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
                         <MonitorIcon className="size-4 text-black/70" />
@@ -1043,7 +1113,7 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
                       </span>
                     </div>
                     <p className="mt-1 text-[11px] text-black/55">
-                      High-resolution image or video displayed on desktop/laptop displays.
+                      High-resolution image or video displayed on desktop/laptop displays (up to 250 MB).
                     </p>
 
                     {/* Preview / Dropzone */}
@@ -1120,6 +1190,34 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
                               )}
                             </div>
 
+                            {/* Live Upload Progress Overlay */}
+                            {isUploadingDesktop && (
+                              <div className="absolute inset-0 bg-black/80 z-30 flex flex-col items-center justify-center p-4 text-white text-center">
+                                <Loader2Icon className="size-7 animate-spin text-white mb-2" />
+                                <span className="text-xs font-semibold">
+                                  {uploadProgressDesktop !== null && uploadProgressDesktop > 0
+                                    ? `Uploading desktop media... ${uploadProgressDesktop}%`
+                                    : "Uploading desktop media..."}
+                                </span>
+                                {uploadProgressDesktop !== null && (
+                                  <div className="w-44 bg-white/20 rounded-full h-1.5 overflow-hidden mt-2">
+                                    <div
+                                      className="bg-white h-1.5 rounded-full transition-all duration-150"
+                                      style={{ width: `${uploadProgressDesktop}%` }}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Dragging Overlay */}
+                            {isDraggingDesktop && !isUploadingDesktop && (
+                              <div className="absolute inset-0 bg-black/85 z-30 flex flex-col items-center justify-center p-4 text-white text-center border-2 border-dashed border-white/80">
+                                <UploadIcon className="size-8 text-white mb-1 animate-bounce" />
+                                <span className="text-xs font-bold">Drop video or image to replace</span>
+                              </div>
+                            )}
+
                             {/* Hover Overlay Controls */}
                             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 z-20">
                               <label className="cursor-pointer inline-flex items-center gap-1 rounded bg-white px-2.5 py-1 text-xs font-semibold text-black shadow-sm hover:bg-neutral-100">
@@ -1128,11 +1226,16 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
                                 ) : (
                                   <UploadIcon className="size-3.5" />
                                 )}
-                                Replace
+                                {isUploadingDesktop && uploadProgressDesktop !== null
+                                  ? `${uploadProgressDesktop}%`
+                                  : "Replace"}
                                 <input
                                   type="file"
-                                  accept="image/*,video/*"
+                                  accept="image/*,video/*,.mp4,.webm,.mov,.ogg,.mkv,.m4v"
                                   className="hidden"
+                                  onClick={(e) => {
+                                    ;(e.currentTarget as HTMLInputElement).value = ""
+                                  }}
                                   onChange={(e) => {
                                     const file = e.target.files?.[0]
                                     if (file) handleDesktopFileUpload(file)
@@ -1186,12 +1289,22 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
                               <LinkIcon className="size-3" />
                               {showDesktopUrlInput ? "Hide media URL" : "Edit media URL"}
                             </button>
-                            <label className="cursor-pointer font-medium text-black hover:underline">
-                              Upload new
+                            <label className="cursor-pointer font-medium text-black hover:underline inline-flex items-center gap-1">
+                              {isUploadingDesktop ? (
+                                <>
+                                  <Loader2Icon className="size-3 animate-spin" />
+                                  <span>{uploadProgressDesktop !== null ? `${uploadProgressDesktop}%` : "Uploading..."}</span>
+                                </>
+                              ) : (
+                                <>Upload new</>
+                              )}
                               <input
                                 type="file"
-                                accept="image/*,video/*"
+                                accept="image/*,video/*,.mp4,.webm,.mov,.ogg,.mkv,.m4v"
                                 className="hidden"
+                                onClick={(e) => {
+                                  ;(e.currentTarget as HTMLInputElement).value = ""
+                                }}
                                 onChange={(e) => {
                                   const file = e.target.files?.[0]
                                   if (file) handleDesktopFileUpload(file)
@@ -1201,11 +1314,51 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
                           </div>
                         </div>
                       ) : (
-                        <label className="flex flex-1 flex-col items-center justify-center rounded-lg border-2 border-dashed border-black/20 bg-white p-6 text-center cursor-pointer hover:border-black/40 hover:bg-neutral-50/50 transition">
+                        <label
+                          onDragOver={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                          }}
+                          onDragEnter={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            setIsDraggingDesktop(true)
+                          }}
+                          onDragLeave={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            setIsDraggingDesktop(false)
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            setIsDraggingDesktop(false)
+                            const file = e.dataTransfer.files?.[0]
+                            if (file) handleDesktopFileUpload(file)
+                          }}
+                          className={`flex flex-1 flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 text-center cursor-pointer transition ${
+                            isDraggingDesktop
+                              ? "border-black bg-black/10 ring-2 ring-black/20"
+                              : "border-black/20 bg-white hover:border-black/40 hover:bg-neutral-50/50"
+                          }`}
+                        >
                           {isUploadingDesktop ? (
-                            <div className="flex flex-col items-center gap-1">
+                            <div className="flex flex-col items-center gap-1.5 w-full max-w-[220px]">
                               <Loader2Icon className="size-6 animate-spin text-black" />
-                              <span className="text-xs font-medium text-black">Uploading desktop media...</span>
+                              <span className="text-xs font-semibold text-black">
+                                {uploadProgressDesktop !== null && uploadProgressDesktop > 0
+                                  ? `Uploading desktop media... ${uploadProgressDesktop}%`
+                                  : "Uploading desktop media..."}
+                              </span>
+                              {uploadProgressDesktop !== null && (
+                                <div className="w-full bg-black/10 rounded-full h-1.5 overflow-hidden mt-1">
+                                  <div
+                                    className="bg-black h-1.5 rounded-full transition-all duration-150"
+                                    style={{ width: `${uploadProgressDesktop}%` }}
+                                  />
+                                </div>
+                              )}
+                              <span className="text-[10px] text-black/50 mt-0.5">Supports video up to 250 MB</span>
                             </div>
                           ) : (
                             <>
@@ -1217,14 +1370,17 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
                                 Click or drag Image or Video
                               </span>
                               <span className="mt-0.5 text-[10px] text-black/50">
-                                MP4, WebM, PNG, JPG (1920×600 or 16:9)
+                                MP4, WebM, MOV, PNG, JPG (1920×600 or 16:9 • max 250 MB)
                               </span>
                             </>
                           )}
                           <input
                             type="file"
-                            accept="image/*,video/*"
+                            accept="image/*,video/*,.mp4,.webm,.mov,.ogg,.mkv,.m4v"
                             className="hidden"
+                            onClick={(e) => {
+                              ;(e.currentTarget as HTMLInputElement).value = ""
+                            }}
                             onChange={(e) => {
                               const file = e.target.files?.[0]
                               if (file) handleDesktopFileUpload(file)
@@ -1252,7 +1408,34 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
                   </div>
 
                   {/* --- MOBILE BANNER UPLOAD SECTION --- */}
-                  <div className="flex flex-col rounded-xl border border-black/15 bg-neutral-50/70 p-3.5">
+                  <div
+                    onDragOver={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                    }}
+                    onDragEnter={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      setIsDraggingMobile(true)
+                    }}
+                    onDragLeave={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      setIsDraggingMobile(false)
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      setIsDraggingMobile(false)
+                      const file = e.dataTransfer.files?.[0]
+                      if (file) handleMobileFileUpload(file)
+                    }}
+                    className={`flex flex-col rounded-xl border p-3.5 transition-all ${
+                      isDraggingMobile
+                        ? "border-black bg-black/[0.04] ring-2 ring-black/20"
+                        : "border-black/15 bg-neutral-50/70"
+                    }`}
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
                         <SmartphoneIcon className="size-4 text-black/70" />
@@ -1263,7 +1446,7 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
                       </span>
                     </div>
                     <p className="mt-1 text-[11px] text-black/55">
-                      Optimized smartphone image/video. If omitted, desktop media is used.
+                      Optimized smartphone image/video (up to 250 MB). If omitted, desktop media is used.
                     </p>
 
                     {/* Preview / Dropzone */}
@@ -1340,6 +1523,34 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
                               )}
                             </div>
 
+                            {/* Live Upload Progress Overlay */}
+                            {isUploadingMobile && (
+                              <div className="absolute inset-0 bg-black/80 z-30 flex flex-col items-center justify-center p-4 text-white text-center">
+                                <Loader2Icon className="size-7 animate-spin text-white mb-2" />
+                                <span className="text-xs font-semibold">
+                                  {uploadProgressMobile !== null && uploadProgressMobile > 0
+                                    ? `Uploading mobile media... ${uploadProgressMobile}%`
+                                    : "Uploading mobile media..."}
+                                </span>
+                                {uploadProgressMobile !== null && (
+                                  <div className="w-44 bg-white/20 rounded-full h-1.5 overflow-hidden mt-2">
+                                    <div
+                                      className="bg-white h-1.5 rounded-full transition-all duration-150"
+                                      style={{ width: `${uploadProgressMobile}%` }}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Dragging Overlay */}
+                            {isDraggingMobile && !isUploadingMobile && (
+                              <div className="absolute inset-0 bg-black/85 z-30 flex flex-col items-center justify-center p-4 text-white text-center border-2 border-dashed border-white/80">
+                                <UploadIcon className="size-8 text-white mb-1 animate-bounce" />
+                                <span className="text-xs font-bold">Drop video or image to replace</span>
+                              </div>
+                            )}
+
                             {/* Hover Overlay Controls */}
                             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 z-20">
                               <label className="cursor-pointer inline-flex items-center gap-1 rounded bg-white px-2.5 py-1 text-xs font-semibold text-black shadow-sm hover:bg-neutral-100">
@@ -1348,11 +1559,16 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
                                 ) : (
                                   <UploadIcon className="size-3.5" />
                                 )}
-                                Replace
+                                {isUploadingMobile && uploadProgressMobile !== null
+                                  ? `${uploadProgressMobile}%`
+                                  : "Replace"}
                                 <input
                                   type="file"
-                                  accept="image/*,video/*"
+                                  accept="image/*,video/*,.mp4,.webm,.mov,.ogg,.mkv,.m4v"
                                   className="hidden"
+                                  onClick={(e) => {
+                                    ;(e.currentTarget as HTMLInputElement).value = ""
+                                  }}
                                   onChange={(e) => {
                                     const file = e.target.files?.[0]
                                     if (file) handleMobileFileUpload(file)
@@ -1406,12 +1622,22 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
                               <LinkIcon className="size-3" />
                               {showMobileUrlInput ? "Hide media URL" : "Edit media URL"}
                             </button>
-                            <label className="cursor-pointer font-medium text-black hover:underline">
-                              Upload new
+                            <label className="cursor-pointer font-medium text-black hover:underline inline-flex items-center gap-1">
+                              {isUploadingMobile ? (
+                                <>
+                                  <Loader2Icon className="size-3 animate-spin" />
+                                  <span>{uploadProgressMobile !== null ? `${uploadProgressMobile}%` : "Uploading..."}</span>
+                                </>
+                              ) : (
+                                <>Upload new</>
+                              )}
                               <input
                                 type="file"
-                                accept="image/*,video/*"
+                                accept="image/*,video/*,.mp4,.webm,.mov,.ogg,.mkv,.m4v"
                                 className="hidden"
+                                onClick={(e) => {
+                                  ;(e.currentTarget as HTMLInputElement).value = ""
+                                }}
                                 onChange={(e) => {
                                   const file = e.target.files?.[0]
                                   if (file) handleMobileFileUpload(file)
@@ -1421,11 +1647,51 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
                           </div>
                         </div>
                       ) : (
-                        <label className="flex flex-1 flex-col items-center justify-center rounded-lg border-2 border-dashed border-black/20 bg-white p-6 text-center cursor-pointer hover:border-black/40 hover:bg-neutral-50/50 transition">
+                        <label
+                          onDragOver={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                          }}
+                          onDragEnter={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            setIsDraggingMobile(true)
+                          }}
+                          onDragLeave={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            setIsDraggingMobile(false)
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            setIsDraggingMobile(false)
+                            const file = e.dataTransfer.files?.[0]
+                            if (file) handleMobileFileUpload(file)
+                          }}
+                          className={`flex flex-1 flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 text-center cursor-pointer transition ${
+                            isDraggingMobile
+                              ? "border-black bg-black/10 ring-2 ring-black/20"
+                              : "border-black/20 bg-white hover:border-black/40 hover:bg-neutral-50/50"
+                          }`}
+                        >
                           {isUploadingMobile ? (
-                            <div className="flex flex-col items-center gap-1">
+                            <div className="flex flex-col items-center gap-1.5 w-full max-w-[220px]">
                               <Loader2Icon className="size-6 animate-spin text-black" />
-                              <span className="text-xs font-medium text-black">Uploading mobile media...</span>
+                              <span className="text-xs font-semibold text-black">
+                                {uploadProgressMobile !== null && uploadProgressMobile > 0
+                                  ? `Uploading mobile media... ${uploadProgressMobile}%`
+                                  : "Uploading mobile media..."}
+                              </span>
+                              {uploadProgressMobile !== null && (
+                                <div className="w-full bg-black/10 rounded-full h-1.5 overflow-hidden mt-1">
+                                  <div
+                                    className="bg-black h-1.5 rounded-full transition-all duration-150"
+                                    style={{ width: `${uploadProgressMobile}%` }}
+                                  />
+                                </div>
+                              )}
+                              <span className="text-[10px] text-black/50 mt-0.5">Supports video up to 250 MB</span>
                             </div>
                           ) : (
                             <>
@@ -1437,14 +1703,17 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
                                 Click or drag Mobile Image or Video
                               </span>
                               <span className="mt-0.5 text-[10px] text-black/50">
-                                Recommended: 800×600, 1080×1350, or 1080×1920
+                                Recommended: 800×600, 1080×1350, or 1080×1920 (max 250 MB)
                               </span>
                             </>
                           )}
                           <input
                             type="file"
-                            accept="image/*,video/*"
+                            accept="image/*,video/*,.mp4,.webm,.mov,.ogg,.mkv,.m4v"
                             className="hidden"
+                            onClick={(e) => {
+                              ;(e.currentTarget as HTMLInputElement).value = ""
+                            }}
                             onChange={(e) => {
                               const file = e.target.files?.[0]
                               if (file) handleMobileFileUpload(file)

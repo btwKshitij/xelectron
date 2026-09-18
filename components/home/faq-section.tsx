@@ -2,12 +2,12 @@ const faqs = [
   {
     question: "Which products are covered by warranty?",
     answer:
-      "Most XElectron products include a manufacturer warranty. The exact coverage depends on the category, so check the product page or invoice for the warranty period.",
+      "All XElectron products include a manufacturer warranty. The exact coverage depends on the category, so check the product page or invoice for the warranty period.",
   },
   {
     question: "Do the products support easy returns?",
     answer:
-      "Return eligibility depends on the seller policy and the item condition. If you receive a damaged or incorrect product, contact support with your order details as soon as possible.",
+      "Yes, eligible products can be returned within 7 days of delivery, subject to our return policy and product conditions. If you receive a damaged, defective, or incorrect product, please inform us within 2 days of receiving the order, along with your order details and the required photos/videos, so that our support team can assist you promptly.",
   },
   {
     question: "Can I connect these products to my phone or TV?",
@@ -15,9 +15,9 @@ const faqs = [
       "Yes. The featured products are built for simple connectivity across Bluetooth, Wi-Fi, USB, and HDMI depending on the model. Check the product specs for the exact connection options.",
   },
   {
-    question: "How do I choose the right product for my setup?",
+    question: "How long does delivery take?",
     answer:
-      "Start with the space you have and the job you want the product to do. Use the product cards above to compare display size, brightness, audio, and connectivity before buying.",
+      "Orders are generally delivered within 2–3 business days across most locations in India. For customers in Delhi NCR, next-day delivery is available on eligible orders.\n\nDelivery timelines may vary slightly depending on the delivery location and other circumstances.",
   },
   {
     question: "Where can I get help after purchase?",
@@ -68,7 +68,7 @@ export default function FaqSection() {
               <div className="pb-5 md:pb-6">
                 <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(0,0.5fr)]">
                   <div />
-                  <p className="max-w-xl text-[14px] leading-7 text-slate-600 md:text-[15px] md:leading-8 lg:justify-self-end lg:text-[16px]">
+                  <p className="max-w-xl whitespace-pre-line text-[14px] leading-7 text-slate-600 md:text-[15px] md:leading-8 lg:justify-self-end lg:text-[16px]">
                     {faq.answer}
                   </p>
                 </div>

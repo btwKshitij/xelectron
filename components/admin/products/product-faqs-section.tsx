@@ -1,6 +1,6 @@
 "use client"
 
-import { Plus, Trash2, HelpCircle, Sparkles } from "lucide-react"
+import { Plus, Trash2, HelpCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -15,33 +15,6 @@ interface ProductFaqsSectionProps {
   faqs: FaqItem[]
   onChange: (faqs: FaqItem[]) => void
 }
-
-const COMMON_FAQ_PRESETS = [
-  {
-    question: "Getting Started",
-    answer: "Unbox the device, connect the power adapter, and press the power button for 3 seconds. Follow the on-screen setup assistant to connect to your Wi-Fi network.",
-  },
-  {
-    question: "About the Product",
-    answer: "Engineered with native 1080P Full HD clarity, 4K video decoding, immersive stereo speakers, and built-in Android Smart OS with Netflix, YouTube, and Prime Video.",
-  },
-  {
-    question: "Battery and Charging",
-    answer: "Equipped with high-efficiency power management and fast-charging support. Full recharge takes approximately 90–120 minutes.",
-  },
-  {
-    question: "App",
-    answer: "Download the companion mobile application from Google Play Store or Apple App Store for wireless remote control, firmware updates, and settings customization.",
-  },
-  {
-    question: "Health and Sensors",
-    answer: "Features precision multi-axis gyroscope, smart auto-keystone correction, intelligent obstacle avoidance, and dynamic heat dissipation sensors.",
-  },
-  {
-    question: "Compatibility",
-    answer: "Seamlessly pairs with Android, iOS, Windows, Mac, gaming consoles (PS5/Xbox/Switch), TV sticks, USB drives, and Bluetooth audio systems.",
-  },
-]
 
 export function ProductFaqsSection({ faqs, onChange }: ProductFaqsSectionProps) {
   function addFaq(question = "", answer = "") {
@@ -60,11 +33,6 @@ export function ProductFaqsSection({ faqs, onChange }: ProductFaqsSectionProps) 
     onChange(nextFaqs)
   }
 
-  function loadPresets() {
-    const existingQuestions = new Set(faqs.map((f) => f.question.trim().toLowerCase()))
-    const newItems = COMMON_FAQ_PRESETS.filter((p) => !existingQuestions.has(p.question.toLowerCase()))
-    onChange([...faqs, ...newItems])
-  }
 
   return (
     <section className="mt-4 overflow-hidden rounded-xl border border-black/10 bg-white shadow-sm">
@@ -79,15 +47,6 @@ export function ProductFaqsSection({ faqs, onChange }: ProductFaqsSectionProps) 
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={loadPresets}
-            className="cursor-pointer border-black/15 bg-white text-xs text-black/75 shadow-none hover:bg-black/[0.04]"
-          >
-            <Sparkles className="size-3.5 mr-1 text-blue-600" /> Auto-fill Presets
-          </Button>
           <Button
             type="button"
             variant="outline"
@@ -146,7 +105,7 @@ export function ProductFaqsSection({ faqs, onChange }: ProductFaqsSectionProps) 
           ))
         ) : (
           <div className="py-6 text-center text-xs text-slate-400">
-            No FAQs added yet. Click &ldquo;Auto-fill Presets&rdquo; or &ldquo;Add FAQ&rdquo; to add product questions.
+            No FAQs added yet. Click &ldquo;Add FAQ&rdquo; to add product questions.
           </div>
         )}
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import Navbar from "@/components/navbar/navbar";
@@ -30,6 +30,15 @@ import {
   Flame,
 } from "lucide-react";
 import { toast } from "sonner";
+import { orderedTopics } from "@/lib/shared/category-order";
+import { resolveCategoryImage } from "@/lib/shared/category-utils";
+
+type CategoryImage = {
+  title: string;
+  slug: string;
+  image: string | null;
+  products?: { mainImage: string | null }[];
+};
 
 // Core Institutional Categories
 const CATEGORY_CARDS = [
@@ -139,6 +148,34 @@ const FAQS = [
 ];
 
 export default function BulkOrderPage() {
+  const [categoryCards, setCategoryCards] = useState(CATEGORY_CARDS);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    async function loadCategoryImages() {
+      try {
+        const response = await fetch("/api/categories", { signal: controller.signal });
+        if (!response.ok) return;
+        const result = await response.json();
+        if (!result.success || !Array.isArray(result.data)) return;
+        const categories: CategoryImage[] = result.data;
+        setCategoryCards(CATEGORY_CARDS.map((card) => {
+          const topic = orderedTopics.find((topic) => topic.matches.test(card.name));
+          const category = categories.find((category) =>
+            topic?.matches.test(`${category.title} ${category.slug}`),
+          );
+          return category
+            ? { ...card, image: resolveCategoryImage(category.image || category.products?.[0]?.mainImage, category.slug, category.title) }
+            : card;
+        }));
+      } catch {
+        // Keep the local category images if the catalog is unavailable.
+      }
+    }
+    void loadCategoryImages();
+    return () => controller.abort();
+  }, []);
+
   const [formData, setFormData] = useState({
     name: "",
     company: "",
@@ -289,7 +326,7 @@ export default function BulkOrderPage() {
 
                   {/* 2x2 PRODUCT SHOWCASE GRID */}
                   <div className="mt-4 grid grid-cols-2 gap-3">
-                    {CATEGORY_CARDS.map((item) => (
+                    {categoryCards.map((item) => (
                       <div
                         key={item.id}
                         onClick={() => {
@@ -304,6 +341,15 @@ export default function BulkOrderPage() {
                             src={item.image}
                             alt={item.name}
                             fill
+                            unoptimized
+                            onError={() => {
+                              const fallback = CATEGORY_CARDS.find((card) => card.id === item.id)?.image;
+                              if (fallback && item.image !== fallback) {
+                                setCategoryCards((cards) => cards.map((card) =>
+                                  card.id === item.id ? { ...card, image: fallback } : card,
+                                ));
+                              }
+                            }}
                             sizes="120px"
                             className="object-contain p-1 transition-transform group-hover:scale-105"
                           />

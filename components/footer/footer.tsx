@@ -1,17 +1,19 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Facebook, Instagram } from "@/components/ui/social-icons";
 
 export type FooterLink = {
   label: string;
   href: string;
 };
 
-// Easily add, modify, or remove links as per your convenience
-export const productLinks: FooterLink[] = [
-  { label: "Projectors", href: "/shop?filter=projectors" },
-  { label: "Digital Photo Frame", href: "/shop?filter=digital-photo-frames" },
-  { label: "Portable Monitors", href: "/shop?filter=portable-monitors" },
-  { label: "Smart TVs", href: "/shop?filter=tv" },
-];
+type FooterCategory = {
+  title: string;
+  slug: string;
+  visible: boolean;
+};
 
 export const customerServiceLinks: FooterLink[] = [
   { label: "Free Pickup & Drop Service", href: "/pickup-drop-service" },
@@ -54,7 +56,7 @@ function FooterColumn({
       </h3>
       <ul className="mt-3.5 space-y-2 text-xs sm:text-sm uppercase leading-5 tracking-[0.01em] text-white/90 font-normal sm:mt-4">
         {links.map((link) => (
-          <li key={link.label}>
+          <li key={link.href}>
             <Link prefetch={false} href={link.href} className="transition-colors hover:text-white hover:underline underline-offset-4">
               {link.label}
             </Link>
@@ -66,6 +68,49 @@ function FooterColumn({
 }
 
 export default function Footer() {
+  const [productLinks, setProductLinks] = useState<FooterLink[]>([]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let isLoading = false;
+
+    async function refreshCategories() {
+      if (document.hidden || isLoading) return;
+      isLoading = true;
+      try {
+        const response = await fetch("/api/categories", {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        if (!response.ok) return;
+        const payload = await response.json();
+        if (!controller.signal.aborted && payload.success && Array.isArray(payload.data)) {
+          setProductLinks(payload.data
+            .filter((category: FooterCategory) => category.visible && category.title && category.slug)
+            .map((category: FooterCategory) => ({
+              label: category.title,
+              href: `/shop?filter=${encodeURIComponent(category.slug)}`,
+            })));
+        }
+      } catch {
+        // Preserve the last loaded categories during temporary network failures.
+      } finally {
+        isLoading = false;
+      }
+    }
+
+    void refreshCategories();
+    const timer = window.setInterval(refreshCategories, 30000);
+    window.addEventListener("focus", refreshCategories);
+    document.addEventListener("visibilitychange", refreshCategories);
+    return () => {
+      controller.abort();
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refreshCategories);
+      document.removeEventListener("visibilitychange", refreshCategories);
+    };
+  }, []);
+
   return (
     <footer className="bg-transparent px-0 sm:px-[20px] pt-0 sm:pt-4 pb-0 w-full overflow-hidden">
       {/* CHARCOAL DARK GRAY FOOTER CARD WITH TOP ROUNDED CORNERS ON DESKTOP */}
@@ -98,6 +143,16 @@ export default function Footer() {
               <span className="text-white font-medium">Email:</span>{" "}
               <a href="mailto:customercare@xelectron.com" className="text-white/90 hover:text-white transition underline-offset-2 hover:underline">customercare@xelectron.com</a>
             </p>
+            <div className="flex flex-wrap items-center gap-4 pt-3">
+              <a href="https://www.facebook.com/XElectron" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-white/90 hover:text-white hover:underline underline-offset-4">
+                <Facebook className="size-4" aria-hidden="true" />
+                Facebook
+              </a>
+              <a href="https://www.instagram.com/xelectron_india/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-white/90 hover:text-white hover:underline underline-offset-4">
+                <Instagram className="size-4" aria-hidden="true" />
+                Instagram
+              </a>
+            </div>
           </div>
         </div>
 
