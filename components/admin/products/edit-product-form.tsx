@@ -40,7 +40,9 @@ type EditableProduct = {
   category: { title: string } | null;
   media: { id: string; url: string; sortOrder: number }[];
   features?: { featureText: string }[];
-  specs?: { id?: string; label: string; value: string }[];
+  designHeading?: string | null;
+  connectivityHeading?: string | null;
+  specs?: { id?: string; label: string; value: string; section?: "design" | "connectivity" | null }[];
   faqs?: { id?: string; question: string; answer: string }[];
   banners?: { id?: string; imageUrl: string; mobileImageUrl?: string | null; title?: string | null; sortOrder?: number }[];
   creatorVideos?: { id?: string; title?: string | null; thumbnailUrl: string; videoUrl?: string | null; sortOrder?: number; isActive?: boolean }[];
@@ -146,7 +148,9 @@ export function EditProductForm({ product, categories }: { product: EditableProd
   const [draggedMediaIndex, setDraggedMediaIndex] = useState<number | null>(null);
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [features, setFeatures] = useState<string[]>(() => product.features?.map(f => f.featureText) || []);
-  const [specs, setSpecs] = useState<SpecItem[]>(() => product.specs?.map(s => ({ label: s.label, value: s.value })) || []);
+  const [designHeading, setDesignHeading] = useState(product.designHeading || "Design, Display & Performance");
+  const [connectivityHeading, setConnectivityHeading] = useState(product.connectivityHeading || "Connectivity, Battery & Smart Features");
+  const [specs, setSpecs] = useState<SpecItem[]>(() => product.specs?.map(s => ({ label: s.label, value: s.value, section: s.section ?? undefined })) || []);
   const [faqs, setFaqs] = useState<FaqItem[]>(() => product.faqs?.map(f => ({ question: f.question, answer: f.answer })) || []);
   const [showcaseBanners, setShowcaseBanners] = useState<BannerItem[]>(() =>
     product.banners
@@ -209,7 +213,7 @@ export function EditProductForm({ product, categories }: { product: EditableProd
       features.some((f, i) => f !== product.features?.[i]?.featureText);
     const specsChanged =
       specs.length !== (product.specs?.length || 0) ||
-      specs.some((s, i) => s.label !== product.specs?.[i]?.label || s.value !== product.specs?.[i]?.value);
+      specs.some((s, i) => s.label !== product.specs?.[i]?.label || s.value !== product.specs?.[i]?.value || (s.section ?? undefined) !== (product.specs?.[i]?.section ?? undefined));
     const faqsChanged =
       faqs.length !== (product.faqs?.length || 0) ||
       faqs.some((f, i) => f.question !== product.faqs?.[i]?.question || f.answer !== product.faqs?.[i]?.answer);
@@ -260,6 +264,8 @@ export function EditProductForm({ product, categories }: { product: EditableProd
       showInNavbar !== (product.showInNavbar ?? false) ||
       mediaChanged ||
       featuresChanged ||
+      designHeading !== (product.designHeading || "Design, Display & Performance") ||
+      connectivityHeading !== (product.connectivityHeading || "Connectivity, Battery & Smart Features") ||
       specsChanged ||
       faqsChanged ||
       showcaseChanged ||
@@ -270,7 +276,7 @@ export function EditProductForm({ product, categories }: { product: EditableProd
       variantsChanged ||
       mediaFiles.length > 0
     );
-  }, [categoryId, compareAtPrice, description, faqs, features, mediaFiles.length, orderedMedia, price, product, quantity, shippingNotice, showcaseBanners, showInBestSellers, showInNavbar, sliderBanners, sliderPosition, slug, specs, title, creatorVideos, colors, variants, sku]);
+  }, [designHeading, connectivityHeading, categoryId, compareAtPrice, description, faqs, features, mediaFiles.length, orderedMedia, price, product, quantity, shippingNotice, showcaseBanners, showInBestSellers, showInNavbar, sliderBanners, sliderPosition, slug, specs, title, creatorVideos, colors, variants, sku]);
 
   useEffect(() => {
     if (!isDirty) return;
@@ -457,6 +463,8 @@ export function EditProductForm({ product, categories }: { product: EditableProd
             variants,
             colors,
             features: features.map(f => f.trim()).filter(f => f !== ""),
+            designHeading: designHeading !== (product.designHeading || "Design, Display & Performance") ? (designHeading.trim() || "Design, Display & Performance") : undefined,
+            connectivityHeading: connectivityHeading !== (product.connectivityHeading || "Connectivity, Battery & Smart Features") ? (connectivityHeading.trim() || "Connectivity, Battery & Smart Features") : undefined,
             specs: specs.filter(s => s.label.trim() || s.value.trim()),
             faqs: faqs.filter(f => f.question.trim() || f.answer.trim()),
             banners: [
@@ -592,7 +600,7 @@ export function EditProductForm({ product, categories }: { product: EditableProd
             </div>
           </Card>
           <Card title="Description"><ProductDescriptionEditor value={description} onChange={setDescription} /></Card>
-          <ProductSpecsSection specs={specs} onChange={setSpecs} />
+          <ProductSpecsSection specs={specs} onChange={setSpecs} designHeading={designHeading} connectivityHeading={connectivityHeading} onDesignHeadingChange={setDesignHeading} onConnectivityHeadingChange={setConnectivityHeading} />
           <ProductBannersSection banners={showcaseBanners} onChange={setShowcaseBanners} />
           <ProductCascadeBannersSection
             banners={sliderBanners}

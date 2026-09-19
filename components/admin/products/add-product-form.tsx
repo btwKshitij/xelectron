@@ -70,7 +70,7 @@ function parseCleanInteger(value: string | number | null | undefined): number {
   return Number.isSafeInteger(num) && num >= 0 ? num : 0;
 }
 
-export function AddProductForm({ categories }: { categories: ProductCategoryOption[] }) {
+export function AddProductForm({ categories, specHeadings }: { categories: ProductCategoryOption[]; specHeadings: { designHeading: string; connectivityHeading: string } }) {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [sku, setSku] = useState("");
@@ -89,6 +89,8 @@ export function AddProductForm({ categories }: { categories: ProductCategoryOpti
   const [variants, setVariants] = useState<any[]>([]);
   const [colors, setColors] = useState<any[]>([]);
   const [features, setFeatures] = useState<string[]>([]);
+  const [designHeading, setDesignHeading] = useState(specHeadings.designHeading);
+  const [connectivityHeading, setConnectivityHeading] = useState(specHeadings.connectivityHeading);
   const [specs, setSpecs] = useState<SpecItem[]>([]);
   const [faqs, setFaqs] = useState<FaqItem[]>([]);
   const [showcaseBanners, setShowcaseBanners] = useState<BannerItem[]>([]);
@@ -206,6 +208,8 @@ export function AddProductForm({ categories }: { categories: ProductCategoryOpti
             variants,
             colors,
             features: features.map(f => f.trim()).filter(f => f !== ""),
+            designHeading: designHeading !== specHeadings.designHeading ? (designHeading.trim() || "Design, Display & Performance") : undefined,
+            connectivityHeading: connectivityHeading !== specHeadings.connectivityHeading ? (connectivityHeading.trim() || "Connectivity, Battery & Smart Features") : undefined,
             specs: specs.filter(s => s.label.trim() || s.value.trim()),
             faqs: faqs.filter(f => f.question.trim() || f.answer.trim()),
             banners: [
@@ -380,7 +384,7 @@ export function AddProductForm({ categories }: { categories: ProductCategoryOpti
             </div>
           </Card>
           
-          <ProductSpecsSection specs={specs} onChange={setSpecs} />
+          <ProductSpecsSection specs={specs} onChange={setSpecs} designHeading={designHeading} connectivityHeading={connectivityHeading} onDesignHeadingChange={setDesignHeading} onConnectivityHeadingChange={setConnectivityHeading} />
 
           <ProductBannersSection banners={showcaseBanners} onChange={setShowcaseBanners} />
 

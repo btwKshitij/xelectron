@@ -517,6 +517,8 @@ export type CreateProductInput = {
   reviewsCount?: string;
   description: string;
   mainImage: string;
+  designHeading?: string | null;
+  connectivityHeading?: string | null;
   shippingNotice: string;
   quantity?: number;
   sku?: string | null;
@@ -526,7 +528,7 @@ export type CreateProductInput = {
   colors?: { name: string; bgHex: string; borderHex?: string | null }[];
   variants?: { name: string; sku?: string; price?: string; stock?: number; colorHex?: string; image?: string; sortOrder?: number }[];
   features?: string[];
-  specs?: { label: string; value: string }[];
+  specs?: { label: string; value: string; section?: "design" | "connectivity" | null }[];
   faqs?: { question: string; answer: string }[];
   banners?: { imageUrl: string; mobileImageUrl?: string | null; title?: string | null; sortOrder?: number }[];
   creatorVideos?: { title?: string | null; thumbnailUrl: string; videoUrl?: string | null; sortOrder?: number; isActive?: boolean }[];
@@ -576,6 +578,7 @@ export async function createProduct(data: CreateProductInput) {
                 .map((s) => ({
                   label: s.label.trim(),
                   value: s.value.trim(),
+                  section: s.section === "design" || s.section === "connectivity" ? s.section : null,
                 })),
             }
           : undefined,
@@ -634,6 +637,7 @@ export async function createProduct(data: CreateProductInput) {
                   .map((s) => ({
                     label: s.label.trim(),
                     value: s.value.trim(),
+                  section: s.section === "design" || s.section === "connectivity" ? s.section : null,
                   })),
               }
             : undefined,
@@ -709,6 +713,7 @@ export async function updateProduct(
             .map((s) => ({
               label: s.label.trim(),
               value: s.value.trim(),
+                  section: s.section === "design" || s.section === "connectivity" ? s.section : null,
             })),
         } : undefined,
         faqs: faqs !== undefined ? {
@@ -766,6 +771,7 @@ export async function updateProduct(
               .map((s) => ({
                 label: s.label.trim(),
                 value: s.value.trim(),
+                  section: s.section === "design" || s.section === "connectivity" ? s.section : null,
               })),
           } : undefined,
         },

@@ -1,3 +1,4 @@
+import { getSpecHeadings } from "@/lib/server/dal/product-spec-headings.dal";
 import type { Metadata } from "next";
 
 import { AppSidebar } from "@/components/admin/navigation/app-sidebar";
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
 };
 
 export default async function AddProductPage() {
-  const categories = await categoriesController.listCategories();
+  const [categories, specHeadings] = await Promise.all([categoriesController.listCategories(), getSpecHeadings()]);
 
   return (
     <TooltipProvider>
@@ -20,7 +21,7 @@ export default async function AddProductPage() {
         <AppSidebar />
         <SidebarInset>
           <main className="min-h-full bg-[#f5f5f5] p-4 text-black sm:p-5">
-            <AddProductForm categories={categories.map((c: any) => ({ id: c.id, title: c.title }))} />
+            <AddProductForm specHeadings={specHeadings} categories={categories.map((c: any) => ({ id: c.id, title: c.title }))} />
           </main>
         </SidebarInset>
       </SidebarProvider>

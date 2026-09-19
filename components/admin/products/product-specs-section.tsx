@@ -14,6 +14,10 @@ export interface SpecItem {
 }
 
 interface ProductSpecsSectionProps {
+  designHeading: string
+  connectivityHeading: string
+  onDesignHeadingChange: (heading: string) => void
+  onConnectivityHeadingChange: (heading: string) => void
   specs: SpecItem[]
   onChange: (specs: SpecItem[]) => void
 }
@@ -36,7 +40,7 @@ export function isConnectivitySpec(rawLabel: string): boolean {
   )
 }
 
-export function ProductSpecsSection({ specs, onChange }: ProductSpecsSectionProps) {
+export function ProductSpecsSection({ specs, onChange, designHeading, connectivityHeading, onDesignHeadingChange, onConnectivityHeadingChange }: ProductSpecsSectionProps) {
   // Partition specs into Design and Connectivity sections
   const { designSpecs, connectivitySpecs } = useMemo(() => {
     const design: SpecItem[] = []
@@ -101,13 +105,20 @@ export function ProductSpecsSection({ specs, onChange }: ProductSpecsSectionProp
 
   return (
     <div className="mt-4 space-y-4">
+      <p className="text-xs text-slate-500">Section headings are shared across all products. Save this product to apply heading changes everywhere.</p>
       {/* SECTION 1: Design, Display & Performance */}
       <section className="overflow-hidden rounded-xl border border-black/10 bg-white shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3.5 border-b border-black/10 bg-slate-50/70">
           <div>
             <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
               <Layers className="size-4 text-[#0a7ae6]" />
-              Design, Display & Performance
+              <Input
+                aria-label="First specification section heading"
+                value={designHeading}
+                onChange={(event) => onDesignHeadingChange(event.target.value)}
+                placeholder="Design, Display & Performance"
+                className="h-9 w-full min-w-0 border-black/15 bg-white text-sm font-bold sm:w-[360px]"
+              />
             </h2>
             <p className="mt-0.5 text-xs text-slate-500">
               Details for design, display, sensors, durability, and performance.
@@ -177,7 +188,13 @@ export function ProductSpecsSection({ specs, onChange }: ProductSpecsSectionProp
           <div>
             <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
               <Cpu className="size-4 text-[#0a7ae6]" />
-              Connectivity, Battery & Smart Features
+              <Input
+                aria-label="Second specification section heading"
+                value={connectivityHeading}
+                onChange={(event) => onConnectivityHeadingChange(event.target.value)}
+                placeholder="Connectivity, Battery & Smart Features"
+                className="h-9 w-full min-w-0 border-black/15 bg-white text-sm font-bold sm:w-[360px]"
+              />
             </h2>
             <p className="mt-0.5 text-xs text-slate-500">
               Details for smart features, battery life, charging, and app support.

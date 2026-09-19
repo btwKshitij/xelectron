@@ -36,6 +36,9 @@ export async function POST(request: NextRequest) {
     await requireAdmin();
     const body = await request.json();
     const product = await productsController.createProduct(body);
+    revalidatePath("/product/[id]", "page");
+    revalidatePath("/dashboard/products/[id]", "page");
+    revalidatePath("/dashboard/products/new");
     revalidatePath("/");
     return NextResponse.json({ success: true, data: product }, { status: 201 });
   } catch (error) {

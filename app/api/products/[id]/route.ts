@@ -46,6 +46,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       : isBestSellerToggle
         ? await productsController.setProductBestSellerPlacement(id, body.showInBestSellers)
       : await productsController.updateProduct(id, body);
+    revalidatePath("/product/[id]", "page");
+    revalidatePath("/dashboard/products/[id]", "page");
+    revalidatePath("/dashboard/products/new");
     revalidatePath("/");
     revalidatePath("/shop");
     revalidatePath("/product");

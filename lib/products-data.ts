@@ -5,6 +5,7 @@ export type ProductColor = {
 };
 
 export type ProductSpec = {
+  section?: "design" | "connectivity" | null;
   label: string;
   value: string;
 };
@@ -36,6 +37,8 @@ export type ProductDetailItem = {
   description: string;
   colors: ProductColor[];
   features: string[];
+  designHeading?: string | null;
+  connectivityHeading?: string | null;
   specs: ProductSpec[];
   faqs?: ProductFaq[];
   banners?: ProductBanner[];

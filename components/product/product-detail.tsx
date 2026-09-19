@@ -103,8 +103,11 @@ function toProductDetailItem(product: any, activeDeal?: any): ProductDetailItem 
               : feature.featureText || feature.text || feature.title || feature.name || String(feature)
           )
         : ["Official 1-Year Brand Warranty", "High Performance Optical Engine", "Fast Express Shipping Across India"],
+    designHeading: product.designHeading,
+    connectivityHeading: product.connectivityHeading,
     specs: Array.isArray(product.specs)
-      ? product.specs.map((spec: { label: string; value: string }) => ({
+      ? product.specs.map((spec: { label: string; value: string; section?: "design" | "connectivity" | null }) => ({
+          section: spec.section,
           label: spec.label,
           value: spec.value,
         }))
@@ -1169,8 +1172,8 @@ export default function ProductDetail({
           );
           if (rawSpecs.length === 0) return null;
 
-          const designSpecs = rawSpecs.filter((s: any) => !isConnectivityKey(s.label));
-          const connectivitySpecs = rawSpecs.filter((s: any) => isConnectivityKey(s.label));
+          const designSpecs = rawSpecs.filter((s: any) => (s.section ?? (isConnectivityKey(s.label) ? "connectivity" : "design")) === "design");
+          const connectivitySpecs = rawSpecs.filter((s: any) => (s.section ?? (isConnectivityKey(s.label) ? "connectivity" : "design")) === "connectivity");
 
           return (
             <section id="product-specifications" className="mt-6 sm:mt-16 pt-5 sm:pt-12 border-t border-slate-200 scroll-mt-24">
@@ -1178,7 +1181,7 @@ export default function ProductDetail({
                 {/* Column 1: Design, Display & Performance */}
                 <div className="space-y-3">
                   <h2 className="text-2xl sm:text-2xl font-bold text-slate-900 tracking-tight mb-2">
-                    Design, Display & Performance
+                    {product.designHeading?.trim() || "Design, Display & Performance"}
                   </h2>
                   {designSpecs.length > 0 ? (
                     <div className="divide-y divide-slate-100 border-t border-slate-100">
@@ -1207,7 +1210,7 @@ export default function ProductDetail({
                 {/* Column 2: Connectivity, Battery & Smart Features */}
                 <div className="space-y-3">
                   <h2 className="text-2xl sm:text-2xl font-bold text-slate-900 tracking-tight mb-2">
-                    Connectivity, Battery & Smart Features
+                    {product.connectivityHeading?.trim() || "Connectivity, Battery & Smart Features"}
                   </h2>
                   {connectivitySpecs.length > 0 ? (
                     <div className="divide-y divide-slate-100 border-t border-slate-100">

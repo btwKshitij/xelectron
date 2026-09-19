@@ -62,6 +62,7 @@ function getDbInstance(): PrismaClient {
       typeof (globalForPrisma.prisma as any).heroBanner === "undefined" ||
       typeof (globalForPrisma.prisma as any).announcement === "undefined" ||
       typeof (globalForPrisma.prisma as any).announcementSettings === "undefined" ||
+      typeof globalForPrisma.prisma.productSpecSettings === "undefined" ||
       typeof (globalForPrisma.prisma as any).creatorVideo === "undefined" ||
       typeof (globalForPrisma.prisma as any).productFaq === "undefined" ||
       typeof (globalForPrisma.prisma as any).productBanner === "undefined" ||

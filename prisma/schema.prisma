@@ -79,6 +79,8 @@ model Product {
   reviewsCount   String  @default("0") @map("reviews_count")
   description    String
   mainImage      String  @map("main_image")
+  designHeading String? @map("design_heading")
+  connectivityHeading String? @map("connectivity_heading")
   shippingNotice String  @map("shipping_notice")
   quantity       Int     @default(0)
   sku            String?
@@ -219,7 +221,16 @@ model ProductFeature {
   @@map("product_features")
 }
 
+model ProductSpecSettings {
+  id String @id @default("default")
+  designHeading String @map("design_heading")
+  connectivityHeading String @map("connectivity_heading")
+
+  @@map("product_spec_settings")
+}
+
 model ProductSpec {
+  section String?
   id    String @id @default(cuid())
   label String
   value String
@@ -546,4 +557,3 @@ model VerifiedBuyerReview {
   @@index([isActive, sortOrder])
   @@map("verified_buyer_reviews")
 }
-

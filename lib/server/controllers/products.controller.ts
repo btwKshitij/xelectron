@@ -1,3 +1,5 @@
+import { getSpecHeadings, saveSpecHeadings } from "@/lib/server/dal/product-spec-headings.dal";
+import { normalizeSpecHeadingChanges } from "@/lib/product-spec-headings";
 import * as productsDal from "@/lib/server/dal/products.dal";
 import type { CreateProductInput } from "@/lib/server/dal/products.dal";
 import { parsePriceNumber } from "@/lib/format-price";
@@ -74,9 +76,9 @@ export async function listCatalogProducts(searchQuery?: string, categorySlug?: s
 export async function getProduct(idOrSlug: string) {
   // Try by ID first, then by slug
   const byId = await productsDal.getProductById(idOrSlug);
-  if (byId) return applyEffectivePrice(byId);
+  if (byId) return { ...applyEffectivePrice(byId), ...await getSpecHeadings() };
   const bySlug = await productsDal.getProductBySlug(idOrSlug);
-  return applyEffectivePrice(bySlug);
+  return bySlug ? { ...applyEffectivePrice(bySlug), ...await getSpecHeadings() } : null;
 }
 
 // ─── Create ──────────────────────────────────────────────────────────────────
@@ -102,7 +104,11 @@ export async function createProduct(data: CreateProductInput) {
     data.name ||
     "High quality XElectron product with premium build and official brand warranty.";
 
-  return productsDal.createProduct({ ...data, description, slug });
+  const { designHeading, connectivityHeading, ...productData } = data;
+  const headings = normalizeSpecHeadingChanges({ designHeading, connectivityHeading });
+  const product = await productsDal.createProduct({ ...productData, description, slug });
+  await saveSpecHeadings(headings);
+  return { ...product, ...await getSpecHeadings() };
 }
 
 // ─── Update ──────────────────────────────────────────────────────────────────
@@ -139,7 +145,11 @@ export async function updateProduct(
     }
   }
 
-  return productsDal.updateProduct(existing.id, data);
+  const { designHeading, connectivityHeading, ...productData } = data;
+  const headings = normalizeSpecHeadingChanges({ designHeading, connectivityHeading });
+  const product = await productsDal.updateProduct(existing.id, productData);
+  await saveSpecHeadings(headings);
+  return { ...product, ...await getSpecHeadings() };
 }
 
 export async function setProductNavbarPlacement(id: string, showInNavbar: boolean) {
