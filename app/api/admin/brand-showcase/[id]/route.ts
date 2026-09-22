@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { verifySession } from "@/lib/server/dal/auth";
 import {
   getBrandShowcaseItem,
@@ -50,11 +51,13 @@ export async function PATCH(
     if (body.title !== undefined) updateData.title = body.title.trim();
     if (body.subtitle !== undefined) updateData.subtitle = body.subtitle.trim();
     if (body.image !== undefined) updateData.image = body.image.trim();
+    if (body.mobileImage !== undefined) updateData.mobileImage = typeof body.mobileImage === "string" ? body.mobileImage.trim() || null : null;
     if (body.linkUrl !== undefined) updateData.linkUrl = body.linkUrl ? body.linkUrl.trim() : null;
     if (body.sortOrder !== undefined) updateData.sortOrder = Number(body.sortOrder) || 0;
     if (body.isActive !== undefined) updateData.isActive = Boolean(body.isActive);
 
     const updated = await updateBrandShowcaseItem(id, updateData);
+    revalidatePath("/");
     return NextResponse.json(updated);
   } catch (error: any) {
     console.error("Failed to update brand showcase item:", error);
@@ -77,6 +80,7 @@ export async function DELETE(
   const { id } = await props.params;
   try {
     await deleteBrandShowcaseItem(id);
+    revalidatePath("/");
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error("Failed to delete brand showcase item:", error);

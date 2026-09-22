@@ -23,6 +23,8 @@ import * as bannersController from "@/lib/server/controllers/banners.controller"
 import * as verifiedReviewsController from "@/lib/server/controllers/verified-reviews.controller";
 import { defaultDealOfTheDay } from "@/lib/shared/default-deal-of-the-day";
 import { resolveCategoryImage } from "@/lib/shared/category-utils";
+import { getLatestLaunchIds } from "@/lib/server/dal/latest-launch.dal";
+import { selectLatestLaunchProducts } from "@/lib/latest-launch";
 
 export const revalidate = 60;
 
@@ -30,6 +32,7 @@ export default async function Home() {
   let selectedBestSellers: BestSellerItem[] = [];
   let storefrontCategories: Array<{ id: string; title: string; slug: string; image: string }> = [];
   let featuredProducts: StorefrontProduct[] = [];
+  const reviewProductImages = new Map<string, string>();
   let dealOfTheDay: React.ComponentProps<typeof DealOfTheDaySection>["deal"] | null = {
     title: defaultDealOfTheDay.title,
     description: defaultDealOfTheDay.description,
@@ -76,9 +79,13 @@ export default async function Home() {
 
   try {
     const products = await productsController.listProducts();
-    // Best Seller products have their own home-page section, so do not repeat
-    // them in either of the regular catalogue sections below.
-    featuredProducts = products.filter((product: any) => !product.showInBestSellers).map((product: any) => ({
+    for (const product of products) {
+      if (product.mainImage) {
+        reviewProductImages.set(product.name.trim().toLowerCase(), product.mainImage);
+      }
+    }
+    const latestLaunchIds = await getLatestLaunchIds();
+    featuredProducts = selectLatestLaunchProducts(products, latestLaunchIds).map((product: any) => ({
       id: product.id,
       slug: product.slug,
       name: product.name,
@@ -179,7 +186,10 @@ export default async function Home() {
 
   let verifiedReviews: any[] = [];
   try {
-    verifiedReviews = await verifiedReviewsController.listActiveVerifiedReviews();
+    verifiedReviews = (await verifiedReviewsController.listActiveVerifiedReviews()).map((review) => ({
+      ...review,
+      productImage: reviewProductImages.get(review.product.trim().toLowerCase()),
+    }));
   } catch {
     // Falls back to default items
   }

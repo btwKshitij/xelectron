@@ -16,7 +16,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       ...(body.title !== undefined && { title: body.title }),
       ...(body.thumbnailUrl !== undefined && { thumbnailUrl: body.thumbnailUrl }),
       ...(body.videoUrl !== undefined && { videoUrl: body.videoUrl }),
-      ...(body.productId !== undefined && { productId: body.productId }),
+      ...(body.productId !== undefined && { productId: body.productId || null }),
       ...(body.sortOrder !== undefined && { sortOrder: Number(body.sortOrder) }),
       ...(body.isActive !== undefined && { isActive: Boolean(body.isActive) }),
     });

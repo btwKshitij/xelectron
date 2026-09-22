@@ -82,6 +82,14 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
   const [uploadProgressDesktop, setUploadProgressDesktop] = useState<number | null>(null)
   const [isUploadingMobile, setIsUploadingMobile] = useState(false)
   const [uploadProgressMobile, setUploadProgressMobile] = useState<number | null>(null)
+  const [desktopUploadPreview, setDesktopUploadPreview] = useState<{ url: string; isVideo: boolean } | null>(null)
+  const [mobileUploadPreview, setMobileUploadPreview] = useState<{ url: string; isVideo: boolean } | null>(null)
+  useEffect(() => () => {
+    if (desktopUploadPreview) URL.revokeObjectURL(desktopUploadPreview.url)
+  }, [desktopUploadPreview])
+  useEffect(() => () => {
+    if (mobileUploadPreview) URL.revokeObjectURL(mobileUploadPreview.url)
+  }, [mobileUploadPreview])
   const [isDraggingDesktop, setIsDraggingDesktop] = useState(false)
   const [isDraggingMobile, setIsDraggingMobile] = useState(false)
   const [showDesktopUrlInput, setShowDesktopUrlInput] = useState(false)
@@ -272,6 +280,11 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
     return cat ? `/shop?filter=${cat.slug}` : "/shop"
   }
 
+  const desktopPreviewSrc = desktopUploadPreview?.url || formData.src
+  const mobilePreviewSrc = mobileUploadPreview?.url || formData.mobileSrc
+  const desktopPreviewIsVideo = desktopUploadPreview?.isVideo ?? isVideoUrl(formData.src)
+  const mobilePreviewIsVideo = mobileUploadPreview?.isVideo ?? isVideoUrl(formData.mobileSrc)
+
   function inspectMediaFile(file: File, isMobile: boolean) {
     const isVideo = file.type.startsWith("video/") || isVideoUrl(file.name)
     const formattedSize = formatBytes(file.size)
@@ -436,8 +449,9 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
   }
 
   async function handleDesktopFileUpload(file: File) {
-    if (!file) return
+    if (!file || isUploadingDesktop || isSubmitting) return
     setIsUploadingDesktop(true)
+    setDesktopUploadPreview({ url: URL.createObjectURL(file), isVideo: file.type.startsWith("video/") || isVideoUrl(file.name) })
     setUploadProgressDesktop(0)
     inspectMediaFile(file, false)
 
@@ -453,14 +467,16 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
       console.error("Desktop media upload failed:", err)
       toast.error(err?.message || "Media upload failed")
     } finally {
+      setDesktopUploadPreview(null)
       setIsUploadingDesktop(false)
       setUploadProgressDesktop(null)
     }
   }
 
   async function handleMobileFileUpload(file: File) {
-    if (!file) return
+    if (!file || isUploadingMobile || isSubmitting) return
     setIsUploadingMobile(true)
+    setMobileUploadPreview({ url: URL.createObjectURL(file), isVideo: file.type.startsWith("video/") || isVideoUrl(file.name) })
     setUploadProgressMobile(0)
     inspectMediaFile(file, true)
 
@@ -476,6 +492,7 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
       console.error("Mobile media upload failed:", err)
       toast.error(err?.message || "Mobile media upload failed")
     } finally {
+      setMobileUploadPreview(null)
       setIsUploadingMobile(false)
       setUploadProgressMobile(null)
     }
@@ -483,6 +500,7 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (isUploadingDesktop || isUploadingMobile || isSubmitting) return
     if (!formData.title.trim()) {
       toast.error("Banner title is required")
       return
@@ -982,7 +1000,7 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
               </div>
               <button
                 type="button"
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => setIsModalOpen(false)} disabled={isUploadingDesktop || isUploadingMobile || isSubmitting}
                 className="rounded-md p-1.5 text-black/50 hover:bg-black/5 hover:text-black transition-colors"
               >
                 <XIcon className="size-5" />
@@ -1118,13 +1136,13 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
 
                     {/* Preview / Dropzone */}
                     <div className="mt-3 flex flex-1 flex-col">
-                      {formData.src ? (
+                      {desktopPreviewSrc ? (
                         <div className="space-y-2">
                           <div className="relative aspect-16/9 w-full overflow-hidden rounded-lg border border-black/15 bg-slate-900 shadow-2xs group">
-                            {isYouTubeUrl(formData.src) ? (
+                            {isYouTubeUrl(desktopPreviewSrc) ? (
                               <div className="relative w-full h-full bg-black flex items-center justify-center">
                                 <img
-                                  src={getYouTubeThumbnail(formData.src) || "/creator-projector.png"}
+                                  src={getYouTubeThumbnail(desktopPreviewSrc) || "/creator-projector.png"}
                                   alt="YouTube Desktop Preview"
                                   className="w-full h-full object-cover opacity-85"
                                 />
@@ -1134,9 +1152,10 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
                                   </div>
                                 </div>
                               </div>
-                            ) : isVideoUrl(formData.src) ? (
+                            ) : desktopPreviewIsVideo ? (
                               <video
-                                src={formData.src}
+                                key={desktopPreviewSrc}
+                                src={desktopPreviewSrc}
                                 autoPlay
                                 loop
                                 muted
@@ -1155,7 +1174,7 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
                               />
                             ) : (
                               <Image
-                                src={formData.src}
+                                src={desktopPreviewSrc}
                                 alt="Desktop Preview"
                                 fill
                                 onLoadingComplete={(img) => {
@@ -1172,12 +1191,12 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
 
                             {/* Type Indicator Badge */}
                             <div className="absolute top-2 left-2 z-10 flex items-center gap-1 rounded bg-black/75 px-2 py-0.5 text-[10px] font-medium text-white backdrop-blur-2xs">
-                              {isYouTubeUrl(formData.src) ? (
+                              {isYouTubeUrl(desktopPreviewSrc) ? (
                                 <>
                                   <PlayIcon className="size-3 fill-red-500 text-red-500" />
                                   <span>YouTube Video</span>
                                 </>
-                              ) : isVideoUrl(formData.src) ? (
+                              ) : desktopPreviewIsVideo ? (
                                 <>
                                   <FilmIcon className="size-3 text-sky-400" />
                                   <span>Video Banner</span>
@@ -1451,13 +1470,13 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
 
                     {/* Preview / Dropzone */}
                     <div className="mt-3 flex flex-1 flex-col">
-                      {formData.mobileSrc ? (
+                      {mobilePreviewSrc ? (
                         <div className="space-y-2">
                           <div className="relative aspect-16/9 w-full overflow-hidden rounded-lg border border-black/15 bg-slate-900 shadow-2xs group">
-                            {isYouTubeUrl(formData.mobileSrc) ? (
+                            {isYouTubeUrl(mobilePreviewSrc) ? (
                               <div className="relative w-full h-full bg-black flex items-center justify-center">
                                 <img
-                                  src={getYouTubeThumbnail(formData.mobileSrc) || "/creator-projector.png"}
+                                  src={getYouTubeThumbnail(mobilePreviewSrc) || "/creator-projector.png"}
                                   alt="YouTube Mobile Preview"
                                   className="w-full h-full object-cover opacity-85"
                                 />
@@ -1467,9 +1486,10 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
                                   </div>
                                 </div>
                               </div>
-                            ) : isVideoUrl(formData.mobileSrc) ? (
+                            ) : mobilePreviewIsVideo ? (
                               <video
-                                src={formData.mobileSrc}
+                                key={mobilePreviewSrc}
+                                src={mobilePreviewSrc}
                                 autoPlay
                                 loop
                                 muted
@@ -1488,7 +1508,7 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
                               />
                             ) : (
                               <Image
-                                src={formData.mobileSrc}
+                                src={mobilePreviewSrc}
                                 alt="Mobile Preview"
                                 fill
                                 onLoadingComplete={(img) => {
@@ -1505,12 +1525,12 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
 
                             {/* Type Indicator Badge */}
                             <div className="absolute top-2 left-2 z-10 flex items-center gap-1 rounded bg-black/75 px-2 py-0.5 text-[10px] font-medium text-white backdrop-blur-2xs">
-                              {isYouTubeUrl(formData.mobileSrc) ? (
+                              {isYouTubeUrl(mobilePreviewSrc) ? (
                                 <>
                                   <PlayIcon className="size-3 fill-red-500 text-red-500" />
                                   <span>YouTube Video</span>
                                 </>
-                              ) : isVideoUrl(formData.mobileSrc) ? (
+                              ) : mobilePreviewIsVideo ? (
                                 <>
                                   <FilmIcon className="size-3 text-sky-400" />
                                   <span>Mobile Video</span>
@@ -1798,7 +1818,7 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
               <div className="flex items-center justify-end gap-2 border-t border-black/10 px-6 py-3.5 bg-neutral-50 shrink-0">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => setIsModalOpen(false)} disabled={isUploadingDesktop || isUploadingMobile || isSubmitting}
                   className="rounded-lg border border-black/20 bg-white px-4 py-2 text-xs font-semibold text-black hover:bg-black/5 transition-colors"
                 >
                   Cancel
@@ -1806,11 +1826,11 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
 
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isUploadingDesktop || isUploadingMobile}
                   className="inline-flex items-center gap-1.5 rounded-lg bg-black px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-black/80 disabled:opacity-50"
                 >
                   {isSubmitting ? <Loader2Icon className="size-3.5 animate-spin" /> : null}
-                  {editingBanner ? "Save Changes" : "Create Banner"}
+                  {isUploadingDesktop || isUploadingMobile ? "Waiting for upload…" : editingBanner ? "Save Changes" : "Create Banner"}
                 </button>
               </div>
             </form>

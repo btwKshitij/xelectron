@@ -10,6 +10,7 @@ export type BrandShowcaseItem = {
   title: string;
   subtitle: string;
   image: string;
+  mobileImage?: string | null;
   linkUrl?: string | null;
   sortOrder?: number;
   isActive?: boolean;
@@ -76,7 +77,7 @@ export default function BrandSetupSection({
                 <article className="relative min-w-[76vw] snap-start overflow-hidden rounded-[10px] bg-slate-100">
                   <div className="relative h-[370px] w-full">
                     <Image
-                      src={item.image}
+                      src={item.mobileImage || item.image}
                       alt={item.title}
                       fill
                       unoptimized

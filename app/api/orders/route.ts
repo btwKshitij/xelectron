@@ -67,17 +67,29 @@ export async function POST(request: NextRequest) {
       await setSessionCookie((order as any).sessionToken);
     }
 
-    // Trigger order confirmation email in background
-    if (order && (order.customerEmail || body.email)) {
+    // Trigger order confirmation email in background to customer and notify info@xelectron.com & customercare@xelectron.com
+    if (order) {
       import("@/lib/server/mail").then(({ sendOrderConfirmationEmail }) => {
         sendOrderConfirmationEmail({
           id: order.id,
           customerName: order.customerName,
           customerEmail: order.customerEmail || body.email,
+          customerPhone: order.customerPhone || cleanPhone,
+          shippingAddress: order.shippingAddress || body.shippingAddress,
+          city: order.city || body.city,
+          state: order.state || body.state,
+          pincode: order.pincode || body.pincode,
+          paymentMethod: isCod ? "Cash on Delivery (COD)" : (body.paymentMethod || "COD"),
           total: order.total,
           trackingNumber: order.trackingNumber,
           trackingUrl: order.trackingUrl,
           estimatedDelivery: order.estimatedDelivery,
+          items: order.items?.map((item: any) => ({
+            name: item.product?.name || item.name || "Product",
+            quantity: item.quantity,
+            price: item.unitPrice,
+            unitPrice: item.unitPrice,
+          })),
         }).catch((err) => console.warn("Failed to send order email:", err));
       });
     }

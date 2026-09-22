@@ -19,13 +19,13 @@ export async function GET() {
         buttonText: settings.buttonText,
         discountCode: settings.discountCode,
       },
-    });
+    }, { headers: { "Cache-Control": "no-store" } });
   } catch (err: any) {
     console.error("Failed to load festive popup settings for storefront:", err);
     return NextResponse.json({
       success: true,
       settings: {
-        isActive: true,
+        isActive: false,
         imageUrl: "/ganesh-chaturthi-popup-clean.png",
         badgeTitle: "GANESH CHATURTHI SPECIAL",
         heading: "BRING HOME MORE JOY",

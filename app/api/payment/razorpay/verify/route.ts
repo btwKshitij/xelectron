@@ -72,6 +72,33 @@ export async function POST(request: NextRequest) {
       await setSessionCookie((order as any).sessionToken);
     }
 
+    // Trigger order confirmation email in background to customer and notify info@xelectron.com & customercare@xelectron.com
+    if (order) {
+      import("@/lib/server/mail").then(({ sendOrderConfirmationEmail }) => {
+        sendOrderConfirmationEmail({
+          id: order.id,
+          customerName: order.customerName,
+          customerEmail: order.customerEmail || orderDetails?.customerEmail || orderDetails?.email,
+          customerPhone: order.customerPhone || orderDetails?.customerPhone || orderDetails?.phone,
+          shippingAddress: order.shippingAddress || orderDetails?.shippingAddress,
+          city: order.city || orderDetails?.city,
+          state: order.state || orderDetails?.state,
+          pincode: order.pincode || orderDetails?.pincode,
+          paymentMethod: "Razorpay (Online Paid)",
+          total: order.total,
+          trackingNumber: order.trackingNumber,
+          trackingUrl: order.trackingUrl,
+          estimatedDelivery: order.estimatedDelivery,
+          items: order.items?.map((item: any) => ({
+            name: item.product?.name || item.name || "Product",
+            quantity: item.quantity,
+            price: item.unitPrice,
+            unitPrice: item.unitPrice,
+          })),
+        }).catch((err) => console.warn("Failed to send Razorpay order email:", err));
+      });
+    }
+
     return NextResponse.json({
       success: true,
       data: order,

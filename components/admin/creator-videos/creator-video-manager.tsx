@@ -21,17 +21,9 @@ import {
 import { toast } from "sonner"
 import type { CreatorVideoItem } from "@/lib/server/controllers/creator-videos.controller"
 import { uploadProductImage } from "@/lib/client/upload-product-image"
+import { extractYouTubeThumbnail, getYouTubeId, getInstagramPostUrl, thumbnailForVideoChange } from "@/lib/creator-video-media"
 
-export function extractYouTubeThumbnail(url: string): string {
-  if (!url) return url;
-  const trimmed = url.trim();
-  const regExp = /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/|watch\?.+&v=))([\w-]{11})/;
-  const match = trimmed.match(regExp);
-  if (match && match[1]) {
-    return `https://img.youtube.com/vi/${match[1]}/hqdefault.jpg`;
-  }
-  return trimmed;
-}
+export { extractYouTubeThumbnail } from "@/lib/creator-video-media"
 
 type ProductOption = {
   id: string
@@ -67,12 +59,12 @@ function ProductSelectPicker({
       <div className="flex items-center justify-between rounded-xl border border-black/15 bg-slate-50 p-2.5 shadow-2xs">
         <div className="flex items-center gap-3 min-w-0">
           <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-white shrink-0 border border-black/10">
-            <Image
+            {selectedProduct.mainImage && <Image
               src={selectedProduct.mainImage}
               alt={selectedProduct.name}
               fill
               className="object-cover"
-            />
+            />}
           </div>
           <div className="min-w-0">
             <p className="font-semibold text-black truncate text-xs">{selectedProduct.name}</p>
@@ -181,7 +173,7 @@ function ProductSelectPicker({
               }`}
             >
               <div className="relative w-9 h-9 rounded-lg overflow-hidden bg-slate-200 shrink-0 border border-black/10">
-                <Image src={p.mainImage} alt={p.name} fill className="object-cover" />
+                {p.mainImage && <Image src={p.mainImage} alt={p.name} fill className="object-cover" />}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="font-semibold truncate leading-tight">{p.name}</p>
@@ -225,10 +217,11 @@ export function CreatorVideoManager({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
 
-  // Sync / fetch videos
-  useEffect(() => {
-    setVideos(initialVideos || [])
-  }, [initialVideos])
+  const [previousInitialVideos, setPreviousInitialVideos] = useState(initialVideos)
+  if (previousInitialVideos !== initialVideos) {
+    setPreviousInitialVideos(initialVideos)
+    setVideos(initialVideos)
+  }
 
   // Fetch product options for dropdown
   useEffect(() => {
@@ -237,11 +230,11 @@ export function CreatorVideoManager({
       .then((json) => {
         if (json.success && Array.isArray(json.data)) {
           setProducts(
-            json.data.map((p: any) => ({
+            json.data.map((p: Omit<ProductOption, "category"> & { category?: string | { title?: string } }) => ({
               id: p.id,
               name: p.name,
               slug: p.slug,
-              mainImage: p.mainImage || "/category-smartphone.png",
+              mainImage: p.mainImage || "",
               price: p.price,
               category: typeof p.category === "string" ? p.category : p.category?.title,
             }))
@@ -341,11 +334,13 @@ export function CreatorVideoManager({
       toast.error("Failed to upload thumbnail")
     } finally {
       setIsUploading(false)
+      e.target.value = ""
     }
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (isUploading || isSubmitting) return
     if (!formData.thumbnailUrl) {
       toast.error("Thumbnail image is required")
       return
@@ -389,8 +384,8 @@ export function CreatorVideoManager({
       }
       setIsModalOpen(false)
       router.refresh()
-    } catch (err: any) {
-      toast.error(err.message || "An error occurred")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "An error occurred")
     } finally {
       setIsSubmitting(false)
     }
@@ -400,7 +395,7 @@ export function CreatorVideoManager({
   const totalCount = videos.length
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="w-full p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5">
         <div>
@@ -458,7 +453,7 @@ export function CreatorVideoManager({
           </div>
           <h3 className="text-sm font-semibold text-black/70">No creator videos yet</h3>
           <p className="text-xs text-black/40 mt-1 max-w-xs mx-auto">
-            Add YouTube or MP4 links to feature creator reviews and demos on your homepage.
+            Add YouTube, Instagram, or MP4 links to feature creator reviews and demos on your homepage.
           </p>
           <button
             onClick={openAddModal}
@@ -469,7 +464,7 @@ export function CreatorVideoManager({
           </button>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
           {videos.map((vid, idx) => (
             <div
               key={vid.id}
@@ -502,8 +497,8 @@ export function CreatorVideoManager({
 
               {/* Info */}
               <div className="flex-1 min-w-0 py-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <h4 className="text-sm font-semibold text-black truncate">
+                <div className="flex flex-wrap items-center gap-2 mb-1">
+                  <h4 className="text-sm font-semibold text-black line-clamp-2">
                     {vid.title || "Untitled Video"}
                   </h4>
                   <span
@@ -529,13 +524,13 @@ export function CreatorVideoManager({
                 {vid.product ? (
                   <div className="inline-flex items-center gap-2 bg-black/[0.04] rounded-lg px-2.5 py-1.5">
                     <div className="relative w-6 h-6 rounded overflow-hidden bg-white shrink-0 border border-black/10">
-                      <Image
+                      {vid.product.mainImage && <Image
                         src={vid.product.mainImage}
                         alt={vid.product.name}
                         fill
                         unoptimized
                         className="object-cover"
-                      />
+                      />}
                     </div>
                     <span className="text-[11px] font-medium text-black/70 truncate max-w-[200px]">
                       {vid.product.name}
@@ -554,7 +549,7 @@ export function CreatorVideoManager({
               </div>
 
               {/* Actions */}
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex flex-col sm:flex-row items-center gap-1 shrink-0">
                 <button
                   onClick={() => handleToggleActive(vid)}
                   className={`p-2 rounded-lg transition cursor-pointer ${
@@ -625,22 +620,36 @@ export function CreatorVideoManager({
                 </label>
                 <input
                   type="text"
-                  placeholder="https://www.youtube.com/watch?v=... or .mp4 link"
+                  placeholder="YouTube, Instagram Reel/post, or MP4 URL"
                   value={formData.videoUrl}
                   onChange={(e) => {
                     const val = e.target.value;
-                    const autoThumb = !formData.thumbnailUrl ? extractYouTubeThumbnail(val) : formData.thumbnailUrl;
-                    setFormData({
-                      ...formData,
+                    setFormData((previous) => ({
+                      ...previous,
                       videoUrl: val,
-                      thumbnailUrl: autoThumb,
-                    });
+                      thumbnailUrl: thumbnailForVideoChange(previous.videoUrl, previous.thumbnailUrl, val),
+                    }));
                   }}
                   className="w-full rounded-lg border border-black/15 bg-black/[0.02] px-3 py-2.5 text-xs outline-none focus:border-black/40 focus:bg-white transition"
                 />
                 <p className="mt-1.5 text-[10px] text-black/40">
-                  YouTube links auto-generate the thumbnail.
+                  YouTube thumbnails update with the video link. Uploaded images are kept.
                 </p>
+                {getInstagramPostUrl(formData.videoUrl) && (
+                  <div className="mt-3 space-y-2">
+                    <p className="text-[11px] leading-relaxed text-black/60">
+                      Use a public Instagram Reel or post with embedding enabled. Upload a cover image below. Playback uses Instagram’s own controls.
+                    </p>
+                    <iframe
+                      key={getInstagramPostUrl(formData.videoUrl)}
+                      src={`${getInstagramPostUrl(formData.videoUrl)}embed/`}
+                      title="Instagram video preview"
+                      allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+                      allowFullScreen
+                      className="h-96 w-full rounded-lg border border-black/10 bg-white"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Thumbnail Image URL / Upload */}
@@ -669,6 +678,16 @@ export function CreatorVideoManager({
                     />
                   </label>
                 </div>
+                {getYouTubeId(formData.videoUrl) && (
+                  <button
+                    type="button"
+                    disabled={isUploading}
+                    onClick={() => setFormData((previous) => ({ ...previous, thumbnailUrl: extractYouTubeThumbnail(previous.videoUrl) }))}
+                    className="mt-2 text-xs font-medium text-blue-600 hover:underline disabled:opacity-50"
+                  >
+                    Use current YouTube thumbnail
+                  </button>
+                )}
                 {formData.thumbnailUrl && (
                   <div className="mt-2.5 relative h-32 w-20 rounded-lg overflow-hidden border border-black/10 bg-slate-900">
                     <Image
@@ -708,7 +727,7 @@ export function CreatorVideoManager({
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isUploading}
                   className="inline-flex items-center gap-2 rounded-lg bg-black px-5 py-2.5 text-xs font-semibold text-white hover:bg-black/80 transition cursor-pointer disabled:opacity-50"
                 >
                   {isSubmitting && <Loader2Icon className="w-4 h-4 animate-spin" />}

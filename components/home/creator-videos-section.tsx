@@ -17,7 +17,7 @@ import {
   VolumeX,
 } from "lucide-react";
 import { useCart } from "@/components/providers/cart-provider";
-import { toast } from "sonner";
+import { extractYouTubeThumbnail, getYouTubeId, getInstagramPostUrl } from "@/lib/creator-video-media";
 
 type CreatorVideoType = {
   id: string;
@@ -40,23 +40,6 @@ type CreatorVideoType = {
 
 const FLIP_HINT_STORAGE_KEY = "xelectron:creator-videos:flip-hint-seen";
 let flipHintSeen = false;
-
-function extractYouTubeId(url?: string | null): string | null {
-  if (!url) return null;
-  const trimmed = url.trim();
-  const regExp = /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/|watch\?.+&v=)|img\.youtube\.com\/vi\/)([\w-]{11})/;
-  const match = trimmed.match(regExp);
-  return match && match[1] ? match[1] : null;
-}
-
-function extractYouTubeThumbnail(url: string): string {
-  if (!url) return url;
-  const ytId = extractYouTubeId(url);
-  if (ytId) {
-    return `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
-  }
-  return url.trim();
-}
 
 export default function CreatorVideosSection() {
   const router = useRouter();
@@ -101,9 +84,13 @@ export default function CreatorVideosSection() {
   }, [isLoading, videoList.length]);
 
   useEffect(() => {
+    let controller: AbortController | undefined;
     async function fetchVideos() {
+      controller?.abort();
+      controller = new AbortController();
+      const { signal } = controller;
       try {
-        const res = await fetch("/api/creator-videos");
+        const res = await fetch("/api/creator-videos", { cache: "no-store", signal });
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data)) {
@@ -111,12 +98,18 @@ export default function CreatorVideosSection() {
           }
         }
       } catch (err) {
+        if (signal.aborted) return;
         console.error("Failed to fetch creator videos:", err);
       } finally {
-        setIsLoading(false);
+        if (!signal.aborted) setIsLoading(false);
       }
     }
     fetchVideos();
+    window.addEventListener("focus", fetchVideos);
+    return () => {
+      controller?.abort();
+      window.removeEventListener("focus", fetchVideos);
+    };
   }, []);
 
   if (!isLoading && videoList.length === 0) {
@@ -128,14 +121,6 @@ export default function CreatorVideosSection() {
   const toggleFlip = (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setFlippedCards((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  const handleNavigateToProduct = (url: string, e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    router.push(url);
   };
 
   const scroll = (direction: "left" | "right") => {
@@ -154,7 +139,7 @@ export default function CreatorVideosSection() {
         <div className="mb-4 sm:mb-6 flex items-center justify-between gap-4">
           <div>
             <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-950">
-              Insta video
+              Influencers Voice
             </h2>
           </div>
 
@@ -185,9 +170,9 @@ export default function CreatorVideosSection() {
           className="no-scrollbar flex snap-x snap-mandatory gap-3.5 sm:gap-6 overflow-x-auto pb-4 pt-1 scroll-smooth px-1 sm:px-0"
         >
           {videos.map((vid) => {
-            const ytId = extractYouTubeId(vid.videoUrl || vid.thumbnailUrl);
+            const ytId = getYouTubeId(vid.videoUrl);
+            const instagramUrl = getInstagramPostUrl(vid.videoUrl);
             const isFlipped = !!flippedCards[vid.id];
-            const targetUrl = vid.product ? `/product/${vid.product.slug}` : "/shop";
 
             return (
               <div
@@ -216,7 +201,16 @@ export default function CreatorVideosSection() {
                     }`}
                   >
                     {/* VIDEO AUTOPLAY LAYER */}
-                    {ytId ? (
+                    {instagramUrl ? (
+                      <iframe
+                        src={`${instagramUrl}embed/`}
+                        title={vid.title || "Instagram creator video"}
+                        allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+                        allowFullScreen
+                        loading="lazy"
+                        className="absolute inset-x-0 top-0 h-[calc(100%-48px)] w-full border-0 bg-white"
+                      />
+                    ) : ytId && isPlaying ? (
                       <div className="absolute inset-0 flex items-center justify-center bg-black overflow-hidden pointer-events-none select-none">
                         <iframe
                           src={`https://www.youtube.com/embed/${ytId}?autoplay=${isPlaying ? 1 : 0}&mute=${isMuted ? 1 : 0}&loop=1&playlist=${ytId}&controls=0&showinfo=0&rel=0&modestbranding=1&disablekb=1&fs=0&playsinline=1&iv_load_policy=3&enablejsapi=1`}
@@ -226,7 +220,7 @@ export default function CreatorVideosSection() {
                           className="pointer-events-none absolute inset-0 w-full h-full object-cover border-0 select-none scale-[1.03]"
                         />
                       </div>
-                    ) : vid.videoUrl ? (
+                    ) : vid.videoUrl && !ytId && isPlaying ? (
                       <video
                         src={vid.videoUrl}
                         poster={extractYouTubeThumbnail(vid.thumbnailUrl)}
@@ -249,9 +243,20 @@ export default function CreatorVideosSection() {
                     )}
 
                     {/* TRANSPARENT INTERACTION SHIELD & SUBTLE BOTTOM GRADIENT */}
-                    <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-auto cursor-pointer select-none" />
+                    {!instagramUrl && <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-auto cursor-pointer select-none" />}
 
-                    {showFlipHint && !isFlipped && (
+                    {instagramUrl && (
+                      <div className="absolute inset-x-0 bottom-0 z-20 flex h-12 items-center justify-between gap-2 bg-slate-950 px-3 text-xs text-white">
+                        <button type="button" onClick={(event) => toggleFlip(vid.id, event)} className="cursor-pointer font-semibold hover:underline">
+                          {vid.product ? "View product" : "Visit shop"}
+                        </button>
+                        <a href={instagramUrl} target="_blank" rel="noopener noreferrer" onClick={(event) => event.stopPropagation()} className="text-white/80 hover:text-white hover:underline">
+                          Open Instagram
+                        </a>
+                      </div>
+                    )}
+
+                    {showFlipHint && !isFlipped && !instagramUrl && (
                       <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
                         <span className="flex items-center gap-3 rounded-full border border-white/30 bg-black/75 px-4 py-3 text-sm font-medium text-white shadow-lg backdrop-blur-sm">
                           <span aria-hidden="true" className="relative flex size-8 items-center justify-center">
@@ -289,7 +294,7 @@ export default function CreatorVideosSection() {
                     </button>
 
                     {/* BOTTOM-LEFT VIDEO CONTROLS: PLAY/PAUSE & MUTE */}
-                    <div className="absolute bottom-3.5 left-3.5 z-20 flex items-center gap-2 pointer-events-auto">
+                    {!instagramUrl && <div className="absolute bottom-3.5 left-3.5 z-20 flex items-center gap-2 pointer-events-auto">
                       <button
                         type="button"
                         onClick={(e) => {
@@ -312,10 +317,10 @@ export default function CreatorVideosSection() {
                       >
                         {isMuted ? <VolumeX className="size-3.5" /> : <Volume2 className="size-3.5" />}
                       </button>
-                    </div>
+                    </div>}
 
                     {/* BOTTOM TITLE */}
-                    {vid.title && (
+                    {vid.title && !instagramUrl && (
                       <div className="absolute bottom-12 left-4 right-4 z-20 text-white pointer-events-auto">
                         <p className="text-xs sm:text-sm font-semibold leading-snug drop-shadow-md line-clamp-2">
                           {vid.title}
@@ -351,13 +356,13 @@ export default function CreatorVideosSection() {
                       <>
                         {/* PRODUCT IMAGE */}
                         <div className="relative h-[56%] w-full rounded-xl bg-[#fbfbfd] overflow-hidden p-3 flex items-center justify-center group/img shrink-0">
-                          <Image
-                            src={vid.product.mainImage || extractYouTubeThumbnail(vid.thumbnailUrl)}
+                          {vid.product.mainImage ? <Image
+                            src={vid.product.mainImage}
                             alt={vid.product.name}
                             fill
                             unoptimized
                             className="object-contain p-2 transition-transform duration-300 group-hover/img:scale-105"
-                          />
+                          /> : <span className="text-xs text-slate-400">No product image</span>}
                         </div>
 
                         {/* PRODUCT DETAILS BODY */}

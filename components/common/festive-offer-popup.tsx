@@ -18,7 +18,7 @@ export type FestiveOfferSettings = {
 };
 
 const DEFAULT_SETTINGS: FestiveOfferSettings = {
-  isActive: true,
+  isActive: false,
   imageUrl: "/ganesh-chaturthi-popup-clean.png",
   badgeTitle: "GANESH CHATURTHI SPECIAL",
   heading: "BRING HOME MORE JOY",
@@ -39,7 +39,8 @@ export default function FestiveOfferPopup() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [copied, setCopied] = useState(false);
   const [discountCode, setDiscountCode] = useState(DEFAULT_SETTINGS.discountCode);
-  const [isMounted, setIsMounted] = useState(false);
+  const [loadedPath, setLoadedPath] = useState<string | null>(null);
+  const isMounted = loadedPath === pathname;
 
   // Exclude dashboard, admin, auth, and checkout pages
   const isExcluded =
@@ -50,23 +51,41 @@ export default function FestiveOfferPopup() {
     pathname.startsWith("/checkout");
 
   useEffect(() => {
-    setIsMounted(true);
-
-    // Fetch dynamic settings from API
-    fetch("/api/festive-offer")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data?.settings) {
-          setSettings(data.settings);
-          if (data.settings.discountCode) {
-            setDiscountCode(data.settings.discountCode);
-          }
-        }
-      })
-      .catch((err) => {
-        console.warn("Using fallback festive popup settings:", err);
-      });
-  }, []);
+    if (isExcluded) return;
+    let controller: AbortController | undefined;
+    const refreshSettings = async () => {
+      controller?.abort();
+      controller = new AbortController();
+      const { signal } = controller;
+      try {
+        const response = await fetch("/api/festive-offer", { cache: "no-store", signal });
+        if (!response.ok) throw new Error("Failed to load popup settings");
+        const data = await response.json();
+        if (!data.success || typeof data.settings?.isActive !== "boolean") throw new Error("Invalid popup settings");
+        if (signal.aborted) return;
+        setSettings(data.settings);
+        setDiscountCode(data.settings.discountCode);
+        if (!data.settings.isActive) setIsOpen(false);
+        setLoadedPath(pathname);
+      } catch {
+        if (signal.aborted) return;
+        setSettings((previous) => ({ ...previous, isActive: false }));
+        setIsOpen(false);
+        setLoadedPath(pathname);
+      }
+    };
+    const handleSettingsChange = (event: StorageEvent) => {
+      if (event.key === "xelectron:festive-popup-updated") void refreshSettings();
+    };
+    void refreshSettings();
+    window.addEventListener("focus", refreshSettings);
+    window.addEventListener("storage", handleSettingsChange);
+    return () => {
+      controller?.abort();
+      window.removeEventListener("focus", refreshSettings);
+      window.removeEventListener("storage", handleSettingsChange);
+    };
+  }, [pathname, isExcluded]);
 
   useEffect(() => {
     if (!isMounted || isExcluded) return;
@@ -83,7 +102,7 @@ export default function FestiveOfferPopup() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isOpen) {
-        handleClose();
+        setIsOpen(false);
       }
     };
     window.addEventListener("keydown", handleKeyDown);

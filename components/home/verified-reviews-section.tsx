@@ -7,6 +7,7 @@ export type BuyerReview = {
   id: string | number;
   name: string;
   product: string;
+  productImage?: string;
   avatar: string;
   text: string;
   rating?: number;
@@ -91,19 +92,75 @@ const defaultReviews: BuyerReview[] = [
   },
 ];
 
+function AnimatedReviewText({ text }: { text: string }) {
+  const [visibleCharacters, setVisibleCharacters] = useState(0);
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    let count = 0;
+    const timer = window.setInterval(() => {
+      count = Math.min(count + 1, text.length);
+      setVisibleCharacters(count);
+      if (count === text.length) window.clearInterval(timer);
+    }, 20);
+
+    return () => window.clearInterval(timer);
+  }, [text]);
+
+  return (
+    <>
+      <span className="sr-only motion-reduce:not-sr-only">&ldquo;{text}&rdquo;</span>
+      <span aria-hidden="true" className="motion-reduce:hidden">
+        &ldquo;{text.slice(0, visibleCharacters)}
+        {visibleCharacters < text.length ? (
+          <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-[#0a7ae6] align-middle" />
+        ) : "\u201d"}
+      </span>
+    </>
+  );
+}
+
 export default function VerifiedReviewsSection({
   initialReviews,
 }: {
   initialReviews?: BuyerReview[];
 }) {
-  const reviews =
-    initialReviews && initialReviews.length > 0 ? initialReviews : defaultReviews;
+  const reviews = initialReviews ?? defaultReviews;
+  // Saved presets only have six slots. Reflow crowded layouts instead of
+  // stacking new customers on top of existing avatars.
+  const useAutomaticLayout = reviews.length > 6 || reviews.some((review, index) =>
+    reviews.slice(0, index).some((other) =>
+      Math.abs(parseFloat(review.desktopPos.top) - parseFloat(other.desktopPos.top)) < 20 &&
+      Math.abs(parseFloat(review.desktopPos.left) - parseFloat(other.desktopPos.left)) < 15
+    )
+  );
+  const columns = Math.min(4, reviews.length);
+  const rows = Math.ceil(reviews.length / Math.max(1, columns));
+  const canvasHeight = useAutomaticLayout ? Math.max(360, rows * 180) : 360;
 
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [mouseOffset, setMouseOffset] = useState({ x: 0, y: 0 });
-  const [typedText, setTypedText] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
   const sectionRef = useRef<HTMLElement | null>(null);
+  const canvasRef = useRef<HTMLDivElement | null>(null);
+  const popupRef = useRef<HTMLDivElement | null>(null);
+  const [popupBottom, setPopupBottom] = useState(0);
+
+  // Follow the typing animation and product image as the popup grows. Avatar
+  // positions use the original canvas height so expansion cannot push them down.
+  useEffect(() => {
+    const popup = popupRef.current;
+    const canvas = canvasRef.current;
+    if (activeIndex === null || !popup || !canvas) return;
+
+    const observer = new ResizeObserver(() => {
+      setPopupBottom(Math.ceil(
+        popup.getBoundingClientRect().bottom - canvas.getBoundingClientRect().top + 48
+      ));
+    });
+    observer.observe(popup);
+    return () => observer.disconnect();
+  }, [activeIndex, canvasHeight]);
 
   // Close card when clicking outside the section
   useEffect(() => {
@@ -112,36 +169,16 @@ export default function VerifiedReviewsSection({
         setActiveIndex(null);
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const activeReview = activeIndex !== null ? reviews[activeIndex] : null;
-
-  // Typewriter effect on active review change (desktop)
-  useEffect(() => {
-    if (activeIndex === null || !activeReview) {
-      setTypedText("");
-      setIsTyping(false);
-      return;
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setActiveIndex(null);
     }
-
-    setTypedText("");
-    setIsTyping(true);
-    let i = 0;
-    const fullText = activeReview.text;
-    const timer = setInterval(() => {
-      if (i < fullText.length) {
-        setTypedText(fullText.slice(0, i + 1));
-        i++;
-      } else {
-        setIsTyping(false);
-        clearInterval(timer);
-      }
-    }, 20);
-
-    return () => clearInterval(timer);
-  }, [activeIndex, activeReview]);
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
 
   const handlePrev = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -166,6 +203,8 @@ export default function VerifiedReviewsSection({
   const handleCanvasClick = () => {
     setActiveIndex(null);
   };
+
+  if (reviews.length === 0) return null;
 
   return (
     <section
@@ -200,7 +239,7 @@ export default function VerifiedReviewsSection({
 
         {/* ── PHONE / MOBILE VIEW: VERTICAL LIST OF CLEAN REVIEW CARDS (< md) ── */}
         <div className="block md:hidden space-y-3.5">
-          {reviews.slice(0, 4).map((rev) => (
+          {reviews.map((rev) => (
             <div
               key={rev.id}
               className="rounded-[20px] bg-white border border-slate-200/80 p-5 shadow-xs"
@@ -232,14 +271,24 @@ export default function VerifiedReviewsSection({
 
         {/* ── DESKTOP VIEW: SCATTERED AVATAR PARALLAX CANVAS (md+) ── */}
         <div
+          ref={canvasRef}
           onClick={handleCanvasClick}
           onMouseMove={handleMouseMove}
           onMouseLeave={() => setMouseOffset({ x: 0, y: 0 })}
-          className="hidden md:block relative min-h-[360px] w-full rounded-3xl bg-transparent p-2 overflow-hidden cursor-pointer"
+          className="hidden md:block relative w-full rounded-3xl bg-transparent p-2 cursor-pointer"
+          style={{ height: activeIndex === null ? canvasHeight : Math.max(canvasHeight, popupBottom) }}
         >
           {reviews.map((rev, idx) => {
             const isActive = idx === activeIndex;
-            const pos = rev.desktopPos;
+            const row = Math.floor(idx / columns);
+            const itemsInRow = Math.min(columns, reviews.length - row * columns);
+            const pos = useAutomaticLayout
+              ? {
+                  top: `${((row + 0.5) / rows) * 100}%`,
+                  left: `${((idx % columns + 0.5) / itemsInRow) * 100}%`,
+                }
+              : rev.desktopPos;
+            const cardSide = parseFloat(pos.left) >= 50 ? "left" : "right";
 
             let circleSize = "w-12 h-12";
             let depth = 10;
@@ -262,25 +311,28 @@ export default function VerifiedReviewsSection({
                   isActive ? "z-40" : "z-10"
                 }`}
                 style={{
-                  top: pos.top,
+                  top: `${parseFloat(pos.top) / 100 * canvasHeight}px`,
                   left: pos.left,
                   transform: `translate(-50%, -50%) translate3d(${moveX}px, ${moveY}px, 0)`,
                 }}
               >
                 {/* BLUE RADIAL GLOW ONLY WHEN ACTIVE */}
                 {isActive && (
-                  <div className="absolute -inset-5 rounded-full bg-blue-500/30 blur-xl animate-pulse" />
+                  <div className="pointer-events-none absolute -inset-5 rounded-full bg-blue-500/30 blur-xl animate-pulse motion-reduce:animate-none" />
                 )}
 
                 {/* AVATAR CIRCLE BUTTON */}
                 <button
                   type="button"
+                  aria-label={`Read review by ${rev.name}`}
+                  aria-expanded={isActive}
+                  aria-controls={isActive ? `buyer-review-${rev.id}` : undefined}
                   onClick={(e) => {
                     e.stopPropagation();
                     setActiveIndex(isActive ? null : idx);
                   }}
                   onMouseEnter={() => setActiveIndex(idx)}
-                  className={`relative overflow-hidden rounded-full border-2 bg-slate-100 shadow-lg transition-all duration-300 cursor-pointer ${circleSize} ${
+                  className={`relative overflow-hidden rounded-full border-2 bg-slate-100 shadow-lg transition-all duration-300 motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0a7ae6] cursor-pointer ${circleSize} ${
                     isActive
                       ? "border-[#0a7ae6] ring-4 ring-blue-500/30 scale-110 shadow-blue-500/20 shadow-xl"
                       : "border-white opacity-85 hover:opacity-100 hover:scale-110"
@@ -296,33 +348,39 @@ export default function VerifiedReviewsSection({
                 {/* DESKTOP FLOATING REVIEW CARD POPOVER */}
                 {isActive && (
                   <div
-                    className={`absolute z-50 w-72 lg:w-80 pointer-events-none animate-in fade-in zoom-in-95 duration-200 ${
-                      rev.cardSide === "left"
-                        ? "right-full mr-3 top-1/2 -translate-y-1/2"
-                        : "left-full ml-3 top-1/2 -translate-y-1/2"
+                    ref={popupRef}
+                    id={`buyer-review-${rev.id}`}
+                    role="region"
+                    aria-label={`Review by ${rev.name}`}
+                    onClick={(event) => event.stopPropagation()}
+                    className={`absolute top-0 z-50 w-64 lg:w-80 cursor-auto animate-in fade-in zoom-in-95 duration-200 motion-reduce:animate-none ${
+                      cardSide === "left"
+                        ? "right-full mr-4"
+                        : "left-full ml-4"
                     }`}
                   >
                     <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-[0_15px_40px_rgba(15,23,42,0.12)]">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <p className="text-[11px] font-bold text-slate-900 uppercase tracking-wider">
-                          {rev.name}
-                        </p>
-                        <span className="rounded bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
-                          {rev.product}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-0.5 text-amber-500 mb-2">
-                        {[...Array(rev.rating ?? 5)].map((_, i) => (
-                          <Star key={i} className="size-3 fill-amber-400 text-amber-400" />
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-900 wrap-break-word">
+                        {rev.name}
+                      </p>
+                      <div className="mb-2 mt-1.5 flex items-center gap-0.5" aria-label={`${rev.rating ?? 5} out of 5 stars`}>
+                        {Array.from({ length: 5 }, (_, i) => (
+                          <Star key={i} aria-hidden="true" className={`size-3.5 ${i < (rev.rating ?? 5) ? "fill-amber-400 text-amber-400" : "fill-slate-100 text-slate-200"}`} />
                         ))}
                       </div>
-                      <p className="min-h-[40px] text-xs sm:text-sm font-medium text-slate-700 leading-relaxed italic">
-                        &quot;{typedText}&quot;
-                        {isTyping && (
-                          <span className="inline-block w-1.5 h-3.5 ml-0.5 bg-[#0a7ae6] animate-pulse" />
-                        )}
-                      </p>
+                      <blockquote className="min-h-10 whitespace-pre-line text-sm font-medium italic leading-relaxed text-slate-700 wrap-break-word">
+                        <AnimatedReviewText key={`${rev.id}:${rev.text}`} text={rev.text} />
+                      </blockquote>
                     </div>
+                    {rev.productImage && (
+                      <div
+                        role="region"
+                        aria-label={`Reviewed product: ${rev.product}`}
+                        className={`mt-3 w-28 rounded-2xl border border-slate-200/90 bg-white p-2 shadow-[0_15px_40px_rgba(15,23,42,0.12)] animate-in fade-in zoom-in-95 duration-300 motion-reduce:animate-none ${cardSide === "left" ? "ml-auto" : "mr-auto"}`}
+                      >
+                        <img src={rev.productImage} alt={rev.product} className="h-20 w-full object-contain" />
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

@@ -43,6 +43,13 @@ export async function confirmVelocityOrder(orderId: string, paymentId?: string) 
         paymentVerified: true,
         internalNotes: appendPaymentNote(order.internalNotes, note),
       },
+      include: {
+        items: {
+          include: {
+            product: { select: { id: true, name: true, mainImage: true, slug: true } },
+          },
+        },
+      },
     });
 
     return { found: true, confirmed: true, order: confirmedOrder };

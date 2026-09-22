@@ -80,6 +80,7 @@ export async function getFestivePopupSettings(): Promise<FestivePopupSettingsIte
     console.error("Failed to fetch festive popup settings from db:", err);
     return {
       ...DEFAULT_FESTIVE_SETTINGS,
+      isActive: false,
       updatedAt: new Date(),
     };
   }

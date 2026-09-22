@@ -15,6 +15,7 @@ async function main() {
       "title" TEXT NOT NULL,
       "subtitle" TEXT NOT NULL,
       "image" TEXT NOT NULL,
+      "mobile_image" TEXT,
       "link_url" TEXT,
       "sort_order" INTEGER NOT NULL DEFAULT 0,
       "is_active" BOOLEAN NOT NULL DEFAULT true,
@@ -23,6 +24,7 @@ async function main() {
     );
   `);
   console.log("Table brand_showcase_items verified/created successfully!");
+  await prisma.$executeRawUnsafe(`ALTER TABLE "brand_showcase_items" ADD COLUMN IF NOT EXISTS "mobile_image" TEXT`);
 
   // Check if items exist, otherwise seed defaults
   const count = await prisma.brandShowcaseItem.count();

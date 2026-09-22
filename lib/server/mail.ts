@@ -222,27 +222,99 @@ export async function sendInquiryCustomerEmail({
   });
 }
 
-/**
- * Sends a rich HTML Order Confirmation Email
- */
-export async function sendOrderConfirmationEmail(order: {
+export const ORDER_NOTIFICATION_EMAILS = [
+  "info@xelectron.com",
+  "customercare@xelectron.com",
+];
+
+export function getOrderNotificationEmails(): string[] {
+  const envEmails = process.env.ORDER_NOTIFICATION_EMAILS;
+  if (envEmails) {
+    const parsed = envEmails
+      .split(",")
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean);
+    if (parsed.length > 0) return parsed;
+  }
+  return [...ORDER_NOTIFICATION_EMAILS];
+}
+
+export interface OrderEmailItem {
+  name?: string;
+  quantity: number;
+  price?: number;
+  unitPrice?: number;
+  product?: { name?: string; mainImage?: string | null };
+}
+
+export interface SendOrderConfirmationOptions {
   id: string;
   customerName?: string | null;
   customerEmail?: string | null;
+  customerPhone?: string | null;
+  shippingAddress?: string | null;
+  city?: string | null;
+  state?: string | null;
+  pincode?: string | null;
+  paymentMethod?: string | null;
   total: number;
   shippingCarrier?: string | null;
   trackingNumber?: string | null;
   trackingUrl?: string | null;
   estimatedDelivery?: string | null;
-  items?: Array<{ name?: string; quantity: number; price?: number }>;
-}) {
-  if (!order.customerEmail) return;
+  items?: OrderEmailItem[];
+}
 
+/**
+ * Sends Order Confirmation Email to the customer and dispatches notification alerts
+ * to info@xelectron.com and customercare@xelectron.com when an order is created.
+ */
+export async function sendOrderConfirmationEmail(order: SendOrderConfirmationOptions) {
   const orderNumber = `XE-${order.id.slice(-6).toUpperCase()}`;
   const formattedTotal = `₹${Math.round(order.total).toLocaleString("en-IN")}`;
   const currentYear = new Date().getFullYear();
+  const deliveryAddress =
+    order.shippingAddress ||
+    [order.city, order.state, order.pincode].filter(Boolean).join(", ");
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://xelectron.com";
+  const dashboardOrderUrl = `${siteUrl}/dashboard/orders/${order.id}`;
 
-  const html = `
+  const itemsTableHtml =
+    order.items && order.items.length > 0
+      ? `
+        <div style="margin-top: 16px; border-top: 1px solid #e2e8f0; padding-top: 14px;">
+          <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; margin-bottom: 8px;">Ordered Products (${order.items.length})</div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+            <thead>
+              <tr style="border-bottom: 1px solid #e2e8f0; color: #64748b; font-size: 11px;">
+                <th style="padding: 6px 0; text-align: left;">Product</th>
+                <th style="padding: 6px 8px; text-align: center;">Qty</th>
+                <th style="padding: 6px 0; text-align: right;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${order.items
+                .map((item) => {
+                  const name = item.name || item.product?.name || "Product";
+                  const unit = item.unitPrice ?? item.price ?? 0;
+                  const lineTotal = Math.round(unit * item.quantity);
+                  return `
+                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                      <td style="padding: 8px 0; color: #1e293b; font-weight: 500;">${name}</td>
+                      <td style="padding: 8px; text-align: center; color: #475569;">${item.quantity}</td>
+                      <td style="padding: 8px 0; text-align: right; color: #0f172a; font-weight: 600;">₹${lineTotal.toLocaleString("en-IN")}</td>
+                    </tr>
+                  `;
+                })
+                .join("")}
+            </tbody>
+          </table>
+        </div>
+      `
+      : "";
+
+  // 1. Customer Confirmation Email HTML
+  const customerHtml = `
     <!DOCTYPE html>
     <html lang="en">
       <head>
@@ -276,7 +348,7 @@ export async function sendOrderConfirmationEmail(order: {
             <div class="hero-section">
               <span class="badge">✓ Order Confirmed</span>
               <h2 class="headline">Thank you for your order!</h2>
-              <p style="color: #64748b; font-size: 14px; margin: 0;">Hi ${order.customerName || "Valued Customer"}, your order has been received and is being prepared for fulfillment. We will share courier details when your shipment is ready.</p>
+              <p style="color: #64748b; font-size: 14px; margin: 0;">Hi ${order.customerName || "Valued Customer"}, your order has been received and is being prepared for fulfillment. We will share courier tracking details as soon as your package is dispatched.</p>
             </div>
 
             <div class="details-card">
@@ -289,6 +361,26 @@ export async function sendOrderConfirmationEmail(order: {
                   <td style="padding: 8px 0; color: #64748b; font-size: 13px; font-weight: 600;">Total Amount</td>
                   <td style="padding: 8px 0; color: #0a7ae6; font-size: 14px; font-weight: 800; text-align: right;">${formattedTotal}</td>
                 </tr>
+                ${
+                  order.paymentMethod
+                    ? `
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                  <td style="padding: 8px 0; color: #64748b; font-size: 13px; font-weight: 600;">Payment Mode</td>
+                  <td style="padding: 8px 0; color: #0f172a; font-size: 13px; font-weight: 700; text-align: right;">${order.paymentMethod}</td>
+                </tr>
+                `
+                    : ""
+                }
+                ${
+                  deliveryAddress
+                    ? `
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                  <td style="padding: 8px 0; color: #64748b; font-size: 13px; font-weight: 600; vertical-align: top;">Delivery Address</td>
+                  <td style="padding: 8px 0; color: #334155; font-size: 12px; font-weight: 500; text-align: right; max-width: 280px;">${deliveryAddress}</td>
+                </tr>
+                `
+                    : ""
+                }
                 ${
                   order.shippingCarrier
                     ? `
@@ -320,6 +412,8 @@ export async function sendOrderConfirmationEmail(order: {
                     : ""
                 }
               </table>
+
+              ${itemsTableHtml}
             </div>
 
             ${
@@ -336,6 +430,7 @@ export async function sendOrderConfirmationEmail(order: {
 
             <div class="footer">
               <p style="margin: 0 0 6px 0;"><strong>XElectron Technologies Pvt. Ltd.</strong></p>
+              <p style="margin: 0 0 4px 0;">Customer Support: <a href="mailto:customercare@xelectron.com" style="color: #0a7ae6; text-decoration: none;">customercare@xelectron.com</a> | Call: +91 8527312304</p>
               <p style="margin: 0 0 10px 0;">2417, Tower A, The Corenthum, Sector – 62, Noida, UP – 201301</p>
               <p style="margin: 0;">© ${currentYear} XElectron Technologies. All rights reserved.</p>
             </div>
@@ -345,9 +440,163 @@ export async function sendOrderConfirmationEmail(order: {
     </html>
   `;
 
-  return sendEmail({
-    to: order.customerEmail,
-    subject: `Your XElectron Order Confirmation [${orderNumber}]`,
-    html,
-  });
+  const customerText = `Thank you for your order!
+Order Number: ${orderNumber}
+Total Amount: ${formattedTotal}
+${order.paymentMethod ? `Payment Mode: ${order.paymentMethod}\n` : ""}${deliveryAddress ? `Delivery Address: ${deliveryAddress}\n` : ""}${order.trackingNumber ? `Tracking AWB: ${order.trackingNumber}\n` : ""}
+Need help? Contact Customer Support at customercare@xelectron.com or call +91 8527312304.
+XElectron Technologies Pvt. Ltd.`;
+
+  // 2. Admin / Internal Notification Email HTML (for info@xelectron.com and customercare@xelectron.com)
+  const adminHtml = `
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>New Order Alert - XElectron</title>
+        <style>
+          body { margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+          .wrapper { width: 100%; table-layout: fixed; background-color: #f1f5f9; padding: 36px 0; }
+          .main-card { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.05); }
+          .brand-header { background: #0f172a; padding: 24px 32px; text-align: center; border-bottom: 3px solid #0a7ae6; }
+          .logo-text { color: #ffffff; font-size: 20px; font-weight: 900; letter-spacing: -0.5px; margin: 0; text-transform: uppercase; }
+          .logo-text span { color: #38bdf8; }
+          .hero-section { padding: 28px 32px 16px 32px; text-align: center; }
+          .badge { display: inline-block; background-color: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; padding: 5px 14px; border-radius: 9999px; margin-bottom: 12px; }
+          .headline { color: #0f172a; font-size: 22px; font-weight: 800; margin: 0 0 8px 0; letter-spacing: -0.5px; }
+          .details-card { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin: 16px 32px; }
+          .cta-wrapper { text-align: center; margin: 20px 32px 28px 32px; }
+          .cta-btn { display: inline-block; background: #0a7ae6; color: #ffffff !important; text-decoration: none; padding: 12px 26px; border-radius: 10px; font-weight: 700; font-size: 13px; letter-spacing: 0.3px; }
+          .footer { padding: 20px 32px; text-align: center; font-size: 11px; color: #94a3b8; line-height: 1.5; border-top: 1px solid #f1f5f9; background: #fafafa; }
+        </style>
+      </head>
+      <body>
+        <div class="wrapper">
+          <div class="main-card">
+            <div class="brand-header">
+              <h1 class="logo-text">X<span>ELECTRON</span></h1>
+              <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 11px; letter-spacing: 1px; text-transform: uppercase;">Store Operations • New Order Alert</p>
+            </div>
+
+            <div class="hero-section">
+              <span class="badge">🔔 New Order Placed</span>
+              <h2 class="headline">${orderNumber} • ${formattedTotal}</h2>
+              <p style="color: #64748b; font-size: 13px; margin: 0;">A new order was successfully created on xelectron.com. Please review the customer details and fulfillment requirements below.</p>
+            </div>
+
+            <div class="details-card">
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                  <td style="padding: 8px 0; color: #64748b; font-size: 12px; font-weight: 600;">Order Reference</td>
+                  <td style="padding: 8px 0; color: #0f172a; font-size: 13px; font-weight: 800; text-align: right; font-family: monospace;">${orderNumber}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                  <td style="padding: 8px 0; color: #64748b; font-size: 12px; font-weight: 600;">Order Amount</td>
+                  <td style="padding: 8px 0; color: #0a7ae6; font-size: 14px; font-weight: 800; text-align: right;">${formattedTotal}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                  <td style="padding: 8px 0; color: #64748b; font-size: 12px; font-weight: 600;">Payment Status / Method</td>
+                  <td style="padding: 8px 0; color: #0f172a; font-size: 12px; font-weight: 700; text-align: right;">${order.paymentMethod || "Online / COD"}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                  <td style="padding: 8px 0; color: #64748b; font-size: 12px; font-weight: 600;">Customer Name</td>
+                  <td style="padding: 8px 0; color: #0f172a; font-size: 13px; font-weight: 700; text-align: right;">${order.customerName || "Not provided"}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                  <td style="padding: 8px 0; color: #64748b; font-size: 12px; font-weight: 600;">Customer Phone</td>
+                  <td style="padding: 8px 0; text-align: right;">
+                    ${order.customerPhone ? `<a href="tel:${order.customerPhone}" style="color: #0a7ae6; font-weight: 700; text-decoration: none; font-size: 13px;">${order.customerPhone}</a>` : '<span style="color: #94a3b8; font-size: 12px;">N/A</span>'}
+                  </td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                  <td style="padding: 8px 0; color: #64748b; font-size: 12px; font-weight: 600;">Customer Email</td>
+                  <td style="padding: 8px 0; text-align: right;">
+                    ${order.customerEmail ? `<a href="mailto:${order.customerEmail}" style="color: #0a7ae6; font-weight: 600; text-decoration: none; font-size: 12px;">${order.customerEmail}</a>` : '<span style="color: #94a3b8; font-size: 12px;">Not provided</span>'}
+                  </td>
+                </tr>
+                ${
+                  deliveryAddress
+                    ? `
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                  <td style="padding: 8px 0; color: #64748b; font-size: 12px; font-weight: 600; vertical-align: top;">Shipping Address</td>
+                  <td style="padding: 8px 0; color: #1e293b; font-size: 12px; font-weight: 500; text-align: right; max-width: 300px;">${deliveryAddress}</td>
+                </tr>
+                `
+                    : ""
+                }
+              </table>
+
+              ${itemsTableHtml}
+            </div>
+
+            <div class="cta-wrapper">
+              <a href="${dashboardOrderUrl}" class="cta-btn" target="_blank">
+                Open in Admin Dashboard →
+              </a>
+            </div>
+
+            <div class="footer">
+              <p style="margin: 0 0 4px 0; font-weight: 600; color: #475569;">XElectron Operations Notification</p>
+              <p style="margin: 0;">Dispatched to store operations: info@xelectron.com & customercare@xelectron.com</p>
+            </div>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  const adminText = `[New Order Alert] Order ${orderNumber}
+Total: ${formattedTotal}
+Payment: ${order.paymentMethod || "Online / COD"}
+Customer: ${order.customerName || "N/A"}
+Phone: ${order.customerPhone || "N/A"}
+Email: ${order.customerEmail || "N/A"}
+Address: ${deliveryAddress || "N/A"}
+${
+  order.items && order.items.length > 0
+    ? `\nItems:\n` +
+      order.items
+        .map(
+          (i) =>
+            `- ${i.name || i.product?.name || "Item"} x ${i.quantity} (₹${((i.unitPrice ?? i.price ?? 0) * i.quantity).toLocaleString("en-IN")})`
+        )
+        .join("\n")
+    : ""
 }
+
+Dashboard URL: ${dashboardOrderUrl}`;
+
+  const deliveries: Promise<any>[] = [];
+
+  // Dispatch customer confirmation if email address is available
+  if (order.customerEmail && order.customerEmail.trim()) {
+    deliveries.push(
+      sendEmail({
+        to: order.customerEmail.trim(),
+        replyTo: "customercare@xelectron.com",
+        subject: `Your XElectron Order Confirmation [${orderNumber}]`,
+        html: customerHtml,
+        text: customerText,
+      })
+    );
+  }
+
+  // Dispatch store operations notification to info@xelectron.com and customercare@xelectron.com
+  const notificationRecipients = getOrderNotificationEmails();
+  if (notificationRecipients.length > 0) {
+    deliveries.push(
+      sendEmail({
+        to: notificationRecipients,
+        replyTo: order.customerEmail?.trim() || "customercare@xelectron.com",
+        subject: `[New Order] ${orderNumber} - ${formattedTotal} (${order.customerName || "Customer"})`,
+        html: adminHtml,
+        text: adminText,
+      })
+    );
+  }
+
+  const results = await Promise.allSettled(deliveries);
+  return results;
+}
+

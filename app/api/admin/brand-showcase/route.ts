@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { verifySession } from "@/lib/server/dal/auth";
 import {
   listBrandShowcaseItems,
@@ -45,11 +46,13 @@ export async function POST(request: Request) {
       title: body.title.trim(),
       subtitle: (body.subtitle || "").trim(),
       image: body.image.trim(),
+      mobileImage: typeof body.mobileImage === "string" ? body.mobileImage.trim() || null : null,
       linkUrl: body.linkUrl ? body.linkUrl.trim() : null,
       sortOrder: Number(body.sortOrder) || 0,
       isActive: body.isActive !== undefined ? Boolean(body.isActive) : true,
     });
 
+    revalidatePath("/");
     return NextResponse.json(item, { status: 201 });
   } catch (error: any) {
     console.error("Failed to create brand showcase item:", error);

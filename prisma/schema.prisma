@@ -470,11 +470,19 @@ model BlogPost {
 
 // ─── Brand Showcase / Brand Setup ───────────────────────────────────────────
 
+model LatestLaunchSettings {
+  id String @id @default("default")
+  productIds Json @default("[]") @map("product_ids")
+
+  @@map("latest_launch_settings")
+}
+
 model BrandShowcaseItem {
   id        String   @id @default(cuid())
   title     String
   subtitle  String
   image     String
+  mobileImage String? @map("mobile_image")
   linkUrl   String?  @map("link_url")
   sortOrder Int      @default(0) @map("sort_order")
   isActive  Boolean  @default(true) @map("is_active")

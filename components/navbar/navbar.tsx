@@ -639,6 +639,14 @@ export default function Navbar() {
           >
             <FlatNavLink label="HOME" href="/" onMouseEnter={() => handleOpenMenu(null)} />
             {dropdownItems.map((group) => (
+              group.label === "PRODUCT" ? (
+                <div key={group.label} className="flex h-full items-center" onMouseEnter={() => handleOpenMenu("PRODUCT")}>
+                  <FlatNavLink label="PRODUCT" href="/shop" onClick={handleNavigate} />
+                  <button type="button" aria-label="Toggle product categories" aria-expanded={openMenu === "PRODUCT"} onClick={() => handleOpenMenu(openMenu === "PRODUCT" ? null : "PRODUCT")} className="-ml-2 flex h-full items-center px-1 text-slate-500 hover:text-[#0a7ae6] focus-visible:outline-2 focus-visible:outline-[#0a7ae6]">
+                    <ChevronDown className={`size-3.5 transition-transform ${openMenu === "PRODUCT" ? "rotate-180" : ""}`} />
+                  </button>
+                </div>
+              ) : (
               <DropdownNavItem
                 key={group.label}
                 label={group.label}
@@ -650,6 +658,7 @@ export default function Navbar() {
                 onOpen={() => handleOpenMenu(group.label)}
                 onClose={() => handleOpenMenu(null)}
               />
+              )
             ))}
             <FlatNavLink label="ABOUT US" href="/about" onMouseEnter={() => handleOpenMenu(null)} />
             <FlatNavLink label="CONTACT US" href="/contact-us" onMouseEnter={() => handleOpenMenu(null)} />
@@ -1181,7 +1190,17 @@ export default function Navbar() {
                         key={group.label}
                         className="rounded-xl border border-slate-200/80 bg-slate-50 overflow-hidden"
                       >
-                        <button
+                        {group.label === "PRODUCT" ? (
+                          <div className="flex items-center">
+                            <Link prefetch={false} href="/shop" onClick={handleNavigate} className="flex flex-1 items-center gap-3 px-3.5 py-3 text-[13px] font-semibold uppercase tracking-wider text-slate-800 hover:bg-slate-100">
+                              <IconComponent className="size-4 text-[#0a7ae6]" />
+                              <span>{group.label}</span>
+                            </Link>
+                            <button type="button" aria-label="Toggle product categories" aria-expanded={isExpanded} onClick={() => toggleMobileCategory(group.label)} className="p-3.5 text-slate-500 hover:bg-slate-100">
+                              <ChevronDown className={`size-4 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                            </button>
+                          </div>
+                        ) : <button
                           type="button"
                           onClick={() => toggleMobileCategory(group.label)}
                           className="flex w-full items-center justify-between px-3.5 py-3 text-[13px] font-semibold uppercase tracking-wider text-slate-800 hover:bg-slate-100"
@@ -1194,7 +1213,7 @@ export default function Navbar() {
                             className={`size-4 text-slate-400 transition-transform duration-200 ${isExpanded ? "rotate-180 text-[#0a7ae6]" : ""
                               }`}
                           />
-                        </button>
+                        </button>}
 
                         {isExpanded && (
                           <div className="border-t border-slate-200/80 bg-white px-3.5 py-2 space-y-1">

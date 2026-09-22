@@ -79,16 +79,29 @@ export async function POST(request: NextRequest) {
     if (event === "payments.success" || data?.status === "success") {
       const result = await confirmVelocityOrder(orderId, paymentId);
 
-      if (result.confirmed && result.order?.customerEmail) {
+      if (result.confirmed && result.order) {
+        const confirmedOrder = result.order as any;
         import("@/lib/server/mail").then(({ sendOrderConfirmationEmail }) => {
           sendOrderConfirmationEmail({
-            id: result.order.id,
-            customerName: result.order.customerName,
-            customerEmail: result.order.customerEmail,
-            total: result.order.total,
-            trackingNumber: result.order.trackingNumber,
-            trackingUrl: result.order.trackingUrl,
-            estimatedDelivery: result.order.estimatedDelivery,
+            id: confirmedOrder.id,
+            customerName: confirmedOrder.customerName,
+            customerEmail: confirmedOrder.customerEmail,
+            customerPhone: confirmedOrder.customerPhone,
+            shippingAddress: confirmedOrder.shippingAddress,
+            city: confirmedOrder.city,
+            state: confirmedOrder.state,
+            pincode: confirmedOrder.pincode,
+            paymentMethod: "Velocity BNPL / EMI (Confirmed)",
+            total: confirmedOrder.total,
+            trackingNumber: confirmedOrder.trackingNumber,
+            trackingUrl: confirmedOrder.trackingUrl,
+            estimatedDelivery: confirmedOrder.estimatedDelivery,
+            items: confirmedOrder.items?.map((item: any) => ({
+              name: item.product?.name || item.name || "Product",
+              quantity: item.quantity,
+              price: item.unitPrice,
+              unitPrice: item.unitPrice,
+            })),
           }).catch((err) => console.warn("Failed to send Velocity order email:", err));
         });
       }

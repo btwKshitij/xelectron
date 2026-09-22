@@ -88,6 +88,8 @@ export default async function DynamicProductPage({ params }: DynamicProductPageP
         rating: dbProduct.rating,
         reviewsCount: `${dbProduct.reviewsCount} Reviews`,
         description: dbProduct.description,
+        designHeading: dbProduct.designHeading,
+        connectivityHeading: dbProduct.connectivityHeading,
         colors: dbProduct.colors.map((color: any) => ({
           name: color.name,
           bg: color.bgHex,

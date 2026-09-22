@@ -38,12 +38,16 @@ export const defaultBrandShowcaseItems = [
 ];
 
 function getDelegate() {
-  if (db && (db as any).brandShowcaseItem) {
-    return (db as any).brandShowcaseItem;
-  }
+  // A dev server may still hold the Prisma model loaded before regeneration.
+  // That delegate silently omits mobileImage on reads; use the SQL path until
+  // the running client supports the complete showcase model.
   try {
-    const freshClient = createPrismaClient();
-    return (freshClient as any).brandShowcaseItem;
+    const client = db || createPrismaClient();
+    const fields = client._runtimeDataModel?.models?.BrandShowcaseItem?.fields;
+    if (!fields?.some((field: { name: string }) => field.name === "mobileImage")) {
+      return null;
+    }
+    return client.brandShowcaseItem;
   } catch {
     return null;
   }
@@ -65,8 +69,8 @@ export async function getAllBrandShowcaseItems(onlyActive = false) {
 
   try {
     const query = onlyActive
-      ? `SELECT "id", "title", "subtitle", "image", "link_url" as "linkUrl", "sort_order" as "sortOrder", "is_active" as "isActive", "created_at" as "createdAt", "updated_at" as "updatedAt" FROM "brand_showcase_items" WHERE "is_active" = true ORDER BY "sort_order" ASC, "created_at" DESC`
-      : `SELECT "id", "title", "subtitle", "image", "link_url" as "linkUrl", "sort_order" as "sortOrder", "is_active" as "isActive", "created_at" as "createdAt", "updated_at" as "updatedAt" FROM "brand_showcase_items" ORDER BY "sort_order" ASC, "created_at" DESC`;
+      ? `SELECT "id", "title", "subtitle", "image", "mobile_image" as "mobileImage", "link_url" as "linkUrl", "sort_order" as "sortOrder", "is_active" as "isActive", "created_at" as "createdAt", "updated_at" as "updatedAt" FROM "brand_showcase_items" WHERE "is_active" = true ORDER BY "sort_order" ASC, "created_at" DESC`
+      : `SELECT "id", "title", "subtitle", "image", "mobile_image" as "mobileImage", "link_url" as "linkUrl", "sort_order" as "sortOrder", "is_active" as "isActive", "created_at" as "createdAt", "updated_at" as "updatedAt" FROM "brand_showcase_items" ORDER BY "sort_order" ASC, "created_at" DESC`;
 
     const rawItems: any[] = await db.$queryRawUnsafe(query);
     if (rawItems && rawItems.length > 0) {
@@ -97,7 +101,7 @@ export async function getBrandShowcaseItemById(id: string) {
 
   try {
     const raw: any[] = await db.$queryRawUnsafe(
-      `SELECT "id", "title", "subtitle", "image", "link_url" as "linkUrl", "sort_order" as "sortOrder", "is_active" as "isActive", "created_at" as "createdAt", "updated_at" as "updatedAt" FROM "brand_showcase_items" WHERE "id" = $1 LIMIT 1`,
+      `SELECT "id", "title", "subtitle", "image", "mobile_image" as "mobileImage", "link_url" as "linkUrl", "sort_order" as "sortOrder", "is_active" as "isActive", "created_at" as "createdAt", "updated_at" as "updatedAt" FROM "brand_showcase_items" WHERE "id" = $1 LIMIT 1`,
       id
     );
     return raw && raw.length > 0 ? raw[0] : null;
@@ -122,14 +126,15 @@ export async function createBrandShowcaseItem(
   const title = String(data.title || "");
   const subtitle = String(data.subtitle || "");
   const image = String(data.image || "");
+  const mobileImage = data.mobileImage ? String(data.mobileImage) : null;
   const linkUrl = data.linkUrl ? String(data.linkUrl) : null;
   const sortOrder = Number(data.sortOrder) || 0;
   const isActive = data.isActive !== undefined ? Boolean(data.isActive) : true;
   const now = new Date();
 
   await db.$executeRawUnsafe(
-    `INSERT INTO "brand_showcase_items" ("id", "title", "subtitle", "image", "link_url", "sort_order", "is_active", "created_at", "updated_at")
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+    `INSERT INTO "brand_showcase_items" ("id", "title", "subtitle", "image", "link_url", "sort_order", "is_active", "created_at", "updated_at", "mobile_image")
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
     id,
     title,
     subtitle,
@@ -138,7 +143,8 @@ export async function createBrandShowcaseItem(
     sortOrder,
     isActive,
     now,
-    now
+    now,
+    mobileImage
   );
 
   return {
@@ -146,6 +152,7 @@ export async function createBrandShowcaseItem(
     title,
     subtitle,
     image,
+    mobileImage,
     linkUrl,
     sortOrder,
     isActive,
@@ -174,6 +181,7 @@ export async function updateBrandShowcaseItem(
   const title = data.title !== undefined ? String(data.title) : existing?.title || "";
   const subtitle = data.subtitle !== undefined ? String(data.subtitle) : existing?.subtitle || "";
   const image = data.image !== undefined ? String(data.image) : existing?.image || "";
+  const mobileImage = data.mobileImage !== undefined ? (data.mobileImage ? String(data.mobileImage) : null) : existing?.mobileImage || null;
   const linkUrl = data.linkUrl !== undefined ? (data.linkUrl ? String(data.linkUrl) : null) : existing?.linkUrl || null;
   const sortOrder = data.sortOrder !== undefined ? Number(data.sortOrder) : existing?.sortOrder || 0;
   const isActive = data.isActive !== undefined ? Boolean(data.isActive) : existing?.isActive ?? true;
@@ -181,7 +189,7 @@ export async function updateBrandShowcaseItem(
 
   await db.$executeRawUnsafe(
     `UPDATE "brand_showcase_items"
-     SET "title" = $1, "subtitle" = $2, "image" = $3, "link_url" = $4, "sort_order" = $5, "is_active" = $6, "updated_at" = $7
+     SET "title" = $1, "subtitle" = $2, "image" = $3, "link_url" = $4, "sort_order" = $5, "is_active" = $6, "updated_at" = $7, "mobile_image" = $9
      WHERE "id" = $8`,
     title,
     subtitle,
@@ -190,7 +198,8 @@ export async function updateBrandShowcaseItem(
     sortOrder,
     isActive,
     now,
-    id
+    id,
+    mobileImage
   );
 
   return {
@@ -198,6 +207,7 @@ export async function updateBrandShowcaseItem(
     title,
     subtitle,
     image,
+    mobileImage,
     linkUrl,
     sortOrder,
     isActive,

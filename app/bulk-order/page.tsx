@@ -27,7 +27,6 @@ import {
   Receipt,
   Layers,
   MapPin,
-  Flame,
 } from "lucide-react";
 import { toast } from "sonner";
 import { orderedTopics } from "@/lib/shared/category-order";
@@ -377,43 +376,6 @@ export default function BulkOrderPage() {
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </section>
-
-        {/* VOLUME TIERS / DISCOUNT SLABS STRIP */}
-        <section className="border-b border-slate-100 bg-white py-10">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-[#0a7ae6]">
-                  Volume Discount Tiers
-                </p>
-                <h3 className="text-lg font-bold text-slate-900 sm:text-xl">
-                  Transparent Bulk Pricing Slabs
-                </h3>
-              </div>
-              <p className="text-xs text-slate-500">
-                Discounts automatically calculated based on cumulative order units
-              </p>
-            </div>
-
-            <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-              {QUANTITY_TIERS.map((tier, idx) => (
-                <div
-                  key={idx}
-                  className="rounded-2xl border border-slate-200/90 bg-gradient-to-b from-white to-slate-50/50 p-4 shadow-xs transition hover:border-[#0a7ae6] hover:shadow-sm"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-[#0a7ae6]">
-                      {tier.badge}
-                    </span>
-                    <Flame className="size-3.5 text-amber-500" />
-                  </div>
-                  <p className="mt-2.5 text-base font-semibold text-slate-900">{tier.label}</p>
-                  <p className="mt-1 text-xs font-semibold text-emerald-700">{tier.perk}</p>
-                </div>
-              ))}
             </div>
           </div>
         </section>

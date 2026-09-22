@@ -868,6 +868,7 @@ export function VerifiedReviewsManager({
 
                     <div>
                       <span className="block text-[11px] font-medium text-slate-600 mb-1">Canvas Position</span>
+                      <p className="mb-2 text-[11px] text-slate-500">Positions adjust automatically when reviews overlap or more than six reviews are live.</p>
                       <div className="grid grid-cols-3 gap-1">
                         {POSITION_PRESETS.map((p) => (
                           <button

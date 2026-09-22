@@ -192,7 +192,7 @@ export async function getAllVerifiedReviews(onlyActive = false): Promise<Verifie
         where: onlyActive ? { isActive: true } : undefined,
         orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
       });
-      if (items && items.length > 0) {
+      if (items) {
         return items.map(mapRow);
       }
     } catch {
@@ -206,29 +206,16 @@ export async function getAllVerifiedReviews(onlyActive = false): Promise<Verifie
       : `SELECT * FROM "verified_buyer_reviews" ORDER BY "sort_order" ASC, "created_at" DESC`;
 
     const rawRows: any[] = await db.$queryRawUnsafe(query);
-    if (rawRows && rawRows.length > 0) {
+    if (rawRows) {
       return rawRows.map(mapRow);
     }
   } catch {
     // Database query failed
   }
 
-  // If table is empty, auto-seed defaults into DB
-  try {
-    const seeded = await seedVerifiedReviewsDefaults();
-    if (onlyActive) {
-      return seeded.filter((s) => s.isActive);
-    }
-    return seeded;
-  } catch {
-    // Return memory fallback
-    return defaultVerifiedBuyerReviews.map((item, idx) => ({
-      id: `default-${idx}`,
-      ...item,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }));
-  }
+  // Reading reviews must never reset saved reviews when none are active or
+  // when the database is temporarily unavailable. Seeding is an admin action.
+  return [];
 }
 
 export async function getVerifiedReviewById(id: string): Promise<VerifiedReviewEntity | null> {

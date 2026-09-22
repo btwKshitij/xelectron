@@ -83,6 +83,9 @@ export default function FestivePopupEditor({ initialSettings }: Props) {
       }
 
       setSettings(data.settings);
+      try {
+        localStorage.setItem("xelectron:festive-popup-updated", String(Date.now()));
+      } catch { /* Storefront also refreshes settings when it regains focus. */ }
       toast.success("Festive popup settings saved and published to storefront!");
     } catch (err: any) {
       toast.error(err?.message || "Error saving festive popup settings");

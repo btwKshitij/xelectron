@@ -6,6 +6,7 @@ export type BrandShowcaseItemDTO = {
   title: string;
   subtitle: string;
   image: string;
+  mobileImage?: string | null;
   linkUrl?: string | null;
   sortOrder: number;
   isActive: boolean;
@@ -19,6 +20,7 @@ function formatItem(item: any): BrandShowcaseItemDTO {
     title: item.title,
     subtitle: item.subtitle,
     image: item.image,
+    mobileImage: item.mobileImage ?? null,
     linkUrl: item.linkUrl,
     sortOrder: item.sortOrder,
     isActive: item.isActive,

@@ -49,6 +49,7 @@ export function BrandShowcaseManager({
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isUploadingMobile, setIsUploadingMobile] = useState(false);
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "hidden">("all");
@@ -57,6 +58,7 @@ export function BrandShowcaseManager({
   const [formTitle, setFormTitle] = useState("");
   const [formSubtitle, setFormSubtitle] = useState("");
   const [formImage, setFormImage] = useState("");
+  const [formMobileImage, setFormMobileImage] = useState("");
   const [formLinkUrl, setFormLinkUrl] = useState("");
   const [selectedLinkType, setSelectedLinkType] = useState<string>("");
   const [formSortOrder, setFormSortOrder] = useState<number>(0);
@@ -137,6 +139,7 @@ export function BrandShowcaseManager({
     setFormTitle("");
     setFormSubtitle("");
     setFormImage("");
+    setFormMobileImage("");
     setImageMeta(null);
     setFormLinkUrl("");
     setSelectedLinkType("");
@@ -151,6 +154,7 @@ export function BrandShowcaseManager({
     setFormTitle(item.title);
     setFormSubtitle(item.subtitle || "");
     setFormImage(item.image);
+    setFormMobileImage(item.mobileImage || "");
     setImageMeta(null);
     const link = item.linkUrl || "";
     setFormLinkUrl(link);
@@ -177,8 +181,25 @@ export function BrandShowcaseManager({
     }
   };
 
+  const handleMobileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingMobile(true);
+    try {
+      const uploaded = await uploadProductImage(file);
+      setFormMobileImage(uploaded.url);
+      toast.success("Phone image uploaded");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to upload phone image");
+    } finally {
+      setIsUploadingMobile(false);
+      e.target.value = "";
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isUploading || isUploadingMobile || isSubmitting) return;
     if (!formTitle.trim()) {
       toast.error("Please enter a title");
       return;
@@ -199,6 +220,7 @@ export function BrandShowcaseManager({
         title: formTitle.trim(),
         subtitle: formSubtitle.trim(),
         image: formImage.trim(),
+        mobileImage: formMobileImage.trim() || null,
         linkUrl: finalLinkUrl,
         sortOrder: Number(formSortOrder) || 0,
         isActive: formIsActive,
@@ -702,7 +724,7 @@ export function BrandShowcaseManager({
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-xs font-semibold text-slate-700">
-                    Banner Image <span className="text-rose-500">*</span>
+                    Desktop Banner Image <span className="text-rose-500">*</span>
                   </label>
                   <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-[#0a7ae6] border border-blue-200/80">
                     Target: 1200 × 500 px (21:9) or 16:9
@@ -929,6 +951,27 @@ export function BrandShowcaseManager({
               </div>
 
               {/* DESTINATION CATEGORY / STORE DROPDOWN */}
+              <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+                <div>
+                  <label htmlFor="showcase-mobile-image" className="block text-xs font-semibold text-slate-700">Phone View Image <span className="font-normal text-slate-400">(optional)</span></label>
+                  <p className="mt-1 text-[11px] leading-relaxed text-slate-500">Shown on phones instead of the desktop banner. Use a portrait image, around 900 × 1200 px. Leave empty to use the desktop image.</p>
+                </div>
+                {formMobileImage && (
+                  <div className="relative mx-auto aspect-[3/4] w-40 overflow-hidden rounded-xl border border-slate-200 bg-white">
+                    <Image src={formMobileImage} alt="Phone banner preview" fill unoptimized sizes="160px" className="object-cover" />
+                  </div>
+                )}
+                <div className="flex items-center gap-3">
+                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700">
+                    {isUploadingMobile ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+                    {isUploadingMobile ? "Uploading…" : formMobileImage ? "Replace phone image" : "Upload phone image"}
+                    <input type="file" accept="image/*" className="hidden" disabled={isUploadingMobile || isSubmitting} onChange={handleMobileUpload} />
+                  </label>
+                  {formMobileImage && <button type="button" disabled={isUploadingMobile || isSubmitting} onClick={() => setFormMobileImage("")} className="text-xs font-medium text-rose-600 hover:underline disabled:opacity-50">Remove</button>}
+                </div>
+                <input id="showcase-mobile-image" type="text" value={formMobileImage} disabled={isUploadingMobile} onChange={(e) => setFormMobileImage(e.target.value)} placeholder="Or paste a phone image URL" className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs outline-none focus:border-[#0a7ae6]" />
+              </div>
+
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Destination Category / Store Link
@@ -991,7 +1034,7 @@ export function BrandShowcaseManager({
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmitting || isUploading}
+                  disabled={isSubmitting || isUploading || isUploadingMobile}
                   className="inline-flex items-center gap-1.5 rounded-xl bg-[#0a7ae6] px-4 py-2 text-xs font-semibold text-white hover:bg-[#096ecf] transition disabled:opacity-50"
                 >
                   {isSubmitting && <Loader2 className="size-3 animate-spin" />}
