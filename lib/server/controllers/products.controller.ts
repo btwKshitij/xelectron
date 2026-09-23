@@ -76,9 +76,28 @@ export async function listCatalogProducts(searchQuery?: string, categorySlug?: s
 export async function getProduct(idOrSlug: string) {
   // Try by ID first, then by slug
   const byId = await productsDal.getProductById(idOrSlug);
-  if (byId) return { ...applyEffectivePrice(byId), ...await getSpecHeadings() };
+  if (byId) {
+    const defaultHeadings = await getSpecHeadings();
+    const product = applyEffectivePrice(byId);
+    return {
+      ...defaultHeadings,
+      ...product,
+      designHeading: product.designHeading || defaultHeadings.designHeading,
+      connectivityHeading: product.connectivityHeading || defaultHeadings.connectivityHeading,
+    };
+  }
   const bySlug = await productsDal.getProductBySlug(idOrSlug);
-  return bySlug ? { ...applyEffectivePrice(bySlug), ...await getSpecHeadings() } : null;
+  if (bySlug) {
+    const defaultHeadings = await getSpecHeadings();
+    const product = applyEffectivePrice(bySlug);
+    return {
+      ...defaultHeadings,
+      ...product,
+      designHeading: product.designHeading || defaultHeadings.designHeading,
+      connectivityHeading: product.connectivityHeading || defaultHeadings.connectivityHeading,
+    };
+  }
+  return null;
 }
 
 // ─── Create ──────────────────────────────────────────────────────────────────

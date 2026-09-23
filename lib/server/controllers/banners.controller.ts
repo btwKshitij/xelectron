@@ -47,7 +47,7 @@ export async function ensureDefaultBannersSeeded() {
 export async function listBanners() {
   await ensureDefaultBannersSeeded()
   return (db as any).heroBanner.findMany({
-    orderBy: { sortOrder: "asc" },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
   })
 }
 
@@ -55,7 +55,7 @@ export async function listActiveBanners() {
   await ensureDefaultBannersSeeded()
   return (db as any).heroBanner.findMany({
     where: { isActive: true },
-    orderBy: { sortOrder: "asc" },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
   })
 }
 

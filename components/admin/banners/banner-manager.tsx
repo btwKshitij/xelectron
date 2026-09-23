@@ -27,6 +27,8 @@ import {
   Maximize2Icon,
   HardDriveIcon,
   PlayIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
 } from "lucide-react"
 import { toast } from "sonner"
 import type { HeroBannerItem } from "@/lib/server/controllers/banners.controller"
@@ -448,6 +450,47 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
     }
   }
 
+  async function handleMoveBanner(bannerId: string, direction: "up" | "down") {
+    const sorted = [...banners].sort((a, b) => a.sortOrder - b.sortOrder)
+    const index = sorted.findIndex((b) => b.id === bannerId)
+    if (index === -1) return
+
+    const targetIndex = direction === "up" ? index - 1 : index + 1
+    if (targetIndex < 0 || targetIndex >= sorted.length) return
+
+    const currentBanner = sorted[index]
+    const targetBanner = sorted[targetIndex]
+    const currentOrder = currentBanner.sortOrder
+    const targetOrder = targetBanner.sortOrder
+
+    const updated = sorted.map((b) => {
+      if (b.id === currentBanner.id) return { ...b, sortOrder: targetOrder }
+      if (b.id === targetBanner.id) return { ...b, sortOrder: currentOrder }
+      return b
+    }).sort((a, b) => a.sortOrder - b.sortOrder)
+
+    setBanners(updated)
+
+    try {
+      await Promise.all([
+        fetch(`/api/admin/banners/${currentBanner.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sortOrder: targetOrder }),
+        }),
+        fetch(`/api/admin/banners/${targetBanner.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sortOrder: currentOrder }),
+        }),
+      ])
+      toast.success("Banner reordered successfully")
+      router.refresh()
+    } catch {
+      toast.error("Failed to update banner order")
+    }
+  }
+
   async function handleDesktopFileUpload(file: File) {
     if (!file || isUploadingDesktop || isSubmitting) return
     setIsUploadingDesktop(true)
@@ -840,6 +883,12 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
                               loop
                               muted
                               playsInline
+                              ref={(el) => {
+                                if (el) {
+                                  el.defaultMuted = true
+                                  el.muted = true
+                                }
+                              }}
                               className="h-full w-full object-cover"
                             />
                           ) : (
@@ -931,6 +980,24 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
                       {/* Action Buttons */}
                       <td className="px-3 py-3 text-right">
                         <div className="inline-flex items-center justify-end gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleMoveBanner(banner.id, "up")}
+                            title="Move up in order"
+                            className="rounded-md p-1.5 text-black/60 hover:bg-black/5 hover:text-black transition"
+                          >
+                            <ArrowUpIcon className="size-3.5" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleMoveBanner(banner.id, "down")}
+                            title="Move down in order"
+                            className="rounded-md p-1.5 text-black/60 hover:bg-black/5 hover:text-black transition"
+                          >
+                            <ArrowDownIcon className="size-3.5" />
+                          </button>
+
                           <button
                             type="button"
                             onClick={() => handleToggleActive(banner)}

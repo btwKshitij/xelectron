@@ -26,7 +26,8 @@ import { resolveCategoryImage } from "@/lib/shared/category-utils";
 import { getLatestLaunchIds } from "@/lib/server/dal/latest-launch.dal";
 import { selectLatestLaunchProducts } from "@/lib/latest-launch";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function Home() {
   let selectedBestSellers: BestSellerItem[] = [];

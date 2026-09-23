@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server"
 import { listActiveBanners } from "@/lib/server/controllers/banners.controller"
 
-export const revalidate = 60
+export const dynamic = "force-dynamic"
+export const revalidate = 0
 
 export async function GET() {
   try {
     const banners = await listActiveBanners()
     return NextResponse.json(banners, {
       headers: {
-        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+        "Cache-Control": "no-store, max-age=0, must-revalidate",
       },
     })
   } catch (error) {

@@ -20,10 +20,10 @@ import {
   MessageCircle,
   Phone,
   Quote,
-  Share2,
   Tag,
   Volume2,
 } from "lucide-react";
+import { Facebook, Instagram } from "@/components/ui/social-icons";
 import { formatINR } from "@/lib/format-price";
 
 export interface BlogPostData {
@@ -451,12 +451,23 @@ export default function BlogArticleRenderer({
     }
   };
 
-  const handleTwitterShare = () => {
+  const handleFacebookShare = () => {
     if (typeof window !== "undefined") {
-      const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-        post.title
-      )}&url=${encodeURIComponent(window.location.href)}`;
+      const shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+        window.location.href
+      )}`;
       window.open(shareUrl, "_blank", "noopener,noreferrer");
+    }
+  };
+
+  const handleInstagramShare = () => {
+    if (typeof window !== "undefined") {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(window.location.href).catch(() => {});
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2500);
+      }
+      window.open("https://www.instagram.com/xelectron_india/", "_blank", "noopener,noreferrer");
     }
   };
 
@@ -529,10 +540,10 @@ export default function BlogArticleRenderer({
               </div>
               <div>
                 <p className="text-sm font-bold text-slate-900">
-                  XElectron Editorial & Engineering
+                  The XElectron Journal
                 </p>
                 <p className="text-xs text-slate-500">
-                  Official Consumer Electronics & Acoustic Lab
+                  Ideas, Insights & Stories Behind Better Experiences
                 </p>
               </div>
             </div>
@@ -570,12 +581,22 @@ export default function BlogArticleRenderer({
 
               <button
                 type="button"
-                onClick={handleTwitterShare}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-900 bg-slate-900 px-3.5 py-2 text-xs font-bold text-white transition hover:bg-slate-800 shadow-xs"
-                title="Share on X"
+                onClick={handleFacebookShare}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3.5 py-2 text-xs font-bold text-[#1877f2] transition hover:bg-blue-100 shadow-xs"
+                title="Share on Facebook"
               >
-                <Share2 className="h-3.5 w-3.5" />
-                <span>Share</span>
+                <Facebook className="h-3.5 w-3.5" />
+                <span>Facebook</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleInstagramShare}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-pink-200 bg-pink-50 px-3.5 py-2 text-xs font-bold text-[#e1306c] transition hover:bg-pink-100 shadow-xs"
+                title="Share on Instagram / Follow XElectron"
+              >
+                <Instagram className="h-3.5 w-3.5" />
+                <span>Instagram</span>
               </button>
             </div>
           </div>

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { X, Loader2, Check, Copy, Sparkles, Tag } from "lucide-react";
+import { X, Loader2, Check, Copy, Sparkles, Tag, Gift } from "lucide-react";
 import { toast } from "sonner";
 
 export type FestiveOfferSettings = {
@@ -34,6 +34,8 @@ export default function FestiveOfferPopup() {
 
   const [settings, setSettings] = useState<FestiveOfferSettings>(DEFAULT_SETTINGS);
   const [isOpen, setIsOpen] = useState(false);
+  const [hasDismissed, setHasDismissed] = useState(false);
+  const [isTabDismissed, setIsTabDismissed] = useState(false);
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -41,6 +43,22 @@ export default function FestiveOfferPopup() {
   const [discountCode, setDiscountCode] = useState(DEFAULT_SETTINGS.discountCode);
   const [loadedPath, setLoadedPath] = useState<string | null>(null);
   const isMounted = loadedPath === pathname;
+
+  // Check stored dismissal and unlocked code on mount
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem("xelectron_festive_closed") === "true") {
+        setHasDismissed(true);
+      }
+      if (sessionStorage.getItem("xelectron_festive_tab_dismissed") === "true") {
+        setIsTabDismissed(true);
+      }
+      const saved = localStorage.getItem("xelectron_festive_submitted");
+      if (saved) {
+        setIsSuccess(true);
+      }
+    } catch {}
+  }, []);
 
   // Exclude dashboard, admin, auth, and checkout pages
   const isExcluded =
@@ -90,6 +108,7 @@ export default function FestiveOfferPopup() {
   useEffect(() => {
     if (!isMounted || isExcluded) return;
     if (settings.isActive === false) return;
+    if (sessionStorage.getItem("xelectron_festive_closed") === "true") return;
 
     // Show popup automatically when opening the website
     const timer = setTimeout(() => {
@@ -98,20 +117,32 @@ export default function FestiveOfferPopup() {
     return () => clearTimeout(timer);
   }, [isMounted, isExcluded, settings.isActive]);
 
+  const handleClose = useCallback(() => {
+    setIsOpen(false);
+    setHasDismissed(true);
+    try {
+      sessionStorage.setItem("xelectron_festive_closed", "true");
+    } catch {}
+  }, []);
+
+  const handleDismissTab = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsTabDismissed(true);
+    try {
+      sessionStorage.setItem("xelectron_festive_tab_dismissed", "true");
+    } catch {}
+  }, []);
+
   // Handle ESC key to close
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isOpen) {
-        setIsOpen(false);
+        handleClose();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen]);
-
-  const handleClose = useCallback(() => {
-    setIsOpen(false);
-  }, []);
+  }, [isOpen, handleClose]);
 
   const handleCopyCode = async () => {
     try {
@@ -158,7 +189,7 @@ export default function FestiveOfferPopup() {
     }
   };
 
-  if (!isMounted || isExcluded || !isOpen || settings.isActive === false) {
+  if (!isMounted || isExcluded || settings.isActive === false) {
     return null;
   }
 
@@ -168,15 +199,52 @@ export default function FestiveOfferPopup() {
     settings.offerText === "GET 5% OFF";
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={settings.badgeTitle || "Festive Offer"}
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/80 backdrop-blur-xs animate-in fade-in duration-300"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) handleClose();
-      }}
-    >
+    <>
+      {/* FLOATING SIDE TAB TRIGGER (ATTACHED TO LEFT EDGE) */}
+      {!isOpen && hasDismissed && !isTabDismissed && (
+        <aside
+          aria-label="Festive Offer"
+          className="fixed left-0 bottom-4 sm:bottom-6 z-40 animate-in fade-in slide-in-from-left-4 duration-300"
+        >
+          <div className="relative group">
+            {/* CORNER CLOSE (X) BUTTON */}
+            <button
+              type="button"
+              onClick={handleDismissTab}
+              aria-label="Dismiss offer tab"
+              title="Dismiss"
+              className="absolute -top-2.5 -right-2.5 z-10 flex size-5.5 items-center justify-center rounded-full bg-slate-950 text-white hover:bg-slate-800 transition-transform hover:scale-110 active:scale-95 cursor-pointer shadow-md border border-white/20"
+            >
+              <X className="size-3 stroke-[2.5]" />
+            </button>
+
+            {/* BRAND BLUE SIDE TAB */}
+            <button
+              type="button"
+              onClick={() => setIsOpen(true)}
+              aria-label="Open festive offer"
+              title="Click to view offer"
+              className="flex w-9 sm:w-10 h-32 sm:h-36 items-center justify-center rounded-r-md bg-[#0a7ae6] hover:bg-[#0866c2] border-2 border-slate-950 border-l-0 shadow-[2px_4px_16px_rgba(10,122,230,0.35)] hover:translate-x-1 transition-all duration-200 cursor-pointer"
+            >
+              <span className="-rotate-90 whitespace-nowrap text-xs sm:text-[13px] font-black tracking-widest text-white uppercase select-none font-sans">
+                {settings.offerText || "GET 5% OFF"}
+              </span>
+            </button>
+          </div>
+        </aside>
+      )}
+
+      {/* FULL-SCREEN FESTIVE OFFER MODAL */}
+      {isOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={settings.badgeTitle || "Festive Offer"}
+          className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/80 backdrop-blur-xs animate-in fade-in duration-300"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) handleClose();
+          }}
+        >
       <div className="relative w-full max-w-[760px] overflow-hidden rounded-2xl sm:rounded-3xl shadow-[0_25px_90px_rgba(0,0,0,0.95),0_0_50px_rgba(240,80,26,0.12)] border border-slate-700/70 bg-[#0c1017] animate-in zoom-in-95 duration-300">
         {/* FLOATING CLOSE BUTTON */}
         <button
@@ -485,5 +553,7 @@ export default function FestiveOfferPopup() {
         </div>
       </div>
     </div>
-  );
+  )}
+</>
+);
 }

@@ -14,6 +14,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  devIndicators: {
+    position: "bottom-right",
+  },
   experimental: {
     proxyClientMaxBodySize: "250mb",
   },

@@ -42,42 +42,83 @@ function isVideoUrl(url?: string | null): boolean {
 function HeroVideo({
   src,
   isActive,
+  onEnded,
+  loop = false,
 }: {
   src: string;
   isActive: boolean;
+  onEnded?: () => void;
+  loop?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const onEndedRef = useRef(onEnded);
+  onEndedRef.current = onEnded;
+  const wasActiveRef = useRef(false);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    // Mobile browsers strictly require muted and defaultMuted to be true in DOM
+    // Mobile and desktop browsers require muted, defaultMuted, and playsInline for autoplay
     video.defaultMuted = true;
     video.muted = true;
+    video.playsInline = true;
 
     if (isActive) {
+      if (!wasActiveRef.current) {
+        try {
+          video.currentTime = 0;
+        } catch {}
+      }
+      wasActiveRef.current = true;
+
       const playPromise = video.play();
       if (playPromise !== undefined) {
-        playPromise.catch(() => {
+        playPromise.catch((err) => {
+          if (err?.name === "AbortError") return;
           video.muted = true;
           video.play().catch(() => {});
         });
       }
     } else {
+      wasActiveRef.current = false;
       video.pause();
     }
-  }, [isActive]);
+  }, [isActive, src]);
+
+  const handleEnded = () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (loop) {
+      try {
+        video.currentTime = 0;
+      } catch {}
+      video.play().catch(() => {});
+      return;
+    }
+
+    onEndedRef.current?.();
+  };
+
+  const handleError = () => {
+    const timer = setTimeout(() => {
+      onEndedRef.current?.();
+    }, 5000);
+    return () => clearTimeout(timer);
+  };
 
   return (
     <video
       ref={videoRef}
       src={src}
       autoPlay
-      loop
+      loop={loop}
       muted
       playsInline
-      preload="metadata"
+      preload="auto"
+      onEnded={handleEnded}
+      onError={handleError}
       className={`h-full w-full object-cover object-center transform-gpu ${
         isActive ? "animate-hero-zoom" : "scale-100"
       }`}
@@ -113,7 +154,7 @@ export default function HeroShowcase({ initialBanners }: { initialBanners?: Bann
 
     async function syncBanners() {
       try {
-        const res = await fetch("/api/banners");
+        const res = await fetch("/api/banners", { cache: "no-store" });
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data) && data.length > 0) {
@@ -127,8 +168,30 @@ export default function HeroShowcase({ initialBanners }: { initialBanners?: Bann
     syncBanners();
   }, [initialBanners]);
 
+  const [isDesktop, setIsDesktop] = useState(true);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(min-width: 640px)");
+    setIsDesktop(mq.matches);
+
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
   const activeBanners = bannerList.length > 0 ? bannerList : defaultBanners;
   const totalBanners = activeBanners.length;
+
+  const currentBanner = activeBanners[currentIndex];
+  const activeMediaSrc = currentBanner
+    ? isDesktop
+      ? currentBanner.src
+      : currentBanner.mobileSrc || currentBanner.src
+    : "";
+
+  const isCurrentSlideVideo = isVideoUrl(activeMediaSrc);
+  const isCurrentSlideYouTube = isYouTubeUrl(activeMediaSrc);
 
   const nextSlide = useCallback(() => {
     setCurrentIndex((prev) => (prev + 1) % totalBanners);
@@ -141,6 +204,38 @@ export default function HeroShowcase({ initialBanners }: { initialBanners?: Bann
   const goToSlide = useCallback((index: number) => {
     setCurrentIndex(index);
   }, []);
+
+  const handleSlideVideoEnded = useCallback(
+    (slideIndex: number) => {
+      if (totalBanners <= 1) return;
+      setCurrentIndex((prev) => {
+        if (prev === slideIndex) {
+          return (prev + 1) % totalBanners;
+        }
+        return prev;
+      });
+    },
+    [totalBanners]
+  );
+
+  // YouTube ended listener via postMessage API
+  useEffect(() => {
+    if (totalBanners <= 1 || !isCurrentSlideYouTube) return;
+
+    const handleMessage = (e: MessageEvent) => {
+      try {
+        const data = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
+        if (data && (data.event === "onStateChange" || typeof data.info === "number")) {
+          if (data.info === 0) {
+            handleSlideVideoEnded(currentIndex);
+          }
+        }
+      } catch {}
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [totalBanners, isCurrentSlideYouTube, currentIndex, handleSlideVideoEnded]);
 
   // Smooth RAF loop for fluid, non-jittery arrow glide
   useEffect(() => {
@@ -162,16 +257,27 @@ export default function HeroShowcase({ initialBanners }: { initialBanners?: Bann
     };
   }, [isInRightHalf]);
 
-  // Autoplay timer: keeps changing even on hover, resets on slide change
+  // Autoplay timer: auto-advances image banners after SLIDE_DURATION (6.5s);
+  // For video banners, auto-advance waits until the video finishes playing (onEnded).
   useEffect(() => {
     if (totalBanners <= 1) return;
+
+    // If current slide is a video or YouTube embed, do NOT auto-advance with the 6.5s timer.
+    // Instead, wait for the video to end. A safety timer (90s) prevents getting stuck.
+    if (isCurrentSlideVideo || isCurrentSlideYouTube) {
+      const fallbackTimer = setTimeout(() => {
+        setCurrentIndex((prev) => (prev + 1) % totalBanners);
+      }, 120000);
+
+      return () => clearTimeout(fallbackTimer);
+    }
 
     const timer = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % totalBanners);
     }, SLIDE_DURATION);
 
     return () => clearInterval(timer);
-  }, [currentIndex, totalBanners]);
+  }, [currentIndex, totalBanners, isCurrentSlideVideo, isCurrentSlideYouTube]);
 
 
   // Mouse move handler for right-half follow arrow
@@ -247,65 +353,80 @@ export default function HeroShowcase({ initialBanners }: { initialBanners?: Bann
                 href={banner.linkUrl || "/shop"}
                 className="block relative h-full w-full overflow-hidden"
               >
-                {/* DESKTOP BANNER MEDIA */}
-                <div className="hidden sm:block relative h-full w-full overflow-hidden">
-                  {isYouTubeUrl(banner.src) ? (
-                    <iframe
-                      src={getYouTubeEmbedUrl(banner.src, isActive, true, true)}
-                      title={banner.title}
-                      className="h-full w-full border-0 pointer-events-none"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    />
-                  ) : isVideoUrl(banner.src) ? (
-                    <HeroVideo src={banner.src} isActive={isActive} />
-                  ) : (
-                    <div
-                      key={`img-desktop-${index}`}
-                      className={`relative h-full w-full transform-gpu ${
-                        isActive ? "animate-hero-zoom" : "scale-100"
-                      }`}
-                    >
-                      <Image
-                        src={banner.src}
-                        alt={banner.alt || banner.title}
-                        fill
-                        priority
-                        className="object-cover object-center pointer-events-none"
-                        sizes="100vw"
-                      />
-                    </div>
-                  )}
-                </div>
+                {/* RESPONSIVE BANNER MEDIA */}
+                {(() => {
+                  const mediaSrc = isDesktop ? banner.src : (banner.mobileSrc || banner.src);
+                  const isMediaVideo = isVideoUrl(mediaSrc);
+                  const isMediaYouTube = isYouTubeUrl(mediaSrc);
 
-                {/* MOBILE BANNER MEDIA */}
-                <div className="sm:hidden relative h-full w-full overflow-hidden">
-                  {isYouTubeUrl(banner.mobileSrc || banner.src) ? (
-                    <iframe
-                      src={getYouTubeEmbedUrl(banner.mobileSrc || banner.src, isActive, true, true)}
-                      title={banner.title}
-                      className="h-full w-full border-0 pointer-events-none"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    />
-                  ) : isVideoUrl(banner.mobileSrc || banner.src) ? (
-                    <HeroVideo src={banner.mobileSrc || banner.src} isActive={isActive} />
-                  ) : (
-                    <div
-                      key={`img-mobile-${index}`}
-                      className={`relative h-full w-full transform-gpu ${
-                        isActive ? "animate-hero-zoom" : "scale-100"
-                      }`}
-                    >
-                      <Image
-                        src={banner.mobileSrc || banner.src}
-                        alt={banner.alt || banner.title}
-                        fill
-                        priority
-                        className="object-cover object-center pointer-events-none"
-                        sizes="100vw"
-                      />
-                    </div>
-                  )}
-                </div>
+                  if (isMediaYouTube) {
+                    return (
+                      <div className="relative h-full w-full overflow-hidden">
+                        <iframe
+                          src={getYouTubeEmbedUrl(mediaSrc, isActive, true, totalBanners <= 1)}
+                          title={banner.title}
+                          className="h-full w-full border-0 pointer-events-none"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        />
+                      </div>
+                    );
+                  }
+
+                  if (isMediaVideo) {
+                    return (
+                      <div className="relative h-full w-full overflow-hidden">
+                        <HeroVideo
+                          src={mediaSrc}
+                          isActive={isActive}
+                          onEnded={() => handleSlideVideoEnded(index)}
+                          loop={totalBanners <= 1}
+                        />
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <>
+                      {/* DESKTOP BANNER IMAGE */}
+                      <div className="hidden sm:block relative h-full w-full overflow-hidden">
+                        <div
+                          key={`img-desktop-${index}`}
+                          className={`relative h-full w-full transform-gpu ${
+                            isActive ? "animate-hero-zoom" : "scale-100"
+                          }`}
+                        >
+                          <Image
+                            src={banner.src}
+                            alt={banner.alt || banner.title}
+                            fill
+                            priority={index === 0}
+                            className="object-cover object-center pointer-events-none"
+                            sizes="100vw"
+                          />
+                        </div>
+                      </div>
+
+                      {/* MOBILE BANNER IMAGE */}
+                      <div className="sm:hidden relative h-full w-full overflow-hidden">
+                        <div
+                          key={`img-mobile-${index}`}
+                          className={`relative h-full w-full transform-gpu ${
+                            isActive ? "animate-hero-zoom" : "scale-100"
+                          }`}
+                        >
+                          <Image
+                            src={banner.mobileSrc || banner.src}
+                            alt={banner.alt || banner.title}
+                            fill
+                            priority={index === 0}
+                            className="object-cover object-center pointer-events-none"
+                            sizes="100vw"
+                          />
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
               </Link>
             </div>
           );

@@ -64,12 +64,11 @@ export default function BlogListView({ initialPosts }: BlogListViewProps) {
             <BookOpen className="h-3.5 w-3.5" />
             The XElectron Journal
           </span>
-          <h1 className="mt-4 text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900">
-            Stories, Engineering & Sound Insights
+          <h1 className="mx-auto mt-4 max-w-4xl text-balance text-3xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-slate-900">
+            Ideas, Insights & Stories Behind Better Experiences
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-sm sm:text-base lg:text-lg text-slate-600 leading-relaxed">
-            Discover in-depth buyer guides, behind-the-scenes engineering breakthroughs, and tips
-            to maximize your home cinema and audio experience.
+          <p className="mx-auto mt-4 max-w-2xl text-balance text-sm sm:text-base lg:text-lg text-slate-600 leading-relaxed">
+            Discover product insights, buying guides, technology stories, and expert perspectives from the world of entertainment.
           </p>
 
           {/* Search Bar */}

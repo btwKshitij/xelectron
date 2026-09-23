@@ -13,7 +13,8 @@ interface DynamicProductPageProps {
   params: Promise<{ id: string }>;
 }
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function DynamicProductPage({ params }: DynamicProductPageProps) {
   const { id } = await params;
@@ -96,7 +97,12 @@ export default async function DynamicProductPage({ params }: DynamicProductPageP
           border: color.borderHex || undefined,
         })),
         features: dbProduct.features.map((feature: any) => feature.featureText),
-        specs: dbProduct.specs.map((spec: any) => ({ label: spec.label, value: spec.value })),
+        specs: dbProduct.specs.map((spec: any) => ({
+          id: spec.id,
+          label: spec.label,
+          value: spec.value,
+          section: spec.section || null,
+        })),
         faqs: dbProduct.faqs?.map((faq: any) => ({ question: faq.question, answer: faq.answer })) || [],
         banners: dbProduct.banners?.map((banner: any) => ({
           id: banner.id,

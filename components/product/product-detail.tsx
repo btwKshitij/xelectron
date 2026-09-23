@@ -1175,15 +1175,19 @@ export default function ProductDetail({
           const designSpecs = rawSpecs.filter((s: any) => (s.section ?? (isConnectivityKey(s.label) ? "connectivity" : "design")) === "design");
           const connectivitySpecs = rawSpecs.filter((s: any) => (s.section ?? (isConnectivityKey(s.label) ? "connectivity" : "design")) === "connectivity");
 
+          const hasDesignSpecs = designSpecs.length > 0;
+          const hasConnectivitySpecs = connectivitySpecs.length > 0;
+          const hasBoth = hasDesignSpecs && hasConnectivitySpecs;
+
           return (
             <section id="product-specifications" className="mt-6 sm:mt-16 pt-5 sm:pt-12 border-t border-slate-200 scroll-mt-24">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 xl:gap-20">
-                {/* Column 1: Design, Display & Performance */}
-                <div className="space-y-3">
-                  <h2 className="text-2xl sm:text-2xl font-bold text-slate-900 tracking-tight mb-2">
-                    {product.designHeading?.trim() || "Design, Display & Performance"}
-                  </h2>
-                  {designSpecs.length > 0 ? (
+              <div className={`grid grid-cols-1 ${hasBoth ? "lg:grid-cols-2 gap-10 lg:gap-16 xl:gap-20" : "max-w-4xl gap-10"}`}>
+                {/* Column 1: Design / First Section */}
+                {hasDesignSpecs && (
+                  <div className="space-y-3">
+                    <h2 className="text-2xl sm:text-2xl font-bold text-slate-900 tracking-tight mb-2">
+                      {product.designHeading?.trim() || "Design, Display & Performance"}
+                    </h2>
                     <div className="divide-y divide-slate-100 border-t border-slate-100">
                       {designSpecs.map((spec: any, idx: number) => {
                         const formattedLabel = spec.label.endsWith(":") ? spec.label : `${spec.label}:`;
@@ -1202,17 +1206,15 @@ export default function ProductDetail({
                         );
                       })}
                     </div>
-                  ) : (
-                    <p className="text-xs text-slate-400 italic py-3">No specifications listed.</p>
-                  )}
-                </div>
+                  </div>
+                )}
 
-                {/* Column 2: Connectivity, Battery & Smart Features */}
-                <div className="space-y-3">
-                  <h2 className="text-2xl sm:text-2xl font-bold text-slate-900 tracking-tight mb-2">
-                    {product.connectivityHeading?.trim() || "Connectivity, Battery & Smart Features"}
-                  </h2>
-                  {connectivitySpecs.length > 0 ? (
+                {/* Column 2: Connectivity / Second Section */}
+                {hasConnectivitySpecs && (
+                  <div className="space-y-3">
+                    <h2 className="text-2xl sm:text-2xl font-bold text-slate-900 tracking-tight mb-2">
+                      {product.connectivityHeading?.trim() || "Connectivity, Battery & Smart Features"}
+                    </h2>
                     <div className="divide-y divide-slate-100 border-t border-slate-100">
                       {connectivitySpecs.map((spec: any, idx: number) => {
                         const formattedLabel = spec.label.endsWith(":") ? spec.label : `${spec.label}:`;
@@ -1231,10 +1233,8 @@ export default function ProductDetail({
                         );
                       })}
                     </div>
-                  ) : (
-                    <p className="text-xs text-slate-400 italic py-3">No specifications listed.</p>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             </section>
           );
