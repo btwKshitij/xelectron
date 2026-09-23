@@ -798,15 +798,15 @@ export default function BlogArticleRenderer({
         {/* Bottom Full-Width CTA Banner - Brand Blue Theme with Refined Font Weight */}
         <div className="mt-16 sm:mt-20 overflow-hidden rounded-3xl bg-gradient-to-r from-[#0a7ae6] via-[#0266c8] to-[#014d99] p-8 sm:p-12 text-white shadow-xl shadow-blue-500/15 border border-blue-400/20">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
-            <div className="max-w-2xl">
+            <div className="max-w-4xl xl:max-w-5xl">
               <span className="rounded-full bg-white/20 backdrop-blur-xs px-3.5 py-1 text-xs font-medium uppercase tracking-wider text-white">
                 Acoustics & Home Cinema
               </span>
-              <h3 className="mt-3 text-2xl sm:text-3xl lg:text-4xl font-normal tracking-tight text-white leading-snug">
-                Ready to Upgrade Your Everyday Audio Experience?
+              <h3 className="mt-3 text-2xl sm:text-3xl lg:text-[1.75rem] xl:text-4xl font-normal tracking-tight text-white leading-snug md:whitespace-nowrap">
+                Ready to Upgrade Your Entertainment Experience?
               </h3>
-              <p className="mt-2.5 text-sm sm:text-base text-blue-50/90 font-light leading-relaxed">
-                Discover XElectron&apos;s full lineup of smart projectors, high-definition displays, and wireless speakers with nationwide 1-year warranty coverage.
+              <p className="mt-2.5 max-w-2xl text-sm sm:text-base text-blue-50/90 font-light leading-relaxed">
+                Discover XElectron&apos;s range of smart projectors, LED TVs, portable monitors, and digital photo frames, designed to make everyday entertainment more immersive.
               </p>
             </div>
 
