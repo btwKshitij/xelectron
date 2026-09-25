@@ -25,6 +25,7 @@ import {
   Minus,
   Plus,
   ShoppingBag,
+  Flame,
 } from "lucide-react";
 import Navbar from "@/components/navbar/navbar";
 import { useSearchParams } from "next/navigation";
@@ -73,6 +74,7 @@ function CheckoutContent() {
   // Prevent resurrecting products that the user explicitly removed, and ensure ?product= is processed once
   const processedProductParamRef = useRef<string | null>(null);
   const removedProductIdsRef = useRef<Set<string>>(new Set());
+  const [dealProductIds, setDealProductIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setIsMounted(true);
@@ -122,15 +124,49 @@ function CheckoutContent() {
       setProductParamLoading(true);
     }
 
+    // Load active deal of the day info
+    fetch("/api/deal-of-the-day", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((dealJson) => {
+        if (!isSubscribed || !dealJson.success || !dealJson.data) return;
+        const deal = dealJson.data;
+        if (deal.isActive && (!deal.endsAt || new Date(deal.endsAt) > new Date())) {
+          setDealProductIds((prev) => {
+            const next = new Set(prev);
+            if (deal.productId) next.add(deal.productId);
+            if (deal.product?.id) next.add(deal.product.id);
+            if (deal.product?.slug) next.add(deal.product.slug);
+            return next;
+          });
+        }
+      })
+      .catch(() => {});
+
     fetch("/api/products", { cache: "no-store" })
       .then((res) => res.json())
       .then((json) => {
         if (!isSubscribed || !json.success || !Array.isArray(json.data)) return;
 
         const productsMap = new Map<string, any>();
+        const dealIds = new Set<string>();
+
         for (const p of json.data) {
           if (p.id) productsMap.set(p.id, p);
           if (p.slug) productsMap.set(p.slug, p);
+
+          if (
+            p.dealOfTheDay &&
+            p.dealOfTheDay.isActive &&
+            (!p.dealOfTheDay.endsAt || new Date(p.dealOfTheDay.endsAt) > new Date())
+          ) {
+            if (p.id) dealIds.add(p.id);
+            if (p.slug) dealIds.add(p.slug);
+            if (p.dealOfTheDay.productId) dealIds.add(p.dealOfTheDay.productId);
+          }
+        }
+
+        if (dealIds.size > 0) {
+          setDealProductIds((prev) => new Set([...prev, ...dealIds]));
         }
 
         // 1. Sync live prices from DB for all items currently in cart
@@ -319,15 +355,54 @@ function CheckoutContent() {
     setCheckoutSessionToken(sessionToken);
   }, []);
 
+  const isDealItem = useCallback(
+    (item: { id: string; slug?: string }) => {
+      return dealProductIds.has(item.id) || Boolean(item.slug && dealProductIds.has(item.slug));
+    },
+    [dealProductIds]
+  );
+
+  const hasDealItems = useMemo(
+    () => orderItems.some((item) => isDealItem(item)),
+    [orderItems, isDealItem]
+  );
+
+  const allItemsAreDeal = useMemo(
+    () => orderItems.length > 0 && orderItems.every((item) => isDealItem(item)),
+    [orderItems, isDealItem]
+  );
+
+  const eligibleItems = useMemo(
+    () => orderItems.filter((item) => !isDealItem(item)),
+    [orderItems, isDealItem]
+  );
+
+  const eligibleSubtotal = useMemo(
+    () => eligibleItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
+    [eligibleItems]
+  );
+
   const discountAmount = useMemo(() => {
     if (couponDiscount > 0) {
-      return Math.round((subtotal * couponDiscount) / 100);
+      // Coupon discounts only apply to eligible items, excluding Deal of the Day items
+      return Math.round((eligibleSubtotal * couponDiscount) / 100);
     }
     return 0;
-  }, [subtotal, couponDiscount]);
+  }, [eligibleSubtotal, couponDiscount]);
 
   const shippingCost = 0; // Free shipping
   const total = Math.max(0, subtotal - discountAmount + shippingCost);
+
+  // Auto-remove applied coupon if user modifies cart to only contain Deal of the Day items
+  useEffect(() => {
+    if (appliedCoupon && allItemsAreDeal) {
+      setAppliedCoupon(null);
+      setCouponDiscount(0);
+      setCouponCode("");
+      setCouponSuccess("");
+      setCouponError("Coupon was removed because Deal of the Day items already have an exclusive offer and are not eligible for coupon discounts.");
+    }
+  }, [appliedCoupon, allItemsAreDeal]);
 
   const trackCheckout = useCallback(async () => {
     if (!checkoutSessionToken || orderItems.length === 0) return;
@@ -360,6 +435,11 @@ function CheckoutContent() {
   const handleApplyCoupon = async () => {
     setCouponError("");
     setCouponSuccess("");
+
+    if (allItemsAreDeal) {
+      setCouponError("Coupon codes cannot be applied to Deal of the Day items as they already have an exclusive offer.");
+      return;
+    }
 
     const code = couponCode.trim().toUpperCase();
     if (!code) {
@@ -401,7 +481,7 @@ function CheckoutContent() {
         // Check eligible product IDs
         if (matchedDiscount.eligibleProductIds) {
           const allowedIds = matchedDiscount.eligibleProductIds.split(",").map((id: string) => id.trim()).filter(Boolean);
-          const cartHasEligible = orderItems.some((item) => allowedIds.includes(item.id));
+          const cartHasEligible = orderItems.some((item) => allowedIds.includes(item.id) && !isDealItem(item));
           if (!cartHasEligible) {
             setCouponError(`Coupon code "${code}" is only valid for selected products.`);
             return;
@@ -413,7 +493,7 @@ function CheckoutContent() {
           setCouponDiscount(matchedDiscount.value);
           setCouponSuccess(`${matchedDiscount.value}% discount applied successfully!`);
         } else if (matchedDiscount.type === "FIXED_AMOUNT") {
-          const percent = subtotal > 0 ? Math.min(100, (matchedDiscount.value / subtotal) * 100) : 10;
+          const percent = eligibleSubtotal > 0 ? Math.min(100, (matchedDiscount.value / eligibleSubtotal) * 100) : 10;
           setCouponDiscount(percent);
           setCouponSuccess(`₹${matchedDiscount.value.toLocaleString("en-IN")} discount applied successfully!`);
         } else {
@@ -942,6 +1022,7 @@ function CheckoutContent() {
               <label htmlFor="coupon-input" className="block text-xs sm:text-sm font-medium text-slate-600 mb-2.5">
                 If you have a coupon code, please apply it below
               </label>
+
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
                 <div className="relative flex-1">
                   <input
