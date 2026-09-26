@@ -572,6 +572,11 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(formData),
         })
+        if (res.status === 401) {
+          toast.error("Your admin session has expired. Please log in again.")
+          router.push("/login")
+          return
+        }
         if (!res.ok) {
           const errData = await res.json().catch(() => ({}))
           throw new Error(errData.error || "Failed to update banner")
@@ -587,6 +592,11 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(formData),
         })
+        if (res.status === 401) {
+          toast.error("Your admin session has expired. Please log in again.")
+          router.push("/login")
+          return
+        }
         if (!res.ok) {
           const errData = await res.json().catch(() => ({}))
           throw new Error(errData.error || "Failed to create banner")

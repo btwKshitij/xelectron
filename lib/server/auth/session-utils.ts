@@ -44,5 +44,9 @@ export async function clearSessionCookie(): Promise<void> {
 /** Read the raw session token from the cookie jar (returns undefined if absent). */
 export async function getSessionToken(): Promise<string | undefined> {
   const cookieStore = await cookies();
-  return cookieStore.get(SESSION_COOKIE_NAME)?.value;
+  return (
+    cookieStore.get(SESSION_COOKIE_NAME)?.value ||
+    cookieStore.get("__Host-session")?.value ||
+    cookieStore.get("session")?.value
+  );
 }
