@@ -91,6 +91,12 @@ export async function updateBanner(
   id: string,
   data: Record<string, any>
 ) {
+  // Check if banner exists before updating to prevent Prisma P2025 crash
+  const existing = await (db as any).heroBanner.findUnique({ where: { id } })
+  if (!existing) {
+    throw new Error("Banner not found — it may have been deleted. Please refresh the page.")
+  }
+
   const updateData: Record<string, any> = {}
 
   if (typeof data.title === "string") updateData.title = data.title.trim()

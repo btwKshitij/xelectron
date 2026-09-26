@@ -40,7 +40,9 @@ export async function POST(
     return NextResponse.json(updated)
   } catch (error: any) {
     console.error("Failed to update banner:", error)
-    return NextResponse.json({ error: error?.message || "Failed to update banner" }, { status: 500 })
+    const message = error?.message || "Failed to update banner"
+    const status = message.includes("not found") ? 404 : 500
+    return NextResponse.json({ error: message }, { status })
   }
 }
 
