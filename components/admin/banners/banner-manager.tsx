@@ -420,16 +420,24 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
         body: JSON.stringify({ isActive: newStatus }),
       })
 
+      if (res.status === 401) {
+        toast.error("Your admin session has expired. Please log in again.")
+        router.push("/login")
+        return
+      }
+
       if (!res.ok) {
-        throw new Error("Failed to update status")
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(errData.error || "Failed to update status")
       }
       toast.success(`Banner ${newStatus ? "activated" : "deactivated"}`)
       router.refresh()
-    } catch {
+    } catch (err: any) {
       setBanners((prev) =>
         prev.map((b) => (b.id === banner.id ? { ...b, isActive: banner.isActive } : b))
       )
-      toast.error("Failed to update banner status")
+      console.error("Toggle banner status failed:", err)
+      toast.error(err?.message || "Failed to update banner status")
     }
   }
 
@@ -441,7 +449,15 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ _method: "DELETE" }),
       })
-      if (!res.ok) throw new Error("Failed to delete banner")
+      if (res.status === 401) {
+        toast.error("Your admin session has expired. Please log in again.")
+        router.push("/login")
+        return
+      }
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(errData.error || "Failed to delete banner")
+      }
 
       setBanners((prev) => prev.filter((b) => b.id !== id))
       setSelectedIds((prev) => {
@@ -452,9 +468,9 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
       toast.success("Banner deleted successfully")
       setDeleteTargetId(null)
       router.refresh()
-    } catch (err) {
-      console.error(err)
-      toast.error("Failed to delete banner")
+    } catch (err: any) {
+      console.error("Delete banner failed:", err)
+      toast.error(err?.message || "Failed to delete banner")
     } finally {
       setIsSubmitting(false)
     }

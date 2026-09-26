@@ -114,14 +114,18 @@ export async function deleteBanner(id: string) {
   try {
     const banner = await (db as any).heroBanner.findUnique({ where: { id } });
     if (banner) {
-      const { deleteMultipleProductMedia } = await import("@/lib/server/r2");
-      await deleteMultipleProductMedia([banner.src, banner.mobileSrc]);
+      try {
+        const { deleteMultipleProductMedia } = await import("@/lib/server/r2");
+        await deleteMultipleProductMedia([banner.src, banner.mobileSrc]);
+      } catch (mediaErr) {
+        console.error("Failed to delete banner media from R2:", mediaErr);
+      }
     }
   } catch (err) {
-    console.error("Failed to delete banner media from R2:", err);
+    console.error("Failed to lookup banner media for deletion:", err);
   }
 
-  return (db as any).heroBanner.delete({
+  return (db as any).heroBanner.deleteMany({
     where: { id },
   })
 }
