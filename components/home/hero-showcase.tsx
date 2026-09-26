@@ -147,11 +147,7 @@ export default function HeroShowcase({ initialBanners }: { initialBanners?: Bann
   const minSwipeDistance = 45;
 
   useEffect(() => {
-    if (initialBanners && initialBanners.length > 0) {
-      setBannerList(initialBanners);
-      return;
-    }
-
+    // Always fetch fresh data from the API to avoid stale server/CDN cache
     async function syncBanners() {
       try {
         const res = await fetch("/api/banners", { cache: "no-store" });
@@ -166,7 +162,7 @@ export default function HeroShowcase({ initialBanners }: { initialBanners?: Bann
       }
     }
     syncBanners();
-  }, [initialBanners]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [isDesktop, setIsDesktop] = useState(true);
 
