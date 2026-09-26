@@ -211,7 +211,7 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
       await Promise.all(
         ids.map((id) =>
           fetch(`/api/admin/banners/${id}`, {
-            method: "PATCH",
+            method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ isActive: activeState }),
           })
@@ -233,7 +233,13 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
     setIsBulkDeleting(true)
     try {
       await Promise.all(
-        ids.map((id) => fetch(`/api/admin/banners/${id}`, { method: "DELETE" }))
+        ids.map((id) =>
+          fetch(`/api/admin/banners/${id}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ _method: "DELETE" }),
+          })
+        )
       )
       setBanners((prev) => prev.filter((b) => !ids.includes(b.id)))
       setSelectedIds(new Set())
@@ -409,7 +415,7 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
 
     try {
       const res = await fetch(`/api/admin/banners/${banner.id}`, {
-        method: "PATCH",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isActive: newStatus }),
       })
@@ -430,7 +436,11 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
   async function handleDelete(id: string) {
     setIsSubmitting(true)
     try {
-      const res = await fetch(`/api/admin/banners/${id}`, { method: "DELETE" })
+      const res = await fetch(`/api/admin/banners/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ _method: "DELETE" }),
+      })
       if (!res.ok) throw new Error("Failed to delete banner")
 
       setBanners((prev) => prev.filter((b) => b.id !== id))
@@ -474,12 +484,12 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
     try {
       await Promise.all([
         fetch(`/api/admin/banners/${currentBanner.id}`, {
-          method: "PATCH",
+          method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ sortOrder: targetOrder }),
         }),
         fetch(`/api/admin/banners/${targetBanner.id}`, {
-          method: "PATCH",
+          method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ sortOrder: currentOrder }),
         }),
@@ -558,7 +568,7 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
       if (editingBanner) {
         // Update existing banner
         const res = await fetch(`/api/admin/banners/${editingBanner.id}`, {
-          method: "PATCH",
+          method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(formData),
         })
