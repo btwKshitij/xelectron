@@ -38,9 +38,18 @@ function SafeBestSellerImage({
   sizes?: string;
   priority?: boolean;
 }) {
-  const [imgSrc, setImgSrc] = useState(src || "/category-tv.png");
+  const getValidUrl = (url?: string | null) => {
+    if (!url) return "/category-tv.png";
+    const trimmed = url.trim();
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("/")) {
+      return trimmed;
+    }
+    return "/category-tv.png";
+  };
+
+  const [imgSrc, setImgSrc] = useState(() => getValidUrl(src));
   useEffect(() => {
-    setImgSrc(src || "/category-tv.png");
+    setImgSrc(getValidUrl(src));
   }, [src]);
 
   return (

@@ -24,6 +24,12 @@ async function createUniqueSlug(requestedSlug: string) {
 function applyEffectivePrice(product: any) {
   if (!product) return product;
   
+  let mainImage = product.mainImage;
+  const firstMediaUrl = product.media?.[0]?.url;
+  if (!mainImage || (!mainImage.startsWith("http://") && !mainImage.startsWith("https://") && !mainImage.startsWith("/"))) {
+    mainImage = firstMediaUrl || "/category-tv.png";
+  }
+
   let effectivePrice = product.price;
   let effectiveOldPrice = product.oldPrice;
   
@@ -44,7 +50,7 @@ function applyEffectivePrice(product: any) {
       discount = `${Math.round((1 - numPrice / numOld) * 100)}% off`;
     }
   }
-  return { ...product, price: effectivePrice, oldPrice: effectiveOldPrice, discount: discount || product.discount };
+  return { ...product, mainImage, price: effectivePrice, oldPrice: effectiveOldPrice, discount: discount || product.discount };
 }
 
 // ─── List / Search ───────────────────────────────────────────────────────────
@@ -213,7 +219,8 @@ export async function setProductBestSellerPlacement(id: string, showInBestSeller
 }
 
 export async function listBestSellerProducts() {
-  return productsDal.getBestSellerProducts();
+  const products = await productsDal.getBestSellerProducts();
+  return products.map(applyEffectivePrice);
 }
 
 // ─── Delete ──────────────────────────────────────────────────────────────────
