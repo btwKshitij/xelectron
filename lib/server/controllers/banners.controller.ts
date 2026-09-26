@@ -89,22 +89,24 @@ export async function createBanner(data: {
 
 export async function updateBanner(
   id: string,
-  data: Partial<{
-    title: string
-    category: string
-    caption: string
-    src: string
-    mobileSrc: string
-    alt: string
-    cta: string
-    linkUrl: string
-    sortOrder: number
-    isActive: boolean
-  }>
+  data: Record<string, any>
 ) {
+  const updateData: Record<string, any> = {}
+
+  if (typeof data.title === "string") updateData.title = data.title.trim()
+  if (data.category !== undefined) updateData.category = data.category ? String(data.category).trim() : null
+  if (data.caption !== undefined) updateData.caption = data.caption ? String(data.caption).trim() : null
+  if (typeof data.src === "string" && data.src.trim()) updateData.src = data.src.trim()
+  if (data.mobileSrc !== undefined) updateData.mobileSrc = data.mobileSrc ? String(data.mobileSrc).trim() : null
+  if (typeof data.alt === "string") updateData.alt = data.alt.trim()
+  if (data.cta !== undefined) updateData.cta = data.cta ? String(data.cta).trim() : "Shop now"
+  if (data.linkUrl !== undefined) updateData.linkUrl = data.linkUrl ? String(data.linkUrl).trim() : "/shop"
+  if (data.sortOrder !== undefined) updateData.sortOrder = Number(data.sortOrder) || 0
+  if (data.isActive !== undefined) updateData.isActive = Boolean(data.isActive)
+
   return (db as any).heroBanner.update({
     where: { id },
-    data,
+    data: updateData,
   })
 }
 

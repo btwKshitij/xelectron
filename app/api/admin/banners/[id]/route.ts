@@ -38,9 +38,9 @@ export async function POST(
       console.error("Revalidation error:", revalErr)
     }
     return NextResponse.json(updated)
-  } catch (error) {
+  } catch (error: any) {
     console.error("Failed to update banner:", error)
-    return NextResponse.json({ error: "Failed to update banner" }, { status: 500 })
+    return NextResponse.json({ error: error?.message || "Failed to update banner" }, { status: 500 })
   }
 }
 
