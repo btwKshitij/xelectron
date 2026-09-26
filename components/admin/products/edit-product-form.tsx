@@ -95,15 +95,30 @@ function slugify(value: string) {
 }
 
 function getExistingMedia(product: EditableProduct): ExistingMediaItem[] {
-  const mediaByUrl = new Map(product.media.map((media) => [media.url, media]));
-  const seenUrls = new Set<string>();
+  if (product.media && product.media.length > 0) {
+    const sorted = [...product.media].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+    const seenUrls = new Set<string>();
+    const items: ExistingMediaItem[] = [];
 
-  return [product.mainImage, ...product.media.map((media) => media.url)].flatMap((url) => {
-    if (!url || seenUrls.has(url)) return [];
+    for (const m of sorted) {
+      if (m.url && !seenUrls.has(m.url)) {
+        seenUrls.add(m.url);
+        items.push({ id: m.id, url: m.url });
+      }
+    }
 
-    seenUrls.add(url);
-    return [{ id: mediaByUrl.get(url)?.id, url }];
-  });
+    if (product.mainImage && !seenUrls.has(product.mainImage)) {
+      items.unshift({ url: product.mainImage });
+    }
+
+    return items;
+  }
+
+  if (product.mainImage) {
+    return [{ url: product.mainImage }];
+  }
+
+  return [];
 }
 
 function confirmDiscardChanges() {

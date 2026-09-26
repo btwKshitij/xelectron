@@ -679,16 +679,9 @@ export async function updateProduct(
   }
 
   const mediaChanges =
-    newMedia?.length || mediaOrder?.length || removeMediaIds?.length
+    newMedia?.length || removeMediaIds?.length
       ? {
-          // Nested `create` appends new rows. Reordering and deletion target only this product's relation.
           create: newMedia?.length ? newMedia : undefined,
-          update: mediaOrder?.length
-            ? mediaOrder.map(({ id: mediaId, sortOrder }) => ({
-                where: { id: mediaId },
-                data: { sortOrder },
-              }))
-            : undefined,
           deleteMany: removeMediaIds?.length
             ? { id: { in: removeMediaIds } }
             : undefined,
@@ -744,6 +737,31 @@ export async function updateProduct(
     if (variants !== undefined) await syncProductVariants(id, variants);
     if (colors !== undefined) await syncProductColors(id, colors);
 
+    if (mediaOrder && mediaOrder.length > 0) {
+      await Promise.all(
+        mediaOrder.map(async ({ id: mediaId, sortOrder }) => {
+          if (mediaId) {
+            try {
+              await db.productMedia.updateMany({
+                where: { id: mediaId, productId: id },
+                data: { sortOrder },
+              });
+            } catch (mediaErr) {
+              console.warn(`Could not update sortOrder for media ${mediaId}:`, mediaErr);
+            }
+          }
+        })
+      );
+    }
+    if (productData.mainImage) {
+      try {
+        await db.productMedia.updateMany({
+          where: { url: productData.mainImage, productId: id },
+          data: { sortOrder: 0 },
+        });
+      } catch {}
+    }
+
     return updated;
   } catch (error: any) {
     if (
@@ -781,6 +799,29 @@ export async function updateProduct(
       if (faqs !== undefined) await syncProductFaqs(id, faqs);
       if (banners !== undefined) await syncProductBanners(id, banners);
       if (creatorVideos !== undefined) await syncProductCreatorVideos(id, creatorVideos);
+
+      if (mediaOrder && mediaOrder.length > 0) {
+        await Promise.all(
+          mediaOrder.map(async ({ id: mediaId, sortOrder }) => {
+            if (mediaId) {
+              try {
+                await db.productMedia.updateMany({
+                  where: { id: mediaId, productId: id },
+                  data: { sortOrder },
+                });
+              } catch {}
+            }
+          })
+        );
+      }
+      if (productData.mainImage) {
+        try {
+          await db.productMedia.updateMany({
+            where: { url: productData.mainImage, productId: id },
+            data: { sortOrder: 0 },
+          });
+        } catch {}
+      }
 
       const extra = await loadMissingFaqsAndBanners(id);
       return { ...updated, faqs: extra.faqs, banners: extra.banners, creatorVideos: extra.creatorVideos };

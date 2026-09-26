@@ -30,6 +30,23 @@ export type ProductTableItem = {
   showInBestSellers?: boolean;
 };
 
+function ProductThumbnailImage({ src, alt }: { src?: string | null; alt: string }) {
+  const [imgSrc, setImgSrc] = useState(src || "/category-smartphone.png");
+  useEffect(() => {
+    setImgSrc(src || "/category-smartphone.png");
+  }, [src]);
+
+  return (
+    <Image
+      src={imgSrc}
+      alt={alt}
+      fill
+      className="object-contain p-1"
+      onError={() => setImgSrc("/category-smartphone.png")}
+    />
+  );
+}
+
 export function ProductsTable({ products }: { products: ProductTableItem[] }) {
   const router = useRouter();
   const selectAllRef = useRef<HTMLInputElement>(null);
@@ -684,11 +701,9 @@ export function ProductsTable({ products }: { products: ProductTableItem[] }) {
                       className="flex items-center gap-3 font-medium text-black hover:text-[#0a7ae6] hover:underline"
                     >
                       <div className="relative size-10 shrink-0 overflow-hidden rounded-md border border-black/10 bg-[#fafafa]">
-                        <Image
-                          src={product.mainImage || "/category-smartphone.png"}
+                        <ProductThumbnailImage
+                          src={product.mainImage}
                           alt={product.name}
-                          fill
-                          className="object-contain p-1"
                         />
                       </div>
                       <span className="max-w-[220px] truncate">{product.name}</span>

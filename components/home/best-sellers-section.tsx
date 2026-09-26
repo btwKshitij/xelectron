@@ -23,6 +23,41 @@ function SpecificationRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+function SafeBestSellerImage({
+  src,
+  alt,
+  fill,
+  className,
+  sizes,
+  priority,
+}: {
+  src?: string | null;
+  alt: string;
+  fill?: boolean;
+  className?: string;
+  sizes?: string;
+  priority?: boolean;
+}) {
+  const [imgSrc, setImgSrc] = useState(src || "/category-tv.png");
+  useEffect(() => {
+    setImgSrc(src || "/category-tv.png");
+  }, [src]);
+
+  return (
+    <Image
+      src={imgSrc}
+      alt={alt}
+      fill={fill}
+      className={className}
+      sizes={sizes}
+      priority={priority}
+      onError={() => {
+        setImgSrc("/category-tv.png");
+      }}
+    />
+  );
+}
+
 function MobileBestSellers({ items }: { items: BestSellerItem[] }) {
   const { addItem } = useCart();
   const sectionRef = useRef<HTMLElement>(null);
@@ -206,7 +241,7 @@ function MobileBestSellers({ items }: { items: BestSellerItem[] }) {
 
                   {/* CENTER PRODUCT IMAGE */}
                   <div className="relative w-full h-full flex items-center justify-center">
-                    <Image
+                    <SafeBestSellerImage
                       src={item.image}
                       alt={item.imageAlt}
                       fill
@@ -582,7 +617,7 @@ export default function BestSellersSection({ additionalItems = [] }: { additiona
                     className="absolute inset-0 rounded-full bg-[radial-gradient(circle,_rgba(10,122,230,0.22)_0%,_rgba(10,122,230,0.09)_35%,_rgba(10,122,230,0)_70%)] blur-3xl pointer-events-none will-change-[opacity]"
                   />
                   <div className="relative w-full h-full p-1 lg:p-2 flex items-center justify-center">
-                    <Image
+                    <SafeBestSellerImage
                       src={item.image}
                       alt={item.imageAlt}
                       fill
