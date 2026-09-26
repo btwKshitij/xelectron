@@ -10,11 +10,14 @@ export const metadata: Metadata = {
   description: "Xelectron admin dashboard",
   icons: {
     icon: [
-      { url: "/xelectron-logo.svg", type: "image/svg+xml" },
-      { url: "/favicon.ico", sizes: "any" },
+      {
+        url: "/favicon.ico?v=2",
+        type: "image/x-icon",
+        sizes: "any",
+      },
     ],
-    shortcut: "/xelectron-logo.svg",
-    apple: "/xelectron-logo.svg",
+    shortcut: "/favicon.ico?v=2",
+    apple: "/favicon.ico?v=2",
   },
 };
 
