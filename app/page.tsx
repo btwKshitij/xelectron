@@ -4,14 +4,9 @@ import CategorySection from "@/components/home/category-section";
 import ProductShowcaseSection from "@/components/home/product-showcase-section";
 import BestSellersSection from "@/components/home/best-sellers-section";
 import DealOfTheDaySection from "@/components/home/deal-of-the-day-section";
-import BrandSetupSection from "@/components/home/brand-setup-section";
-import FaqSection from "@/components/home/faq-section";
-import CreatorVideosSection from "@/components/home/creator-videos-section";
-import VerifiedReviewsSection from "@/components/home/verified-reviews-section";
-import BrandMarqueeSection from "@/components/home/brand-marquee-section";
-import BlogSection from "@/components/home/blog-section";
 import WhatsAppSupportBanner from "@/components/home/whatsapp-support-banner";
 import Footer from "@/components/footer/footer";
+import dynamic from "next/dynamic";
 import type { BestSellerItem } from "@/components/home/best-sellers-data";
 import type { StorefrontProduct } from "@/components/home/product-showcase-section";
 import * as productsController from "@/lib/server/controllers/products.controller";
@@ -26,14 +21,96 @@ import { resolveCategoryImage } from "@/lib/shared/category-utils";
 import { getLatestLaunchIds } from "@/lib/server/dal/latest-launch.dal";
 import { selectLatestLaunchProducts } from "@/lib/latest-launch";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+// Dynamic import for below-the-fold sections to speed up initial page load
+const BrandSetupSection = dynamic(() => import("@/components/home/brand-setup-section"));
+const CreatorVideosSection = dynamic(() => import("@/components/home/creator-videos-section"));
+const BrandMarqueeSection = dynamic(() => import("@/components/home/brand-marquee-section"));
+const VerifiedReviewsSection = dynamic(() => import("@/components/home/verified-reviews-section"));
+const FaqSection = dynamic(() => import("@/components/home/faq-section"));
+const BlogSection = dynamic(() => import("@/components/home/blog-section"));
+
+// Cache the homepage with ISR (revalidates every 60 seconds, or instantly when cleared from admin)
+export const revalidate = 60;
 
 export default async function Home() {
-  let selectedBestSellers: BestSellerItem[] = [];
-  let storefrontCategories: Array<{ id: string; title: string; slug: string; image: string }> = [];
-  let featuredProducts: StorefrontProduct[] = [];
+  // Execute all database queries in parallel for ultra-fast TTFB
+  const [
+    bestSellerProductsResult,
+    allProductsResult,
+    latestLaunchIdsResult,
+    savedDealResult,
+    activeDealResult,
+    categoriesResult,
+    heroBannersResult,
+    brandShowcaseItemsResult,
+    brandMarqueeItemsResult,
+    verifiedReviewsResult,
+  ] = await Promise.all([
+    productsController.listBestSellerProducts().catch(() => []),
+    productsController.listProducts().catch(() => []),
+    getLatestLaunchIds().catch(() => []),
+    dealOfTheDayController.getDealOfTheDay().catch(() => null),
+    dealOfTheDayController.getActiveDealOfTheDay().catch(() => null),
+    categoriesController.listCategories().catch(() => []),
+    bannersController.listActiveBanners().catch(() => []),
+    brandShowcaseController.listBrandShowcaseItems(true).catch(() => []),
+    brandMarqueeController.listBrandMarqueeItems(true).catch(() => []),
+    verifiedReviewsController.listActiveVerifiedReviews().catch(() => []),
+  ]);
+
   const reviewProductImages = new Map<string, string>();
+  for (const product of allProductsResult) {
+    if (product.mainImage) {
+      reviewProductImages.set(product.name.trim().toLowerCase(), product.mainImage);
+    }
+  }
+
+  const selectedBestSellers: BestSellerItem[] = (bestSellerProductsResult || []).map((product: any) => ({
+    id: product.slug,
+    slug: product.slug,
+    name: product.name,
+    price: product.price,
+    oldPrice: product.oldPrice || undefined,
+    discount: product.discount || undefined,
+    description: product.description,
+    image: (product.media && product.media.length > 0 && product.media[0]?.url)
+      ? product.media[0].url
+      : (product.mainImage?.startsWith("http") || product.mainImage?.startsWith("/")
+          ? product.mainImage
+          : (product.media?.[0]?.url || "/category-tv.png")),
+    imageAlt: product.name,
+    specs: product.specs && product.specs.length > 0
+      ? product.specs.slice(0, 3).map((spec: any) => ({ label: spec.label, value: spec.value }))
+      : [
+          { label: "Category", value: product.category?.title || "Electronics" },
+          { label: "Customer rating", value: `${(product.rating || 5).toFixed(1)} / 5` },
+          { label: "Availability", value: (product.quantity || 0) > 0 ? "In stock" : "Out of stock" },
+        ],
+  }));
+
+  const featuredProducts: StorefrontProduct[] = selectLatestLaunchProducts(
+    allProductsResult || [],
+    latestLaunchIdsResult || []
+  ).map((product: any) => ({
+    id: product.id,
+    slug: product.slug,
+    name: product.name,
+    description: product.description,
+    image: (product.media && product.media.length > 0 && product.media[0]?.url)
+      ? product.media[0].url
+      : (product.mainImage?.startsWith("http") || product.mainImage?.startsWith("/")
+          ? product.mainImage
+          : (product.media?.[0]?.url || "/category-tv.png")),
+    hoverImage:
+      product.media?.find((media: any) => media.url !== product.mainImage)?.url ?? null,
+    price: product.price,
+    oldPrice: product.oldPrice,
+    rating: product.rating,
+    reviews: product.reviewsCount,
+    category: product.category?.title || "XElectron",
+    discount: product.discount,
+  }));
+
   let dealOfTheDay: React.ComponentProps<typeof DealOfTheDaySection>["deal"] | null = {
     title: defaultDealOfTheDay.title,
     description: defaultDealOfTheDay.description,
@@ -51,170 +128,65 @@ export default async function Home() {
     },
   };
 
-  try {
-    const products = await productsController.listBestSellerProducts();
-    selectedBestSellers = products.map((product: any) => ({
-      // The carousel uses the product slug for its link and stable slide key.
+  if (savedDealResult && !activeDealResult) {
+    dealOfTheDay = null;
+  } else if (activeDealResult) {
+    const dealPrice = activeDealResult.dealPrice || activeDealResult.product.price;
+    const compareAtPrice =
+      activeDealResult.compareAtPrice ||
+      (activeDealResult.product.price !== dealPrice ? activeDealResult.product.price : activeDealResult.product.oldPrice);
 
-      id: product.slug,
-      slug: product.slug,
-      name: product.name,
-      price: product.price,
-      oldPrice: product.oldPrice || undefined,
-      discount: product.discount || undefined,
-      description: product.description,
-      image: (product.media && product.media.length > 0 && product.media[0]?.url)
-        ? product.media[0].url
-        : (product.mainImage?.startsWith("http") || product.mainImage?.startsWith("/")
-            ? product.mainImage
-            : (product.media?.[0]?.url || "/category-tv.png")),
-      imageAlt: product.name,
-      specs: product.specs.length > 0
-        ? product.specs.slice(0, 3).map((spec: any) => ({ label: spec.label, value: spec.value }))
-        : [
-            { label: "Category", value: product.category?.title || "Electronics" },
-            { label: "Customer rating", value: `${product.rating.toFixed(1)} / 5` },
-            { label: "Availability", value: product.quantity > 0 ? "In stock" : "Out of stock" },
-          ],
+    dealOfTheDay = {
+      title: activeDealResult.title,
+      description: activeDealResult.description,
+      image: activeDealResult.image || activeDealResult.product.mainImage,
+      badge: activeDealResult.badge,
+      features: activeDealResult.features,
+      unitsLeft: activeDealResult.unitsLeft,
+      totalUnits: activeDealResult.totalUnits,
+      endsAt: activeDealResult.endsAt.toISOString(),
+      product: {
+        slug: activeDealResult.product.slug,
+        name: activeDealResult.product.name,
+        price: dealPrice,
+        oldPrice: compareAtPrice && compareAtPrice !== dealPrice ? compareAtPrice : null,
+        description: activeDealResult.product.description || null,
+        shippingNotice: activeDealResult.product.shippingNotice || null,
+      },
+    };
+  }
+
+  const storefrontCategories = (categoriesResult || [])
+    .filter((category: any) => category.visible)
+    .map((category: any) => ({
+      id: category.id,
+      title: category.title,
+      slug: category.slug,
+      sortOrder: category.sortOrder ?? 0,
+      image: resolveCategoryImage(
+        category.image || category.products?.[0]?.mainImage,
+        category.slug,
+        category.title
+      ),
     }));
-  } catch {
 
-    // The existing Best Sellers content stays visible if the catalog is unavailable.
-  }
-
-  try {
-    const products = await productsController.listProducts();
-    for (const product of products) {
-      if (product.mainImage) {
-        reviewProductImages.set(product.name.trim().toLowerCase(), product.mainImage);
-      }
-    }
-    const latestLaunchIds = await getLatestLaunchIds();
-    featuredProducts = selectLatestLaunchProducts(products, latestLaunchIds).map((product: any) => ({
-      id: product.id,
-      slug: product.slug,
-      name: product.name,
-      description: product.description,
-      image: (product.media && product.media.length > 0 && product.media[0]?.url)
-        ? product.media[0].url
-        : (product.mainImage?.startsWith("http") || product.mainImage?.startsWith("/")
-            ? product.mainImage
-            : (product.media?.[0]?.url || "/category-tv.png")),
-      hoverImage:
-        product.media.find((media: any) => media.url !== product.mainImage)?.url ?? null,
-      price: product.price,
-      oldPrice: product.oldPrice,
-      rating: product.rating,
-      reviews: product.reviewsCount,
-      category: product.category?.title || "XElectron",
-      discount: product.discount,
-    }));
-  } catch {
-    // Do not show the static sample products when the dashboard catalog is unavailable.
-  }
-
-  try {
-    const [savedDeal, activeDeal] = await Promise.all([
-      dealOfTheDayController.getDealOfTheDay(),
-      dealOfTheDayController.getActiveDealOfTheDay(),
-    ]);
-
-    // Keep the default offer only until the first dashboard deal is saved.
-    // Once a deal exists, an inactive or expired deal must hide the section.
-    if (savedDeal && !activeDeal) {
-      dealOfTheDay = null;
-    } else if (activeDeal) {
-      const dealPrice = activeDeal.dealPrice || activeDeal.product.price;
-      const compareAtPrice =
-        activeDeal.compareAtPrice ||
-        (activeDeal.product.price !== dealPrice ? activeDeal.product.price : activeDeal.product.oldPrice);
-
-      dealOfTheDay = {
-        title: activeDeal.title,
-        description: activeDeal.description,
-        image: activeDeal.image || activeDeal.product.mainImage,
-        badge: activeDeal.badge,
-        features: activeDeal.features,
-        unitsLeft: activeDeal.unitsLeft,
-        totalUnits: activeDeal.totalUnits,
-        endsAt: activeDeal.endsAt.toISOString(),
-        product: {
-          slug: activeDeal.product.slug,
-          name: activeDeal.product.name,
-          price: dealPrice,
-          oldPrice: compareAtPrice && compareAtPrice !== dealPrice ? compareAtPrice : null,
-          description: activeDeal.product.description || null,
-          shippingNotice: activeDeal.product.shippingNotice || null,
-        },
-      };
-    }
-  } catch {
-    // The home page remains available while the deal is not configured.
-  }
-
-  try {
-    const categories = await categoriesController.listCategories();
-    storefrontCategories = categories
-      .filter((category: any) => category.visible)
-      .map((category: any) => ({
-        id: category.id,
-        title: category.title,
-        slug: category.slug,
-        sortOrder: category.sortOrder ?? 0,
-        image: resolveCategoryImage(
-          category.image || category.products[0]?.mainImage,
-          category.slug,
-          category.title
-        ),
-      }));
-  } catch {
-    // Keep the rest of the home page available if the category catalog is unavailable.
-  }
-
-  let brandShowcaseItems: any[] = [];
-  let brandMarqueeItems: any[] = [];
-  let heroBanners: any[] = [];
-
-  try {
-    heroBanners = await bannersController.listActiveBanners();
-  } catch {
-    // Falls back to default items
-  }
-
-  try {
-    brandShowcaseItems = await brandShowcaseController.listBrandShowcaseItems(true);
-  } catch {
-    // Falls back to default items
-  }
-
-  try {
-    brandMarqueeItems = await brandMarqueeController.listBrandMarqueeItems(true);
-  } catch {
-    // Falls back to default items
-  }
-
-  let verifiedReviews: any[] = [];
-  try {
-    verifiedReviews = (await verifiedReviewsController.listActiveVerifiedReviews()).map((review) => ({
-      ...review,
-      productImage: reviewProductImages.get(review.product.trim().toLowerCase()),
-    }));
-  } catch {
-    // Falls back to default items
-  }
+  const verifiedReviews = (verifiedReviewsResult || []).map((review: any) => ({
+    ...review,
+    productImage: reviewProductImages.get(review.product?.trim().toLowerCase()),
+  }));
 
   return (
     <div className="min-h-screen w-full bg-white text-[#1d1d1f]">
       <Navbar />
       <main className="w-full">
-        <HeroShowcase initialBanners={heroBanners} />
+        <HeroShowcase initialBanners={heroBannersResult || []} />
         <CategorySection categories={storefrontCategories} />
         <ProductShowcaseSection products={featuredProducts} />
         <BestSellersSection additionalItems={selectedBestSellers} />
         {dealOfTheDay ? <DealOfTheDaySection deal={dealOfTheDay} /> : null}
-        <BrandSetupSection items={brandShowcaseItems} />
+        <BrandSetupSection items={brandShowcaseItemsResult || []} />
         <CreatorVideosSection />
-        <BrandMarqueeSection items={brandMarqueeItems} />
+        <BrandMarqueeSection items={brandMarqueeItemsResult || []} />
         <VerifiedReviewsSection initialReviews={verifiedReviews} />
         <FaqSection />
         <BlogSection />
