@@ -20,24 +20,35 @@ export async function POST(
     if (body?._method === "DELETE" || body?.action === "delete") {
       await deleteBanner(id)
       try {
-        revalidatePath("/")
-        revalidatePath("/dashboard/banners")
+        revalidatePath("/", "layout")
+        revalidatePath("/dashboard", "layout")
         revalidatePath("/api/banners")
       } catch (revalErr) {
         console.error("Revalidation error:", revalErr)
       }
-      return NextResponse.json({ success: true })
+      return NextResponse.json(
+        { success: true },
+        {
+          headers: {
+            "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+          },
+        }
+      )
     }
 
     const updated = await updateBanner(id, body)
     try {
-      revalidatePath("/")
-      revalidatePath("/dashboard/banners")
+      revalidatePath("/", "layout")
+      revalidatePath("/dashboard", "layout")
       revalidatePath("/api/banners")
     } catch (revalErr) {
       console.error("Revalidation error:", revalErr)
     }
-    return NextResponse.json(updated)
+    return NextResponse.json(updated, {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+      },
+    })
   } catch (error: any) {
     console.error("Failed to update banner:", error)
     const message = error?.message || "Failed to update banner"

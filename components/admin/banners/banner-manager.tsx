@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo, useRef } from "react"
+import { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -80,6 +80,7 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
   const [isBulkDeleting, setIsBulkDeleting] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isClearingCache, setIsClearingCache] = useState(false)
   const [isUploadingDesktop, setIsUploadingDesktop] = useState(false)
   const [uploadProgressDesktop, setUploadProgressDesktop] = useState<number | null>(null)
   const [isUploadingMobile, setIsUploadingMobile] = useState(false)
@@ -109,23 +110,49 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set())
   const selectAllRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
-    // Always fetch fresh data from the API on mount to avoid stale server cache
-    fetch("/api/admin/banners")
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch banners")
-        return res.json()
+  const fetchFreshBanners = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/admin/banners?t=${Date.now()}`, {
+        cache: "no-store",
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+        },
       })
-      .then((data) => {
-        if (Array.isArray(data)) setBanners(data)
-      })
-      .catch(() => {
-        // Fallback: keep initialBanners if the API call fails
-        if (initialBanners && initialBanners.length > 0) {
-          setBanners(initialBanners)
+      if (res.ok) {
+        const data = await res.json()
+        if (Array.isArray(data)) {
+          setBanners(data)
         }
+      }
+    } catch (err) {
+      console.error("Failed to fetch fresh banners:", err)
+      if (initialBanners && initialBanners.length > 0) {
+        setBanners(initialBanners)
+      }
+    }
+  }, [initialBanners])
+
+  useEffect(() => {
+    fetchFreshBanners()
+  }, [fetchFreshBanners])
+
+  async function handleClearServerCache() {
+    setIsClearingCache(true)
+    try {
+      const res = await fetch(`/api/admin/clear-cache?t=${Date.now()}`, {
+        method: "POST",
       })
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+      if (!res.ok) throw new Error("Failed to clear server cache")
+      await fetchFreshBanners()
+      toast.success("Server cache cleared successfully!")
+      router.refresh()
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to clear cache")
+    } finally {
+      setIsClearingCache(false)
+    }
+  }
 
   useEffect(() => {
     fetch("/api/categories")
@@ -472,6 +499,7 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
       })
       toast.success("Banner deleted successfully")
       setDeleteTargetId(null)
+      await fetchFreshBanners()
       router.refresh()
     } catch (err: any) {
       console.error("Delete banner failed:", err)
@@ -516,6 +544,7 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
         }),
       ])
       toast.success("Banner reordered successfully")
+      await fetchFreshBanners()
       router.refresh()
     } catch {
       toast.error("Failed to update banner order")
@@ -628,6 +657,7 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
         toast.success("New banner added successfully")
       }
       setIsModalOpen(false)
+      await fetchFreshBanners()
       router.refresh()
     } catch (err: any) {
       console.error(err)
@@ -649,6 +679,21 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleClearServerCache}
+            disabled={isClearingCache || isSubmitting}
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-medium text-red-700 shadow-2xs transition hover:bg-red-100 disabled:opacity-50"
+            title="Purge Next.js page & data cache immediately"
+          >
+            {isClearingCache ? (
+              <Loader2Icon className="size-3.5 animate-spin" />
+            ) : (
+              <RefreshCwIcon className="size-3.5" />
+            )}
+            <span>Clear Cache</span>
+          </button>
+
           <button
             type="button"
             onClick={handleRestoreDefaults}

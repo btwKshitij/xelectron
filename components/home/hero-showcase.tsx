@@ -147,13 +147,19 @@ export default function HeroShowcase({ initialBanners }: { initialBanners?: Bann
   const minSwipeDistance = 45;
 
   useEffect(() => {
-    // Always fetch fresh data from the API to avoid stale server/CDN cache
+    // Always fetch fresh data from the API with cache-buster timestamp to bypass CDN and browser cache
     async function syncBanners() {
       try {
-        const res = await fetch("/api/banners", { cache: "no-store" });
+        const res = await fetch(`/api/banners?t=${Date.now()}`, {
+          cache: "no-store",
+          headers: {
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            Pragma: "no-cache",
+          },
+        });
         if (res.ok) {
           const data = await res.json();
-          if (Array.isArray(data) && data.length > 0) {
+          if (Array.isArray(data)) {
             setBannerList(data);
           }
         }
