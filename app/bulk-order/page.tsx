@@ -76,10 +76,9 @@ const CATEGORY_CARDS = [
 ];
 
 const QUANTITY_TIERS = [
-  { label: "5 – 10 Units", badge: "Starter Tier", perk: "10% Wholesale Pricing" },
-  { label: "11 – 25 Units", badge: "Business Tier", perk: "15% Off + Free Freight" },
-  { label: "26 – 50 Units", badge: "Enterprise Tier", perk: "20% Off + Logo Customization" },
-  { label: "51 – 100+ Units", badge: "Direct OEM Slabs", perk: "Bespoke Packaging & Terms" },
+  { label: "10 – 50 Units", badge: "Starter Tier", perk: "10% Wholesale Pricing" },
+  { label: "51 – 100 Units", badge: "Business Tier", perk: "15% Off + Free Freight" },
+  { label: "101 – 500+ Units", badge: "Enterprise Tier", perk: "20% Off + Logo Customization" },
 ];
 
 const PURPOSE_OPTIONS = [
@@ -181,7 +180,7 @@ export default function BulkOrderPage() {
     email: "",
     phone: "",
     productCategory: "Smart Projectors",
-    quantity: "5 – 10 Units",
+    quantity: "10 – 50 Units",
     requirementType: "Corporate Gifting",
     deliveryLocation: "",
     message: "",
@@ -228,7 +227,7 @@ export default function BulkOrderPage() {
       email: "",
       phone: "",
       productCategory: "Smart Projectors",
-      quantity: "5 – 10 Units",
+      quantity: "10 – 50 Units",
       requirementType: "Corporate Gifting",
       deliveryLocation: "",
       message: "",
@@ -411,6 +410,54 @@ export default function BulkOrderPage() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        </section>
+
+        {/* VOLUME PROCUREMENT SLABS */}
+        <section className="border-b border-slate-100 bg-white py-14 sm:py-18">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-2xl text-center">
+              <span className="text-xs font-bold uppercase tracking-widest text-[#0a7ae6]">
+                Institutional Slabs
+              </span>
+              <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+                Volume Procurement Pricing Tiers
+              </h2>
+              <p className="mt-2 text-xs text-slate-600 sm:text-sm">
+                Transparent wholesale brackets tailored for startup purchases, business expansions, and enterprise deployments.
+              </p>
+            </div>
+
+            <div className="mt-10 grid gap-6 sm:grid-cols-3 max-w-5xl mx-auto">
+              {QUANTITY_TIERS.map((tier, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => {
+                    setFormData((prev) => ({ ...prev, quantity: tier.label }));
+                    const el = document.getElementById("inquiry-section");
+                    el?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  className="group relative flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-[#f8fafc] p-6 text-center transition-all hover:-translate-y-1 hover:border-[#0a7ae6] hover:bg-white hover:shadow-xl cursor-pointer"
+                >
+                  <div>
+                    <span className="inline-block rounded-full bg-blue-50 border border-blue-200/80 px-3 py-1 text-xs font-bold text-[#0a7ae6]">
+                      {tier.badge}
+                    </span>
+                    <h3 className="mt-4 text-2xl font-extrabold text-slate-900 tracking-tight">
+                      {tier.label}
+                    </h3>
+                    <p className="mt-2 text-xs font-medium text-slate-600 leading-relaxed">
+                      {tier.perk}
+                    </p>
+                  </div>
+                  <div className="mt-6 pt-4 border-t border-slate-200/70">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0a7ae6] group-hover:underline">
+                      Select This Tier <ArrowRight className="size-3" />
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </section>

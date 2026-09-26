@@ -53,6 +53,8 @@ export async function POST(request: NextRequest) {
 
     const order = await ordersController.createOrder({
       ...body,
+      discountCode: isCod ? undefined : body.discountCode,
+      discountAmount: isCod ? 0 : body.discountAmount,
       status: "PENDING",
       paymentVerified: false,
       internalNotes,

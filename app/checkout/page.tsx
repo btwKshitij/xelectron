@@ -383,12 +383,13 @@ function CheckoutContent() {
   );
 
   const discountAmount = useMemo(() => {
+    if (paymentMethod === "cod") return 0;
     if (couponDiscount > 0) {
       // Coupon discounts only apply to eligible items, excluding Deal of the Day items
       return Math.round((eligibleSubtotal * couponDiscount) / 100);
     }
     return 0;
-  }, [eligibleSubtotal, couponDiscount]);
+  }, [eligibleSubtotal, couponDiscount, paymentMethod]);
 
   const shippingCost = 0; // Free shipping
   const total = Math.max(0, subtotal - discountAmount + shippingCost);
@@ -403,6 +404,17 @@ function CheckoutContent() {
       setCouponError("Coupon was removed because Deal of the Day items already have an exclusive offer and are not eligible for coupon discounts.");
     }
   }, [appliedCoupon, allItemsAreDeal]);
+
+  // Auto-remove applied coupon if user selects Cash on Delivery
+  useEffect(() => {
+    if (appliedCoupon && paymentMethod === "cod") {
+      setAppliedCoupon(null);
+      setCouponDiscount(0);
+      setCouponCode("");
+      setCouponSuccess("");
+      setCouponError("Coupon codes are not applicable for Cash on Delivery orders. Please choose an online payment method to use coupons.");
+    }
+  }, [appliedCoupon, paymentMethod]);
 
   const trackCheckout = useCallback(async () => {
     if (!checkoutSessionToken || orderItems.length === 0) return;
@@ -435,6 +447,11 @@ function CheckoutContent() {
   const handleApplyCoupon = async () => {
     setCouponError("");
     setCouponSuccess("");
+
+    if (paymentMethod === "cod") {
+      setCouponError("Coupon codes cannot be applied to Cash on Delivery orders. Please select an online payment method to use coupons.");
+      return;
+    }
 
     if (allItemsAreDeal) {
       setCouponError("Coupon codes cannot be applied to Deal of the Day items as they already have an exclusive offer.");
@@ -812,7 +829,7 @@ function CheckoutContent() {
           shippingAddress: fullAddress,
           paymentMethod: "COD",
           phone,
-          discountCode: appliedCoupon || undefined,
+          discountCode: undefined,
         }),
       });
 
@@ -1019,47 +1036,65 @@ function CheckoutContent() {
 
             {/* Coupon Card (Reference UI) */}
             <div className="rounded-2xl border border-slate-100 bg-[#f8fafc] p-4 sm:p-5">
-              <label htmlFor="coupon-input" className="block text-xs sm:text-sm font-medium text-slate-600 mb-2.5">
-                If you have a coupon code, please apply it below
-              </label>
-
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
-                <div className="relative flex-1">
-                  <input
-                    id="coupon-input"
-                    type="text"
-                    placeholder="Coupon code"
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value)}
-                    disabled={Boolean(appliedCoupon)}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0a7ae6] focus:outline-none focus:ring-2 focus:ring-[#0a7ae6]/15 disabled:bg-slate-100"
-                  />
-                </div>
-                {appliedCoupon ? (
-                  <button
-                    type="button"
-                    onClick={removeCoupon}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-5 py-2.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100"
-                  >
-                    <X className="size-3.5" /> Remove
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleApplyCoupon}
-                    className="inline-flex items-center justify-center rounded-xl bg-[#0a7ae6] px-5 py-2.5 text-xs font-semibold text-white shadow-sm shadow-[#0a7ae6]/15 transition-all hover:bg-[#086ac9] active:scale-98"
-                  >
-                    Apply coupon
-                  </button>
+              <div className="flex items-center justify-between mb-2.5">
+                <label htmlFor="coupon-input" className="block text-xs sm:text-sm font-medium text-slate-600">
+                  If you have a coupon code, please apply it below
+                </label>
+                {paymentMethod === "cod" && (
+                  <span className="text-[10px] sm:text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-md">
+                    Prepaid Orders Only
+                  </span>
                 )}
               </div>
 
-              {couponSuccess && (
+              {paymentMethod === "cod" ? (
+                <div className="rounded-xl border border-amber-200/90 bg-amber-50/70 p-3 text-xs text-amber-900">
+                  <p className="font-bold flex items-center gap-1.5">
+                    <span>⚠️</span> Coupon codes are not available for Cash on Delivery (COD).
+                  </p>
+                  <p className="mt-1 text-amber-800 text-[11.5px] leading-relaxed">
+                    To use coupon codes and claim discounts, please select an online payment option (Razorpay or Velocity) under the payment section below.
+                  </p>
+                </div>
+              ) : (
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                  <div className="relative flex-1">
+                    <input
+                      id="coupon-input"
+                      type="text"
+                      placeholder="Coupon code"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value)}
+                      disabled={Boolean(appliedCoupon)}
+                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0a7ae6] focus:outline-none focus:ring-2 focus:ring-[#0a7ae6]/15 disabled:bg-slate-100"
+                    />
+                  </div>
+                  {appliedCoupon ? (
+                    <button
+                      type="button"
+                      onClick={removeCoupon}
+                      className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-5 py-2.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100 cursor-pointer"
+                    >
+                      <X className="size-3.5" /> Remove
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleApplyCoupon}
+                      className="inline-flex items-center justify-center rounded-xl bg-[#0a7ae6] px-5 py-2.5 text-xs font-semibold text-white shadow-sm shadow-[#0a7ae6]/15 transition-all hover:bg-[#086ac9] active:scale-98 cursor-pointer"
+                    >
+                      Apply coupon
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {paymentMethod !== "cod" && couponSuccess && (
                 <p className="mt-2 text-xs font-medium text-emerald-600 flex items-center gap-1">
                   <Check className="size-3.5" /> {couponSuccess}
                 </p>
               )}
-              {couponError && (
+              {paymentMethod !== "cod" && couponError && (
                 <p className="mt-2 text-xs font-medium text-red-500">
                   {couponError}
                 </p>
@@ -1694,12 +1729,17 @@ function CheckoutContent() {
 
                 {/* Compact COD Information Line */}
                 {paymentMethod === "cod" && (
-                  <div className="mt-2.5 flex items-center justify-between rounded-lg bg-slate-50 border border-slate-200/80 px-2.5 sm:px-3 py-1.5 text-[10px] text-slate-600 gap-1.5">
-                    <span className="flex items-center gap-1.5 font-medium min-w-0 truncate">
-                      <Truck className="size-3 text-emerald-600 shrink-0" />
-                      <span className="truncate">Pay via Cash or delivery partner UPI QR</span>
-                    </span>
-                    <span className="font-semibold text-slate-500 shrink-0 whitespace-nowrap text-[9.5px] sm:text-[10px]">Doorstep</span>
+                  <div className="mt-2.5 flex flex-col gap-1 rounded-lg bg-amber-50/70 border border-amber-200/90 px-3 py-2 text-[10px] text-amber-900">
+                    <div className="flex items-center justify-between gap-1.5">
+                      <span className="flex items-center gap-1.5 font-semibold min-w-0 truncate text-slate-800">
+                        <Truck className="size-3 text-emerald-600 shrink-0" />
+                        <span className="truncate">Pay via Cash or delivery partner UPI QR at doorstep</span>
+                      </span>
+                      <span className="font-semibold text-slate-500 shrink-0 whitespace-nowrap text-[9.5px] sm:text-[10px]">Doorstep</span>
+                    </div>
+                    <p className="text-[10px] text-amber-800 font-medium">
+                      * Note: Coupon codes and promotional discounts do not apply to Cash on Delivery orders.
+                    </p>
                   </div>
                 )}
               </div>
