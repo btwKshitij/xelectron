@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import CartProvider from "@/components/providers/cart-provider";
 import SmoothScrollProvider from "@/components/providers/smooth-scroll-provider";
 import FestiveOfferPopup from "@/components/common/festive-offer-popup";
+import ChunkErrorHandler from "@/components/common/chunk-error-handler";
 
 export const metadata: Metadata = {
   title: "Xelectron",
@@ -32,6 +33,7 @@ export default function RootLayout({
       className={cn("h-full", "antialiased", "font-sans")}
       >
       <body className="min-h-dvh flex flex-col">
+        <ChunkErrorHandler />
         <CartProvider>
           <SmoothScrollProvider>{children}</SmoothScrollProvider>
           <FestiveOfferPopup />
