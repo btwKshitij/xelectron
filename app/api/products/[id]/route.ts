@@ -23,6 +23,60 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
   }
 }
 
+// POST /api/products/:id (handles update, toggle, or delete to avoid WAF 403 on PUT/DELETE)
+export async function POST(request: NextRequest, { params }: RouteParams) {
+  try {
+    await requireAdmin();
+    const { id } = await params;
+    const body = await request.json();
+
+    if (body?._method === "DELETE" || body?.action === "delete") {
+      await productsController.deleteProduct(id);
+      revalidatePath("/");
+      return NextResponse.json({ success: true, message: "Product deleted" });
+    }
+
+    const isNavbarToggle =
+      typeof body?.showInNavbar === "boolean" &&
+      Object.keys(body).length === 1;
+    const isWarrantyMenuToggle =
+      typeof body?.showInWarrantyMenu === "boolean" &&
+      Object.keys(body).length === 1;
+    const isBestSellerToggle =
+      typeof body?.showInBestSellers === "boolean" &&
+      Object.keys(body).length === 1;
+
+    const product = isNavbarToggle
+      ? await productsController.setProductNavbarPlacement(id, body.showInNavbar)
+      : isWarrantyMenuToggle
+        ? await productsController.setProductWarrantyMenuPlacement(id, body.showInWarrantyMenu)
+      : isBestSellerToggle
+        ? await productsController.setProductBestSellerPlacement(id, body.showInBestSellers)
+      : await productsController.updateProduct(id, body);
+
+    revalidatePath("/product/[id]", "page");
+    revalidatePath("/dashboard/products/[id]", "page");
+    revalidatePath("/dashboard/products/new");
+    revalidatePath("/");
+    revalidatePath("/shop");
+    revalidatePath("/product");
+    revalidatePath(`/product/${product.id}`);
+    if (product.slug) revalidatePath(`/product/${product.slug}`);
+    revalidatePath("/dashboard/products");
+    revalidatePath("/dashboard/products/navbar");
+    revalidatePath("/dashboard/products/warranty");
+    revalidatePath("/terms-policy");
+    return NextResponse.json({ success: true, data: product });
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ success: false, error: error.message }, { status: error.status });
+    }
+    const message = error instanceof Error ? error.message : "Internal server error";
+    const status = message.includes("not found") ? 404 : message.includes("maximum") ? 400 : 500;
+    return NextResponse.json({ success: false, error: message }, { status });
+  }
+}
+
 // PUT /api/products/:id
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {

@@ -20,6 +20,43 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
   }
 }
 
+// POST /api/categories/:id (handles update and delete to avoid WAF 403 on PUT/DELETE)
+export async function POST(request: NextRequest, { params }: RouteParams) {
+  try {
+    await requireAdmin();
+    const { id } = await params;
+    const body = await request.json();
+
+    if (body?._method === "DELETE" || body?.action === "delete") {
+      await categoriesController.deleteCategory(id);
+      revalidatePath("/dashboard/products/categories");
+      revalidatePath("/dashboard/products");
+      revalidatePath("/dashboard/products/navbar");
+      revalidatePath("/");
+      revalidatePath("/shop");
+      return NextResponse.json({ success: true, message: "Category deleted" });
+    }
+
+    if (body.sortOrder !== undefined) {
+      body.sortOrder = Number(body.sortOrder);
+    }
+    const category = await categoriesController.updateCategory(id, body);
+    revalidatePath("/dashboard/products/categories");
+    revalidatePath("/dashboard/products");
+    revalidatePath("/dashboard/products/navbar");
+    revalidatePath("/");
+    revalidatePath("/shop");
+    return NextResponse.json({ success: true, data: category });
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ success: false, error: error.message }, { status: error.status });
+    }
+    const message = error instanceof Error ? error.message : "Internal server error";
+    const status = message.includes("not found") ? 404 : 500;
+    return NextResponse.json({ success: false, error: message }, { status });
+  }
+}
+
 // PUT /api/categories/:id
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {

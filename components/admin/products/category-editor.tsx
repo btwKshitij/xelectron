@@ -120,7 +120,7 @@ export function CategoryEditor({
         sortOrder: Number(sortOrder) || 0,
       };
       const response = await fetch(isNew ? "/api/categories" : `/api/categories/${category.id}`, {
-        method: isNew ? "POST" : "PUT",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody),
       });
@@ -131,7 +131,7 @@ export function CategoryEditor({
       const initialIds = new Set(category?.productIds ?? []);
       const productsToAdd = assignedProductIds.filter((productId) => !initialIds.has(productId));
       const assignments = await Promise.all(productsToAdd.map((productId) => fetch(`/api/products/${productId}`, {
-        method: "PUT",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ categoryId: savedCategoryId }),
       })));

@@ -440,7 +440,7 @@ export function EditProductForm({ product, categories }: { product: EditableProd
       let response: Response;
       try {
         response = await fetch(`/api/products/${encodeURIComponent(product.id)}`, {
-          method: "PUT",
+          method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: title.trim(),
@@ -504,6 +504,8 @@ export function EditProductForm({ product, categories }: { product: EditableProd
           "Unable to save changes: Network connection lost while communicating with the server. Please check your connection and try again."
         );
       }
+
+      if (response.status === 401) { throw new Error("Your admin session has expired. Please log in again."); }
 
       let result: any;
       try {

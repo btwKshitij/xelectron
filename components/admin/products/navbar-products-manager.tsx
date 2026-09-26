@@ -46,7 +46,7 @@ export function NavbarProductsManager({ initialProducts }: { initialProducts: Na
     setUpdatingKey(requestKey)
     try {
       const response = await fetch(`/api/products/${encodeURIComponent(product.id)}`, {
-        method: "PUT",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ [field]: enabled }),
       })

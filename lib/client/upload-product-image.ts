@@ -16,6 +16,63 @@ export interface UploadProductImageOptions {
   onProgress?: (percent: number, loaded: number, total: number) => void;
 }
 
+async function optimizeImageForUpload(file: File): Promise<File> {
+  // Only process images (never videos, SVGs, or GIFs)
+  if (
+    typeof window === "undefined" ||
+    !file.type.startsWith("image/") ||
+    file.type === "image/svg+xml" ||
+    file.type === "image/gif"
+  ) {
+    return file;
+  }
+
+  // If already under 3.5 MB, don't modify
+  if (file.size <= 3.5 * 1024 * 1024) {
+    return file;
+  }
+
+  try {
+    const bitmap = await createImageBitmap(file);
+    const maxDim = 2560;
+    let width = bitmap.width;
+    let height = bitmap.height;
+
+    if (width > maxDim || height > maxDim) {
+      if (width > height) {
+        height = Math.round((height * maxDim) / width);
+        width = maxDim;
+      } else {
+        width = Math.round((width * maxDim) / height);
+        height = maxDim;
+      }
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.drawImage(bitmap, 0, 0, width, height);
+
+    // Use WebP for PNGs to preserve crispness while drastically reducing size below firewall limits
+    const targetMime = file.type === "image/png" ? "image/webp" : file.type;
+    const blob: Blob | null = await new Promise((resolve) =>
+      canvas.toBlob(resolve, targetMime, 0.90)
+    );
+
+    if (blob && blob.size < file.size) {
+      const ext = targetMime === "image/webp" ? ".webp" : (file.name.substring(file.name.lastIndexOf(".")) || ".jpg");
+      const baseName = file.name.replace(/\.[^/.]+$/, "");
+      return new File([blob], `${baseName}${ext}`, { type: targetMime });
+    }
+  } catch (err) {
+    console.warn("Client image optimization fallback:", err);
+  }
+
+  return file;
+}
+
 function uploadWithXHR(
   file: File,
   timeoutMs: number,
@@ -61,7 +118,7 @@ function uploadWithXHR(
         if (xhr.status === 413) {
           return reject(
             new Error(
-              `"${file.name}" exceeds maximum allowed upload size (250 MB for video / 50 MB for image).`
+              `"${file.name}" exceeds the server upload limit. The file is too large for the firewall; please use a compressed image or video under 10 MB.`
             )
           );
         }
@@ -110,6 +167,7 @@ export async function uploadProductImage(
 ): Promise<UploadedProductImage> {
   const { timeoutMs = 300000, retries = 2, signal, onProgress } = options;
 
+  const preparedFile = await optimizeImageForUpload(file);
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -119,7 +177,7 @@ export async function uploadProductImage(
 
     try {
       if (typeof window !== "undefined" && typeof XMLHttpRequest !== "undefined" && onProgress) {
-        return await uploadWithXHR(file, timeoutMs, signal, onProgress);
+        return await uploadWithXHR(preparedFile, timeoutMs, signal, onProgress);
       }
 
       const controller = new AbortController();
@@ -131,7 +189,7 @@ export async function uploadProductImage(
 
       try {
         const formData = new FormData();
-        formData.set("file", file);
+        formData.set("file", preparedFile);
 
         let response: Response;
         try {
@@ -162,7 +220,7 @@ export async function uploadProductImage(
           if (!response.ok) {
             if (response.status === 413) {
               throw new Error(
-                `"${file.name}" exceeds the server's maximum upload limit (250 MB for video / 50 MB for image).`
+                `"${file.name}" exceeds the server upload limit. The file is too large for the firewall; please use a compressed image or video under 10 MB.`
               );
             }
             if (response.status === 504 || response.status === 502) {
@@ -185,7 +243,7 @@ export async function uploadProductImage(
           );
         }
 
-        onProgress?.(100, file.size, file.size);
+        onProgress?.(100, preparedFile.size, preparedFile.size);
         return result.data as UploadedProductImage;
       } catch (err: any) {
         clearTimeout(timer);

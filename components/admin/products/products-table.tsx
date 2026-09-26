@@ -197,7 +197,7 @@ export function ProductsTable({ products }: { products: ProductTableItem[] }) {
 
     try {
       const response = await fetch(`/api/products/${encodeURIComponent(productId)}`, {
-        method: "PUT",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ showInBestSellers: newValue }),
       });
@@ -239,7 +239,7 @@ export function ProductsTable({ products }: { products: ProductTableItem[] }) {
         productIds.map(async (productId) => {
           try {
             const response = await fetch(`/api/products/${encodeURIComponent(productId)}`, {
-              method: "PUT",
+              method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ showInBestSellers: newValue }),
             });
@@ -280,7 +280,7 @@ export function ProductsTable({ products }: { products: ProductTableItem[] }) {
       const results = await Promise.all(
         productIds.map(async (productId) => {
           try {
-            const response = await fetch(`/api/products/${encodeURIComponent(productId)}`, { method: "DELETE" });
+            const response = await fetch(`/api/products/${encodeURIComponent(productId)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ _method: "DELETE" }) });
             return { productId, success: response.ok };
           } catch {
             return { productId, success: false };

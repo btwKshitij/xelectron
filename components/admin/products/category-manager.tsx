@@ -110,7 +110,7 @@ export function CategoryManager({ initialCategories = [] }: { initialCategories?
 
     try {
       const response = await fetch(`/api/categories/${category.id}`, {
-        method: "PUT",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ visible }),
       })
@@ -130,7 +130,7 @@ export function CategoryManager({ initialCategories = [] }: { initialCategories?
     setIsReordering(true)
     try {
       const response = await fetch("/api/categories/reorder", {
-        method: "PUT",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           items: reordered.map((cat, idx) => ({ id: cat.id, sortOrder: idx })),
@@ -256,7 +256,7 @@ export function CategoryManager({ initialCategories = [] }: { initialCategories?
     if (!window.confirm(`Delete ${category.title}?`)) return
 
     try {
-      const response = await fetch(`/api/categories/${category.id}`, { method: "DELETE" })
+      const response = await fetch(`/api/categories/${category.id}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ _method: "DELETE" }) })
       if (!response.ok) throw new Error("Could not delete category")
       setCategories((current) => {
         const updated = current.filter((item) => item.id !== category.id)
