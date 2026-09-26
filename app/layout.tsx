@@ -7,7 +7,7 @@ import FestiveOfferPopup from "@/components/common/festive-offer-popup";
 
 export const metadata: Metadata = {
   title: "Xelectron",
-  description: "Xelectron admin dashboard",
+  description: "Discover premium XElectron products, smart tech, and official support for home entertainment, lifestyle, and everyday innovation.",
   icons: {
     icon: [
       {
