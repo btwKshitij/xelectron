@@ -110,17 +110,22 @@ export function BannerManager({ initialBanners }: { initialBanners: HeroBannerIt
   const selectAllRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    if (initialBanners && initialBanners.length > 0) {
-      setBanners(initialBanners)
-    } else {
-      fetch("/api/admin/banners")
-        .then((res) => res.json())
-        .then((data) => {
-          if (Array.isArray(data) && data.length > 0) setBanners(data)
-        })
-        .catch(() => {})
-    }
-  }, [initialBanners])
+    // Always fetch fresh data from the API on mount to avoid stale server cache
+    fetch("/api/admin/banners")
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch banners")
+        return res.json()
+      })
+      .then((data) => {
+        if (Array.isArray(data)) setBanners(data)
+      })
+      .catch(() => {
+        // Fallback: keep initialBanners if the API call fails
+        if (initialBanners && initialBanners.length > 0) {
+          setBanners(initialBanners)
+        }
+      })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetch("/api/categories")
