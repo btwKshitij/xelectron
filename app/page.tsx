@@ -63,7 +63,11 @@ export default async function Home() {
       oldPrice: product.oldPrice || undefined,
       discount: product.discount || undefined,
       description: product.description,
-      image: product.mainImage || "/category-smartphone.png",
+      image: (product.media && product.media.length > 0 && product.media[0]?.url)
+        ? product.media[0].url
+        : (product.mainImage?.startsWith("http") || product.mainImage?.startsWith("/")
+            ? product.mainImage
+            : (product.media?.[0]?.url || "/category-tv.png")),
       imageAlt: product.name,
       specs: product.specs.length > 0
         ? product.specs.slice(0, 3).map((spec: any) => ({ label: spec.label, value: spec.value }))
@@ -91,7 +95,11 @@ export default async function Home() {
       slug: product.slug,
       name: product.name,
       description: product.description,
-      image: product.mainImage,
+      image: (product.media && product.media.length > 0 && product.media[0]?.url)
+        ? product.media[0].url
+        : (product.mainImage?.startsWith("http") || product.mainImage?.startsWith("/")
+            ? product.mainImage
+            : (product.media?.[0]?.url || "/category-tv.png")),
       hoverImage:
         product.media.find((media: any) => media.url !== product.mainImage)?.url ?? null,
       price: product.price,
