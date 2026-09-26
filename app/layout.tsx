@@ -8,6 +8,14 @@ import FestiveOfferPopup from "@/components/common/festive-offer-popup";
 export const metadata: Metadata = {
   title: "Xelectron",
   description: "Xelectron admin dashboard",
+  icons: {
+    icon: [
+      { url: "/xelectron-logo.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico", sizes: "any" },
+    ],
+    shortcut: "/xelectron-logo.svg",
+    apple: "/xelectron-logo.svg",
+  },
 };
 
 export default function RootLayout({
