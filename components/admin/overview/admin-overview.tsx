@@ -243,7 +243,7 @@ export function AdminOverview({ data }: { data: DashboardData }) {
         </div>
 
         {isExpanded ? <div className="mt-4 h-[220px] w-full min-w-0">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={200}>
             <LineChart data={currentData.chartData} margin={{ top: 8, right: 12, left: 10, bottom: 0 }}>
               <CartesianGrid stroke="#e5e5e5" vertical={false} />
               <XAxis
