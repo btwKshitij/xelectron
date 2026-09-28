@@ -20,6 +20,7 @@ export type StorefrontProduct = {
   reviews: string;
   category: string;
   discount: string | null;
+  quantity?: number | null;
 };
 
 export default function ProductShowcaseSection({ products }: { products: StorefrontProduct[] }) {
@@ -65,6 +66,7 @@ export default function ProductShowcaseSection({ products }: { products: Storefr
         <div className="grid grid-cols-2 gap-2.5 sm:gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {products.slice(0, 4).map((product) => {
             const isWishlisted = wishlistItems.some((item) => item.id === product.id);
+            const isOutOfStock = typeof product.quantity === "number" && product.quantity === 0;
 
             return (
               <Link
@@ -77,6 +79,11 @@ export default function ProductShowcaseSection({ products }: { products: Storefr
               <article className="flex h-full flex-col overflow-hidden rounded-lg border border-slate-200/80 bg-white transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(15,23,42,0.08)]">
                 <div className="flex flex-1 flex-col p-2.5 sm:p-4 lg:p-5">
                   <div className="relative flex h-[140px] items-center justify-center overflow-hidden rounded-md bg-slate-50/60 p-2 sm:h-[235px] sm:p-4 lg:h-[270px]">
+                    {isOutOfStock && (
+                      <span className="absolute left-2.5 top-2.5 z-10 rounded-[3px] bg-slate-900/85 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow-xs sm:text-[10px]">
+                        Out of Stock
+                      </span>
+                    )}
                     <button
                       type="button"
                       aria-label={`${isWishlisted ? "Remove" : "Add"} ${product.name} ${isWishlisted ? "from" : "to"} wishlist`}
@@ -108,6 +115,8 @@ export default function ProductShowcaseSection({ products }: { products: Storefr
                       alt={product.name}
                       fill
                       className={`object-contain p-2 transition-all duration-300 sm:p-3 ${
+                        isOutOfStock ? "opacity-70 grayscale-[30%]" : ""
+                      } ${
                         product.hoverImage
                           ? "opacity-100 group-hover:opacity-0"
                           : "group-hover:scale-[1.03]"
@@ -148,30 +157,42 @@ export default function ProductShowcaseSection({ products }: { products: Storefr
                       ) : null}
                     </div>
 
-                    <div className="mt-2.5 grid grid-cols-2 gap-1.5 sm:mt-4">
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.preventDefault();
-                          event.stopPropagation();
-                          addProductToCart(product);
-                        }}
-                        className="inline-flex h-8 cursor-pointer items-center justify-center rounded-md border border-[#0a7ae6] px-1 text-[10px] font-medium text-[#0a7ae6] truncate transition-colors hover:bg-[#0a7ae6] hover:text-white sm:h-10 sm:text-[12px]"
-                      >
-                        Add to cart
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.preventDefault();
-                          event.stopPropagation();
-                          addProductToCart(product);
-                          router.push(`/checkout?product=${encodeURIComponent(product.slug || product.id)}`);
-                        }}
-                        className="inline-flex h-8 cursor-pointer items-center justify-center rounded-md bg-[#0a7ae6] px-1 text-[10px] font-medium text-white truncate transition-opacity hover:opacity-90 sm:h-10 sm:text-[12px]"
-                      >
-                        Buy
-                      </button>
+                    <div className="mt-2.5 sm:mt-4">
+                      {isOutOfStock ? (
+                        <button
+                          type="button"
+                          disabled
+                          className="inline-flex h-8 w-full items-center justify-center rounded-md border border-slate-200 bg-slate-100 px-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400 cursor-not-allowed sm:h-10 sm:text-[12px]"
+                        >
+                          Out of Stock
+                        </button>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-1.5">
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              addProductToCart(product);
+                            }}
+                            className="inline-flex h-8 cursor-pointer items-center justify-center rounded-md border border-[#0a7ae6] px-1 text-[10px] font-medium text-[#0a7ae6] truncate transition-colors hover:bg-[#0a7ae6] hover:text-white sm:h-10 sm:text-[12px]"
+                          >
+                            Add to cart
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              addProductToCart(product);
+                              router.push(`/checkout?product=${encodeURIComponent(product.slug || product.id)}`);
+                            }}
+                            className="inline-flex h-8 cursor-pointer items-center justify-center rounded-md bg-[#0a7ae6] px-1 text-[10px] font-medium text-white truncate transition-opacity hover:opacity-90 sm:h-10 sm:text-[12px]"
+                          >
+                            Buy
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -109,6 +109,7 @@ export default async function Home() {
     reviews: product.reviewsCount,
     category: product.category?.title || "XElectron",
     discount: product.discount,
+    quantity: typeof product.quantity === "number" ? product.quantity : null,
   }));
 
   let dealOfTheDay: React.ComponentProps<typeof DealOfTheDaySection>["deal"] | null = {

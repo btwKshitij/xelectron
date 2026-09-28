@@ -72,4 +72,5 @@ export type SimilarProductCard = {
   hoverImage?: string;
   alt: string;
   swatches: string[];
+  quantity?: number | null;
 };

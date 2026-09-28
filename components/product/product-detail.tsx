@@ -338,9 +338,15 @@ export default function ProductDetail({
                 <span className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
                   {product.category || "XElectron"}
                 </span>
-                <span className="rounded bg-[#0a7ae6] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-2xs">
-                  NEW ARRIVALS
-                </span>
+                {isOutOfStock ? (
+                  <span className="rounded bg-rose-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-2xs">
+                    OUT OF STOCK
+                  </span>
+                ) : (
+                  <span className="rounded bg-[#0a7ae6] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-2xs">
+                    NEW ARRIVALS
+                  </span>
+                )}
                 {product.sku && (
                   <span className="rounded bg-white border border-slate-200 px-2 py-0.5 font-mono text-[10px] font-medium text-slate-600">
                     SKU: {product.sku}
@@ -391,13 +397,19 @@ export default function ProductDetail({
                     </span>
                     <span>/month (3 months)</span>
                   </div>
-                  <Link prefetch={false}
-                    href={`/checkout?product=${encodeURIComponent(product.slug || product.id)}&payment=velocity&emiTenure=3`}
-                    onClick={addProductToCart}
-                    className="rounded-lg bg-[#0a7ae6] px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-[#086ac9] transition active:scale-95"
-                  >
-                    Buy on EMI
-                  </Link>
+                  {isOutOfStock ? (
+                    <span className="rounded-lg bg-slate-200 px-3 py-1.5 text-xs font-bold text-slate-400 cursor-not-allowed">
+                      Out of Stock
+                    </span>
+                  ) : (
+                    <Link prefetch={false}
+                      href={`/checkout?product=${encodeURIComponent(product.slug || product.id)}&payment=velocity&emiTenure=3`}
+                      onClick={addProductToCart}
+                      className="rounded-lg bg-[#0a7ae6] px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-[#086ac9] transition active:scale-95"
+                    >
+                      Buy on EMI
+                    </Link>
+                  )}
                 </div>
                 <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-medium">
                   <div className="flex items-center gap-1.5">
@@ -547,53 +559,58 @@ export default function ProductDetail({
               </div>
 
               {/* Primary Action Buttons: ADD TO CART & BUY NOW (Side-by-Side) */}
-              <div className="mt-6 flex items-end gap-3">
-                <button
-                  type="button"
-                  onClick={addProductToCart}
-                  disabled={isOutOfStock}
-                  className="h-12 flex-1 rounded-lg bg-black text-white font-bold text-xs sm:text-sm uppercase tracking-wider shadow-sm hover:bg-slate-900 active:scale-[0.98] transition cursor-pointer flex items-center justify-center disabled:opacity-40"
-                >
-                  ADD TO CART
-                </button>
-
-                <div className="relative flex-1">
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10 whitespace-nowrap rounded-sm bg-[#22c55e] px-2 py-0.5 text-[9px] font-bold text-white uppercase tracking-wider shadow-xs">
-                    Easy EMI available
-                  </div>
-                  {isOutOfStock ? (
-                    <button type="button" disabled className="h-12 w-full rounded-lg bg-slate-300 text-slate-600 font-bold text-xs sm:text-sm uppercase tracking-wider cursor-not-allowed">
-                      Out of Stock
-                    </button>
-                  ) : (
-                    <Link prefetch={false}
-                      href={`/checkout?product=${encodeURIComponent(product.slug || product.id)}`}
+              <div className="mt-6">
+                {isOutOfStock ? (
+                  <button
+                    type="button"
+                    disabled
+                    className="h-12 w-full rounded-lg border border-slate-200 bg-slate-100 text-slate-400 font-bold text-xs sm:text-sm uppercase tracking-wider cursor-not-allowed shadow-none"
+                  >
+                    Out of Stock
+                  </button>
+                ) : (
+                  <div className="flex items-end gap-3">
+                    <button
+                      type="button"
                       onClick={addProductToCart}
-                      className="h-12 w-full rounded-lg bg-[#0a7ae6] text-white font-bold text-xs sm:text-sm uppercase tracking-wider shadow-md shadow-blue-500/25 hover:bg-[#086ac9] active:scale-[0.98] transition flex items-center justify-center gap-2"
+                      className="h-12 flex-1 rounded-lg bg-black text-white font-bold text-xs sm:text-sm uppercase tracking-wider shadow-sm hover:bg-slate-900 active:scale-[0.98] transition cursor-pointer flex items-center justify-center"
                     >
-                      <span>BUY NOW</span>
-                      <div className="flex items-center -space-x-1.5 bg-white rounded-full p-0.5 shadow-xs shrink-0">
-                        {/* Google G Logo Badge */}
-                        <div className="size-5 rounded-full bg-white flex items-center justify-center shadow-2xs overflow-hidden">
-                          <svg viewBox="0 0 24 24" className="size-3.5">
-                            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
-                            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
-                          </svg>
-                        </div>
-                        {/* PhonePe Logo Badge */}
-                        <div className="size-5 rounded-full bg-[#5f259f] flex items-center justify-center text-white font-extrabold text-[9px] shadow-2xs">
-                          पे
-                        </div>
-                        {/* Paytm Logo Badge */}
-                        <div className="size-5 rounded-full bg-[#00baf2] flex items-center justify-center text-white font-black text-[7.5px] shadow-2xs tracking-tighter">
-                          tm
-                        </div>
+                      ADD TO CART
+                    </button>
+
+                    <div className="relative flex-1">
+                      <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10 whitespace-nowrap rounded-sm bg-[#22c55e] px-2 py-0.5 text-[9px] font-bold text-white uppercase tracking-wider shadow-xs">
+                        Easy EMI available
                       </div>
-                    </Link>
-                  )}
-                </div>
+                      <Link prefetch={false}
+                        href={`/checkout?product=${encodeURIComponent(product.slug || product.id)}`}
+                        onClick={addProductToCart}
+                        className="h-12 w-full rounded-lg bg-[#0a7ae6] text-white font-bold text-xs sm:text-sm uppercase tracking-wider shadow-md shadow-blue-500/25 hover:bg-[#086ac9] active:scale-[0.98] transition flex items-center justify-center gap-2"
+                      >
+                        <span>BUY NOW</span>
+                        <div className="flex items-center -space-x-1.5 bg-white rounded-full p-0.5 shadow-xs shrink-0">
+                          {/* Google G Logo Badge */}
+                          <div className="size-5 rounded-full bg-white flex items-center justify-center shadow-2xs overflow-hidden">
+                            <svg viewBox="0 0 24 24" className="size-3.5">
+                              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+                              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
+                            </svg>
+                          </div>
+                          {/* PhonePe Logo Badge */}
+                          <div className="size-5 rounded-full bg-[#5f259f] flex items-center justify-center text-white font-extrabold text-[9px] shadow-2xs">
+                            पे
+                          </div>
+                          {/* Paytm Logo Badge */}
+                          <div className="size-5 rounded-full bg-[#00baf2] flex items-center justify-center text-white font-black text-[7.5px] shadow-2xs tracking-tighter">
+                            tm
+                          </div>
+                        </div>
+                      </Link>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Collapsible Accordion: Description */}
@@ -1353,7 +1370,7 @@ export default function ProductDetail({
                 </div>
 
                 {isOutOfStock ? (
-                  <span className="rounded-lg bg-slate-300 px-3.5 py-2 text-xs font-bold text-slate-600 sm:px-6 sm:py-2.5 sm:text-sm whitespace-nowrap">
+                  <span className="rounded-lg border border-slate-200 bg-slate-100 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-slate-400 sm:px-6 sm:py-2.5 sm:text-sm whitespace-nowrap cursor-not-allowed">
                     Out of Stock
                   </span>
                 ) : (

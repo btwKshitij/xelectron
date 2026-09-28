@@ -18,6 +18,7 @@ type RecentProductItem = {
   discount?: string | null;
   image: string;
   hoverImage?: string | null;
+  quantity?: number | null;
 };
 
 export default function RecentlyViewedSection({
@@ -56,6 +57,7 @@ export default function RecentlyViewedSection({
               discount: p.discount,
               image: primaryImg,
               hoverImage: hoverImg,
+              quantity: typeof p.quantity === "number" ? p.quantity : null,
             };
           });
 
@@ -107,6 +109,8 @@ export default function RecentlyViewedSection({
         <div className="mt-5 grid grid-cols-1 gap-3 px-4 sm:grid-cols-2 sm:gap-4 sm:px-6 lg:grid-cols-4 lg:gap-4 lg:px-8">
           {recentProducts.map((product) => {
             const hasHoverImage = Boolean(product.hoverImage && product.hoverImage !== product.image);
+            const isOutOfStock = typeof product.quantity === "number" && product.quantity === 0;
+
             return (
               <Link prefetch={false}
                 key={product.id}
@@ -119,11 +123,18 @@ export default function RecentlyViewedSection({
                 </h3>
 
                 <div className="relative mt-3 flex flex-1 items-center justify-center overflow-hidden rounded-[10px] bg-white py-3 sm:py-4 min-h-[180px] sm:min-h-[240px]">
+                  {isOutOfStock && (
+                    <span className="absolute left-2 top-2 z-10 rounded-[3px] bg-slate-900/85 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white shadow-xs">
+                      Out of Stock
+                    </span>
+                  )}
                   <Image
                     src={product.image}
                     alt={product.name}
                     fill
                     className={`object-contain p-2 transition-all duration-300 ${
+                      isOutOfStock ? "opacity-70 grayscale-[30%]" : ""
+                    } ${
                       hasHoverImage ? "opacity-100 group-hover:opacity-0" : "group-hover:scale-105"
                     }`}
                     sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
@@ -157,18 +168,28 @@ export default function RecentlyViewedSection({
                     </span>
                   )}
                 </div>
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    addItem({ id: product.id, slug: product.slug, name: product.name, price: priceToNumber(product.price), image: product.image, category: product.category });
-                    router.push(`/checkout?product=${encodeURIComponent(product.slug || product.id)}`);
-                  }}
-                  className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-900 transition-colors hover:border-[#0a7ae6] hover:bg-[#0a7ae6] hover:text-white sm:px-4 sm:py-2 sm:text-[12px] shrink-0"
-                >
-                  Buy
-                </button>
+                {isOutOfStock ? (
+                  <button
+                    type="button"
+                    disabled
+                    className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1.5 text-[11px] font-medium text-slate-400 cursor-not-allowed sm:px-4 sm:py-2 sm:text-[12px] shrink-0"
+                  >
+                    Out of Stock
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      addItem({ id: product.id, slug: product.slug, name: product.name, price: priceToNumber(product.price), image: product.image, category: product.category });
+                      router.push(`/checkout?product=${encodeURIComponent(product.slug || product.id)}`);
+                    }}
+                    className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-900 transition-colors hover:border-[#0a7ae6] hover:bg-[#0a7ae6] hover:text-white sm:px-4 sm:py-2 sm:text-[12px] shrink-0"
+                  >
+                    Buy
+                  </button>
+                )}
               </div>
             </Link>
             );

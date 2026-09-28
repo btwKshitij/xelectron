@@ -22,6 +22,7 @@ export default async function ShopPage() {
       categorySlug: product.category?.slug || "",
       showInBestSellers: product.showInBestSellers,
       createdAt: product.createdAt.toISOString(),
+      quantity: typeof product.quantity === "number" ? product.quantity : null,
     }));
   } catch {
     // Keep the storefront reachable if the catalog is temporarily unavailable.

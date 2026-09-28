@@ -26,6 +26,7 @@ export type ShopProduct = {
   categorySlug: string;
   showInBestSellers: boolean;
   createdAt: string;
+  quantity?: number | null;
 };
 
 export default function ShopContent({ products }: { products: ShopProduct[] }) {
@@ -178,6 +179,8 @@ function ProductCard({
   onAddToCart: (product: ShopProduct, event: React.MouseEvent<HTMLButtonElement>) => void;
 }) {
   const router = useRouter();
+  const isOutOfStock = typeof product.quantity === "number" && product.quantity === 0;
+
   return (
     <Link prefetch={false}
       href={`/product/${product.slug}`}
@@ -187,11 +190,18 @@ function ProductCard({
     >
       <article className="flex h-full flex-col overflow-hidden rounded-lg border border-slate-200/80 bg-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(15,23,42,0.08)]">
         <div className="relative flex h-[140px] items-center justify-center bg-[#ffffff] p-2 sm:h-[250px] sm:p-4 lg:h-[280px]">
+          {isOutOfStock && (
+            <span className="absolute left-2.5 top-2.5 z-10 rounded-[3px] bg-slate-900/85 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow-xs sm:text-[10px]">
+              Out of Stock
+            </span>
+          )}
           <Image
             src={product.mainImage}
             alt={product.name}
             fill
             className={`object-contain p-2 transition-all duration-500 sm:p-4 ${
+              isOutOfStock ? "opacity-70 grayscale-[30%]" : ""
+            } ${
               product.hoverImage ? "opacity-100 group-hover:opacity-0" : "group-hover:scale-105"
             }`}
             sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, 50vw"
@@ -219,24 +229,36 @@ function ProductCard({
             {product.oldPrice ? <span className="text-[11px] text-slate-400 line-through sm:text-[13px]">{formatINR(product.oldPrice)}</span> : null}
           </div>
 
-          <div className="mt-2.5 grid grid-cols-2 gap-1.5">
-            <button
-              type="button"
-              onClick={(event) => onAddToCart(product, event)}
-              className="inline-flex h-8 items-center justify-center truncate rounded-md border border-[#0a7ae6] px-1 text-[10px] font-medium text-[#0a7ae6] transition-colors group-hover:bg-[#0a7ae6]/5 sm:h-10 sm:text-[13px]"
-            >
-              Add to cart
-            </button>
-            <button
-              type="button"
-              onClick={(event) => {
-                onAddToCart(product, event);
-                router.push(`/checkout?product=${encodeURIComponent(product.slug || product.id)}`);
-              }}
-              className="inline-flex h-8 items-center justify-center truncate rounded-md bg-[#0a7ae6] px-1 text-[10px] font-medium text-white transition-opacity group-hover:opacity-90 sm:h-10 sm:text-[13px]"
-            >
-              Buy now
-            </button>
+          <div className="mt-2.5">
+            {isOutOfStock ? (
+              <button
+                type="button"
+                disabled
+                className="inline-flex h-8 w-full items-center justify-center rounded-md border border-slate-200 bg-slate-100 px-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400 cursor-not-allowed sm:h-10 sm:text-[12px]"
+              >
+                Out of Stock
+              </button>
+            ) : (
+              <div className="grid grid-cols-2 gap-1.5">
+                <button
+                  type="button"
+                  onClick={(event) => onAddToCart(product, event)}
+                  className="inline-flex h-8 items-center justify-center truncate rounded-md border border-[#0a7ae6] px-1 text-[10px] font-medium text-[#0a7ae6] transition-colors group-hover:bg-[#0a7ae6]/5 sm:h-10 sm:text-[13px]"
+                >
+                  Add to cart
+                </button>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    onAddToCart(product, event);
+                    router.push(`/checkout?product=${encodeURIComponent(product.slug || product.id)}`);
+                  }}
+                  className="inline-flex h-8 items-center justify-center truncate rounded-md bg-[#0a7ae6] px-1 text-[10px] font-medium text-white transition-opacity group-hover:opacity-90 sm:h-10 sm:text-[13px]"
+                >
+                  Buy now
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </article>
@@ -247,6 +269,7 @@ function ProductCard({
 function CompactProductCard({ product }: { product: ShopProduct }) {
   const router = useRouter();
   const { addItem } = useCart();
+  const isOutOfStock = typeof product.quantity === "number" && product.quantity === 0;
 
   return (
     <Link prefetch={false}
@@ -257,11 +280,18 @@ function CompactProductCard({ product }: { product: ShopProduct }) {
     >
       <article className="flex h-full flex-col overflow-hidden rounded-lg border border-slate-200/80 bg-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(15,23,42,0.08)]">
         <div className="relative flex h-[120px] items-center justify-center bg-[#ffffff] p-2 sm:h-[180px] sm:p-4">
+          {isOutOfStock && (
+            <span className="absolute left-2 top-2 z-10 rounded-[3px] bg-slate-900/85 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white shadow-xs">
+              Out of Stock
+            </span>
+          )}
           <Image
             src={product.mainImage}
             alt={product.name}
             fill
             className={`object-contain p-2 transition-all duration-500 ${
+              isOutOfStock ? "opacity-70 grayscale-[30%]" : ""
+            } ${
               product.hoverImage ? "opacity-100 group-hover:opacity-0" : "group-hover:scale-105"
             }`}
             sizes="220px"
@@ -286,25 +316,35 @@ function CompactProductCard({ product }: { product: ShopProduct }) {
               {product.oldPrice ? <span className="text-[10px] text-slate-400 line-through">{formatINR(product.oldPrice)}</span> : null}
             </div>
 
-            <button
-              type="button"
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                addItem({
-                  id: product.id,
-                  slug: product.slug,
-                  name: product.name,
-                  price: priceToNumber(product.price),
-                  image: product.mainImage,
-                  category: product.category,
-                });
-                router.push(`/checkout?product=${encodeURIComponent(product.slug || product.id)}`);
-              }}
-              className="inline-flex h-8 shrink-0 items-center justify-center rounded-md bg-[#0a7ae6] px-3 text-[11px] font-semibold text-white transition-opacity hover:opacity-90 sm:h-9 sm:px-4 sm:text-[12px]"
-            >
-              Buy now
-            </button>
+            {isOutOfStock ? (
+              <button
+                type="button"
+                disabled
+                className="inline-flex h-8 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-slate-100 px-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400 cursor-not-allowed sm:h-9 sm:px-3 sm:text-[11px]"
+              >
+                Out of Stock
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  addItem({
+                    id: product.id,
+                    slug: product.slug,
+                    name: product.name,
+                    price: priceToNumber(product.price),
+                    image: product.mainImage,
+                    category: product.category,
+                  });
+                  router.push(`/checkout?product=${encodeURIComponent(product.slug || product.id)}`);
+                }}
+                className="inline-flex h-8 shrink-0 items-center justify-center rounded-md bg-[#0a7ae6] px-3 text-[11px] font-semibold text-white transition-opacity hover:opacity-90 sm:h-9 sm:px-4 sm:text-[12px]"
+              >
+                Buy now
+              </button>
+            )}
           </div>
         </div>
       </article>

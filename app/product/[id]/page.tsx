@@ -70,6 +70,7 @@ export default async function DynamicProductPage({ params }: DynamicProductPageP
             hoverImage: hoverCandidate || undefined,
             alt: relatedProduct.name,
             swatches: relatedProduct.colors?.map((color: any) => color.bgHex).slice(0, 3) || [],
+            quantity: typeof relatedProduct.quantity === "number" ? relatedProduct.quantity : null,
           };
         })
     : [];
