@@ -72,6 +72,36 @@ export function ProductsTable({ products }: { products: ProductTableItem[] }) {
   }, [products]);
 
   useEffect(() => {
+    const syncTable = async () => {
+      try {
+        const res = await fetch(`/api/products?_t=${Date.now()}`, { cache: "no-store" });
+        if (res.ok) {
+          const payload = await res.json();
+          if (payload.success && Array.isArray(payload.data)) {
+            setProductList((prev) => {
+              const liveMap = new Map<string, any>(payload.data.map((p: any) => [p.id, p]));
+              return prev.map((item) => {
+                const live: any = liveMap.get(item.id) || liveMap.get(item.slug);
+                if (!live) return item;
+                return {
+                  ...item,
+                  price: typeof live.price === "number" ? `₹${live.price.toFixed(2)}` : String(live.price),
+                  quantity: typeof live.quantity === "number" ? live.quantity : 0,
+                  showInBestSellers: typeof live.showInBestSellers === "boolean" ? live.showInBestSellers : item.showInBestSellers,
+                };
+              });
+            });
+          }
+        }
+      } catch {}
+    };
+
+    syncTable();
+    window.addEventListener("focus", syncTable);
+    return () => window.removeEventListener("focus", syncTable);
+  }, []);
+
+  useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const tab = params.get("tab");

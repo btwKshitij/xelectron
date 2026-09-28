@@ -15,6 +15,9 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import * as productsController from "@/lib/server/controllers/products.controller";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: "Products | Xelectron Admin",
   description: "Manage Xelectron products, collections, and inventory.",
