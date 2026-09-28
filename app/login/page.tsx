@@ -75,7 +75,6 @@ function AuthForm() {
   const [isOtpVerified, setIsOtpVerified] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [countdown, setCountdown] = useState(0);
-  const [demoOtpHint, setDemoOtpHint] = useState<string | null>(null);
 
   // Cooldown timer for resend OTP
   useEffect(() => {
@@ -87,9 +86,10 @@ function AuthForm() {
   }, [countdown]);
 
   const handleSendOtp = async () => {
-    const rawPhone = formData.phone.replace(/[^0-9]/g, "");
-    if (!rawPhone || rawPhone.length < 10) {
-      setErrorMsg("Please enter a valid 10-digit phone number first.");
+    const cleanEmail = formData.email.trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!cleanEmail || !emailRegex.test(cleanEmail)) {
+      setErrorMsg("Please enter a valid email address first.");
       return;
     }
 
@@ -99,7 +99,7 @@ function AuthForm() {
       const res = await fetch("/api/auth/otp/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: rawPhone }),
+        body: JSON.stringify({ email: cleanEmail }),
       });
       const data = await res.json();
 
@@ -109,16 +109,7 @@ function AuthForm() {
 
       setIsOtpSent(true);
       setCountdown(30); // 30 seconds cooldown
-
-      if (data.otp) {
-        setDemoOtpHint(data.otp);
-        toast.info(`Your OTP is: ${data.otp}`, {
-          description: "Use this code to verify your phone number",
-          duration: 10000,
-        });
-      } else {
-        toast.success("OTP sent to your phone number!");
-      }
+      toast.success("Verification code sent to your email!");
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Failed to send OTP.");
     } finally {
@@ -128,7 +119,7 @@ function AuthForm() {
 
   const handleVerifyOtp = async () => {
     if (!formData.otp || formData.otp.trim().length !== 6) {
-      setErrorMsg("Please enter the 6-digit OTP code received on your phone.");
+      setErrorMsg("Please enter the 6-digit OTP code received in your email.");
       return;
     }
 
@@ -139,7 +130,7 @@ function AuthForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          phone: formData.phone,
+          email: formData.email.trim().toLowerCase(),
           otp: formData.otp.trim(),
         }),
       });
@@ -150,8 +141,7 @@ function AuthForm() {
       }
 
       setIsOtpVerified(true);
-      setDemoOtpHint(null);
-      toast.success("Phone number verified successfully!");
+      toast.success("Email address verified successfully!");
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "OTP verification failed.");
     } finally {
@@ -164,14 +154,20 @@ function AuthForm() {
     setErrorMsg(null);
 
     if (mode === "signup") {
-      const rawPhone = formData.phone.replace(/[^0-9]/g, "");
-      if (!rawPhone || rawPhone.length < 10) {
-        setErrorMsg("Please provide a valid 10-digit phone number.");
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!formData.email || !emailRegex.test(formData.email.trim())) {
+        setErrorMsg("Please enter a valid email address.");
         return;
       }
 
       if (!isOtpVerified) {
-        setErrorMsg("Please verify your phone number with the OTP before creating your account.");
+        setErrorMsg("Please verify your email address with the OTP before creating your account.");
+        return;
+      }
+
+      const rawPhone = formData.phone.replace(/[^0-9]/g, "");
+      if (!rawPhone || rawPhone.length < 10) {
+        setErrorMsg("Please provide a valid 10-digit phone number.");
         return;
       }
 
@@ -260,7 +256,7 @@ function AuthForm() {
               </h2>
               <p className="mt-1.5 text-xs leading-relaxed text-slate-500 font-normal">
                 {mode === "signup"
-                  ? "Required: Name, Phone (verified by OTP), Email and Password."
+                  ? "Required: Name, Email (verified by OTP), Phone and Password."
                   : "Access your saved products, track your orders, and manage your member profile."}
               </p>
 
@@ -292,11 +288,11 @@ function AuthForm() {
                     />
                   </div>
 
-                  {/* Phone Number + OTP Trigger */}
+                  {/* Email Address + OTP Trigger */}
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
                       <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-900">
-                        PHONE NUMBER (CONFIRMED BY OTP) <span className="text-rose-500">*</span>
+                        EMAIL ADDRESS (CONFIRMED BY OTP) <span className="text-rose-500">*</span>
                       </label>
                       {isOtpVerified && (
                         <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase text-emerald-700 bg-emerald-50 px-2 py-0.5 border border-emerald-200">
@@ -306,31 +302,24 @@ function AuthForm() {
                     </div>
 
                     <div className="flex gap-2">
-                      <div className="flex flex-1 items-center border border-slate-900 bg-white px-3">
-                        <span className="text-xs font-medium text-slate-500 pr-2 border-r border-slate-200 shrink-0">
-                          +91
-                        </span>
-                        <input
-                          type="tel"
-                          required
-                          disabled={isOtpVerified}
-                          placeholder="10-digit mobile number"
-                          maxLength={10}
-                          value={formData.phone}
-                          onChange={(e) => {
-                            const val = e.target.value.replace(/[^0-9]/g, "");
-                            setFormData({ ...formData, phone: val });
-                            if (isOtpVerified) setIsOtpVerified(false);
-                          }}
-                          className="w-full bg-transparent py-2.5 pl-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none disabled:bg-slate-50 disabled:text-slate-500"
-                        />
-                      </div>
+                      <input
+                        type="email"
+                        required
+                        disabled={isOtpVerified}
+                        placeholder="you@example.com"
+                        value={formData.email}
+                        onChange={(e) => {
+                          setFormData({ ...formData, email: e.target.value });
+                          if (isOtpVerified) setIsOtpVerified(false);
+                        }}
+                        className="flex-1 rounded-none border border-slate-900 bg-white py-2.5 px-3.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-900 disabled:bg-slate-50 disabled:text-slate-500 transition-all"
+                      />
 
                       {!isOtpVerified && (
                         <button
                           type="button"
                           onClick={handleSendOtp}
-                          disabled={isSendingOtp || countdown > 0 || formData.phone.length < 10}
+                          disabled={isSendingOtp || countdown > 0 || !formData.email || !formData.email.includes("@")}
                           className="shrink-0 bg-slate-900 hover:bg-black text-white px-3.5 text-[11px] font-bold uppercase tracking-wider transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
                         >
                           {isSendingOtp ? (
@@ -350,69 +339,99 @@ function AuthForm() {
                     </div>
                   </div>
 
-                  {/* OTP Input Section (Visible when OTP sent and not yet verified) */}
+                  {/* OTP Verification Box */}
                   {isOtpSent && !isOtpVerified && (
-                    <div className="p-3.5 bg-slate-50 border border-slate-300 space-y-2.5 animate-in fade-in duration-200">
+                    <div className="bg-slate-50 border border-slate-900/15 p-4 space-y-3 transition-all animate-in fade-in duration-200">
                       <div className="flex items-center justify-between">
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-700">
-                          ENTER 6-DIGIT OTP CODE
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-900">
+                          ENTER VERIFICATION CODE
                         </label>
-                        {demoOtpHint && (
-                          <span className="text-[10px] font-mono text-[#0a7ae6] bg-blue-50 px-2 py-0.5 border border-blue-200">
-                            Demo Code: {demoOtpHint}
-                          </span>
-                        )}
+                        <span className="text-[10px] text-slate-500 font-medium">
+                          6 digits
+                        </span>
                       </div>
 
                       <div className="flex gap-2">
                         <input
                           type="text"
                           maxLength={6}
-                          placeholder="6-digit OTP"
+                          autoFocus
+                          placeholder="••••••"
                           value={formData.otp}
                           onChange={(e) =>
                             setFormData({ ...formData, otp: e.target.value.replace(/[^0-9]/g, "") })
                           }
-                          className="flex-1 border border-slate-900 bg-white py-2 px-3 text-center font-mono text-sm tracking-widest text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
+                          className="flex-1 rounded-none border border-slate-900 bg-white py-2.5 px-3 text-center font-mono text-base font-semibold tracking-[0.4em] text-slate-900 placeholder:tracking-widest placeholder:text-slate-300 focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all"
                         />
                         <button
                           type="button"
                           onClick={handleVerifyOtp}
                           disabled={isVerifyingOtp || formData.otp.length !== 6}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-40 flex items-center gap-1.5 shrink-0"
+                          className="shrink-0 bg-slate-900 hover:bg-black text-white px-5 text-[11px] font-bold uppercase tracking-wider transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 cursor-pointer"
                         >
                           {isVerifyingOtp ? (
-                            <Loader2 className="size-3.5 animate-spin" />
+                            <>
+                              <Loader2 className="size-3.5 animate-spin" />
+                              VERIFYING...
+                            </>
                           ) : (
-                            <CheckCircle2 className="size-3.5" />
+                            <>
+                              <CheckCircle2 className="size-3.5" />
+                              VERIFY
+                            </>
                           )}
-                          VERIFY
                         </button>
                       </div>
-                      <p className="text-[10px] text-slate-500">
-                        Enter the verification code sent to +91 {formData.phone}
+                      <p className="text-[11px] text-slate-500 leading-normal">
+                        Please check your inbox (or spam) at <strong className="text-slate-800 font-semibold">{formData.email}</strong>
                       </p>
                     </div>
                   )}
+
+                  {/* Phone Number */}
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-900 mb-1.5">
+                      PHONE NUMBER <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="flex items-center border border-slate-900 bg-white px-3">
+                      <span className="text-xs font-medium text-slate-500 pr-2 border-r border-slate-200 shrink-0">
+                        +91
+                      </span>
+                      <input
+                        type="tel"
+                        required
+                        placeholder="10-digit mobile number"
+                        maxLength={10}
+                        value={formData.phone}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/[^0-9]/g, "");
+                          setFormData({ ...formData, phone: val });
+                        }}
+                        className="w-full bg-transparent py-2.5 pl-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none"
+                      />
+                    </div>
+                  </div>
                 </>
               )}
 
-              {/* Email Address */}
-              <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-900 mb-1.5">
-                  EMAIL ADDRESS <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="email"
-                  required
-                  placeholder="you@example.com"
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                  className="w-full rounded-none border border-slate-900 bg-white py-2.5 px-3.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all"
-                />
-              </div>
+              {/* Email Address for Login */}
+              {mode === "login" && (
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-900 mb-1.5">
+                    EMAIL ADDRESS <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="you@example.com"
+                    value={formData.email}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
+                    className="w-full rounded-none border border-slate-900 bg-white py-2.5 px-3.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all"
+                  />
+                </div>
+              )}
 
               {mode === "signup" ? (
                 /* 2-Column Password Grid for Signup */
@@ -576,7 +595,7 @@ function AuthForm() {
                       : mode === "signup"
                       ? isOtpVerified
                         ? "CREATE ACCOUNT"
-                        : "VERIFY PHONE FIRST"
+                        : "VERIFY EMAIL FIRST"
                       : "SIGN IN"}
                   </span>
                   <ArrowUpRight className="size-4 shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />

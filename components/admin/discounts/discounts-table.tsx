@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Trash2, Clock, Calendar } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -24,17 +24,42 @@ function discountValue(discount: DiscountTableItem) {
 
 export function DiscountsTable({ discounts }: { discounts: DiscountTableItem[] }) {
   const router = useRouter();
+  const [items, setItems] = useState<DiscountTableItem[]>(discounts);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    setItems(discounts);
+  }, [discounts]);
 
   async function deleteDiscount(discount: DiscountTableItem) {
     if (!window.confirm(`Delete ${discount.code || "this automatic discount"}? This cannot be undone.`)) return;
     setDeletingId(discount.id);
     setError("");
     try {
-      const response = await fetch(`/api/discounts/${discount.id}`, { method: "DELETE" });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || "Could not delete the discount");
+      // Use POST with method override or DELETE to bypass WAF / Nginx DELETE blocking
+      const response = await fetch(`/api/discounts/${encodeURIComponent(discount.id)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ _method: "DELETE" }),
+      });
+
+      let payload: any = null;
+      try {
+        const text = await response.text();
+        payload = text ? JSON.parse(text) : {};
+      } catch {
+        payload = null;
+      }
+
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          throw new Error("Admin session expired or access denied. Please refresh or log in again.");
+        }
+        throw new Error(payload?.error || `Could not delete the discount (HTTP ${response.status})`);
+      }
+
+      setItems((prev) => prev.filter((d) => d.id !== discount.id));
       router.refresh();
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "Could not delete the discount");
@@ -58,7 +83,7 @@ export function DiscountsTable({ discounts }: { discounts: DiscountTableItem[] }
             </tr>
           </thead>
           <tbody>
-            {discounts.map((discount) => {
+            {items.map((discount) => {
               const isExpired = discount.endDate ? new Date(discount.endDate) < new Date() : false;
               const hasSpecificProducts = Boolean(discount.eligibleProductIds || discount.appliesTo === "SPECIFIC_PRODUCTS");
 

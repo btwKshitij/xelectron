@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import * as discountsController from "@/lib/server/controllers/discounts.controller";
 import { requireAdmin, AuthError } from "@/lib/server/dal/auth";
 
-export async function DELETE(_request: Request, context: { params: Promise<{ id: string }> }) {
+async function handleDelete(_request: Request, context: { params: Promise<{ id: string }> }) {
   try {
     await requireAdmin();
     const { id } = await context.params;
@@ -18,4 +18,12 @@ export async function DELETE(_request: Request, context: { params: Promise<{ id:
     const message = error instanceof Error ? error.message : "Internal server error";
     return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
+}
+
+export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
+  return handleDelete(request, context);
+}
+
+export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
+  return handleDelete(request, context);
 }

@@ -1,8 +1,8 @@
-// In-memory OTP storage for phone verification with TTL expiration
-// For production, this can also interface with SMS providers (Twilio, Fast2SMS, MSG91)
+// In-memory OTP storage for phone and email verification with TTL expiration
+// Preserves OTPs across hot-reloads in development
 
 type OtpRecord = {
-  phone: string;
+  identifier: string; // phone or email
   otp: string;
   expiresAt: number;
   verified: boolean;
@@ -25,56 +25,91 @@ export function normalizePhone(phone: string): string {
   return cleaned;
 }
 
-export function generateAndStoreOtp(rawPhone: string): { otp: string; phone: string; expiresAt: number } {
-  const phone = normalizePhone(rawPhone);
-  if (!phone || phone.length < 10) {
-    throw new Error("Please enter a valid 10-digit phone number");
+export function normalizeIdentifier(raw: string): string {
+  if (raw.includes("@")) {
+    return raw.toLowerCase().trim();
+  }
+  return normalizePhone(raw);
+}
+
+export function generateAndStoreOtp(rawIdentifier: string): {
+  otp: string;
+  identifier: string;
+  expiresAt: number;
+  isEmail: boolean;
+} {
+  const isEmail = rawIdentifier.includes("@");
+  const identifier = normalizeIdentifier(rawIdentifier);
+
+  if (isEmail) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier)) {
+      throw new Error("Please enter a valid email address");
+    }
+  } else {
+    if (!identifier || identifier.length < 10) {
+      throw new Error("Please enter a valid 10-digit phone number");
+    }
   }
 
   // Generate 6-digit numeric OTP
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes validity
 
-  otpStore.set(phone, {
-    phone,
+  otpStore.set(identifier, {
+    identifier,
     otp,
     expiresAt,
     verified: false,
   });
 
-  console.log(`[OTP SERVICE] Generated OTP ${otp} for phone +91-${phone} (Valid for 10 min)`);
+  console.log(`[OTP SERVICE] Generated OTP ${otp} for ${isEmail ? "email" : "phone"} ${identifier} (Valid for 10 min)`);
 
-  return { otp, phone, expiresAt };
+  return { otp, identifier, expiresAt, isEmail };
 }
 
-export function verifyOtp(rawPhone: string, rawOtp: string): { success: boolean; message: string } {
-  const phone = normalizePhone(rawPhone);
+export function verifyOtp(rawIdentifier: string, rawOtp: string): { success: boolean; message: string } {
+  const identifier = normalizeIdentifier(rawIdentifier);
   const otp = rawOtp.trim();
+  const isEmail = rawIdentifier.includes("@");
 
-  const record = otpStore.get(phone);
+  const record = otpStore.get(identifier);
   if (!record) {
-    return { success: false, message: "No OTP was requested for this phone number. Please click Send OTP." };
+    return {
+      success: false,
+      message: `No OTP was requested for this ${isEmail ? "email address" : "phone number"}. Please click Send OTP.`,
+    };
   }
 
   if (Date.now() > record.expiresAt) {
-    otpStore.delete(phone);
+    otpStore.delete(identifier);
     return { success: false, message: "OTP has expired. Please request a new OTP." };
   }
 
   // Demo bypass: "123456" is also accepted in dev or test environments for convenience
   if (record.otp === otp || otp === "123456") {
     record.verified = true;
-    otpStore.set(phone, record);
-    return { success: true, message: "Phone number verified successfully" };
+    otpStore.set(identifier, record);
+    return {
+      success: true,
+      message: `${isEmail ? "Email address" : "Phone number"} verified successfully`,
+    };
   }
 
   return { success: false, message: "Incorrect OTP code. Please check and try again." };
 }
 
-export function isPhoneVerified(rawPhone: string): boolean {
-  const phone = normalizePhone(rawPhone);
-  const record = otpStore.get(phone);
+export function isVerified(rawIdentifier: string): boolean {
+  const identifier = normalizeIdentifier(rawIdentifier);
+  const record = otpStore.get(identifier);
   if (!record) return false;
   if (Date.now() > record.expiresAt + 15 * 60 * 1000) return false;
   return record.verified;
+}
+
+export function isPhoneVerified(rawPhone: string): boolean {
+  return isVerified(rawPhone);
+}
+
+export function isEmailVerified(rawEmail: string): boolean {
+  return isVerified(rawEmail);
 }

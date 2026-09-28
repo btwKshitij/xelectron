@@ -58,5 +58,5 @@ export async function incrementDiscountUsage(code: string) {
 }
 
 export function deleteDiscount(id: string) {
-  return db.discount.delete({ where: { id } });
+  return db.discount.deleteMany({ where: { id } });
 }

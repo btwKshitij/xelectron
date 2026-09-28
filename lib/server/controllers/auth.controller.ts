@@ -68,7 +68,7 @@ export async function loginUser(email: string, password: string) {
 
 // ─── Register ────────────────────────────────────────────────────────────────
 
-import { isPhoneVerified, verifyOtp, normalizePhone } from "@/lib/server/auth/otp-service";
+import { isEmailVerified, verifyOtp, normalizePhone } from "@/lib/server/auth/otp-service";
 
 /**
  * Create a new CUSTOMER user, create a DB session, return token + redirect.
@@ -87,21 +87,17 @@ export async function registerUser(
     throw new Error("An account with this email address already exists");
   }
 
-  const cleanPhone = phone ? normalizePhone(phone) : undefined;
-  if (cleanPhone) {
-    // If an OTP was submitted with the registration form, verify it now
-    if (otp) {
-      const verification = verifyOtp(cleanPhone, otp);
-      if (!verification.success) {
-        throw new Error(verification.message);
-      }
-    } else if (!isPhoneVerified(cleanPhone)) {
-      // If no OTP code was sent in the signup payload, verify if the phone was pre-verified
-      // For development/demo convenience, allow signup if OTP verification was performed
-      // If not, ask user to verify phone
-      throw new Error("Please verify your phone number with the OTP before creating your account");
+  // Verify Email OTP
+  if (otp) {
+    const verification = verifyOtp(cleanEmail, otp);
+    if (!verification.success) {
+      throw new Error(verification.message);
     }
+  } else if (!isEmailVerified(cleanEmail)) {
+    throw new Error("Please verify your email address with the OTP before creating your account");
   }
+
+  const cleanPhone = phone ? normalizePhone(phone) : undefined;
 
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
   const newUser = await usersDal.createUser({
