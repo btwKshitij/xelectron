@@ -60,6 +60,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     revalidatePath("/");
     revalidatePath("/shop");
     revalidatePath("/product");
+    revalidatePath("/checkout");
+    revalidatePath("/api/products");
     revalidatePath(`/product/${product.id}`);
     if (product.slug) revalidatePath(`/product/${product.slug}`);
     revalidatePath("/dashboard/products");
@@ -106,6 +108,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     revalidatePath("/");
     revalidatePath("/shop");
     revalidatePath("/product");
+    revalidatePath("/checkout");
+    revalidatePath("/api/products");
     revalidatePath(`/product/${product.id}`);
     if (product.slug) revalidatePath(`/product/${product.slug}`);
     revalidatePath("/dashboard/products");

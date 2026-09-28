@@ -163,7 +163,9 @@ export default function CartProvider({ children }: { children: ReactNode }) {
 
       if (existingItem) {
         return currentItems.map((item) =>
-          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item,
+          item.id === product.id
+            ? { ...item, ...product, quantity: item.quantity + 1 }
+            : item,
         );
       }
 
@@ -180,6 +182,7 @@ export default function CartProvider({ children }: { children: ReactNode }) {
         if (existingItemIndex >= 0) {
           nextItems[existingItemIndex] = {
             ...nextItems[existingItemIndex],
+            ...product,
             quantity: nextItems[existingItemIndex].quantity + 1,
           };
         } else {
@@ -220,7 +223,7 @@ export default function CartProvider({ children }: { children: ReactNode }) {
 
   const syncLivePrices = useCallback(async () => {
     try {
-      const res = await fetch("/api/products", { cache: "no-store" });
+      const res = await fetch(`/api/products?_t=${Date.now()}`, { cache: "no-store" });
       const json = await res.json();
       if (!json.success || !Array.isArray(json.data) || json.data.length === 0) return;
 
@@ -264,6 +267,12 @@ export default function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!hasLoadedCart) return;
     syncLivePrices();
+
+    const onFocus = () => {
+      syncLivePrices();
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
   }, [hasLoadedCart, syncLivePrices]);
 
   const removeItem = useCallback((id: string) => {

@@ -108,11 +108,32 @@ export async function createOrder(data: ordersDal.CreateOrderInput) {
         throw new Error(`Product not found: ${item.productId}`);
       }
 
-      const itemPrice = typeof item.unitPrice === "number" && item.unitPrice > 0
+      // Calculate true live price from database
+      let dbPrice =
+        typeof product.price === "number"
+          ? product.price
+          : parseFloat(String(product.price).replace(/,/g, "").replace(/[^0-9.]/g, "")) || 0;
+
+      // Check if active deal of the day applies
+      if (
+        product.dealOfTheDay &&
+        product.dealOfTheDay.isActive &&
+        (!product.dealOfTheDay.endsAt || new Date(product.dealOfTheDay.endsAt) > new Date())
+      ) {
+        const dealPrice =
+          typeof product.dealOfTheDay.dealPrice === "number"
+            ? product.dealOfTheDay.dealPrice
+            : parseFloat(String(product.dealOfTheDay.dealPrice).replace(/,/g, "").replace(/[^0-9.]/g, "")) || 0;
+        if (dealPrice > 0) {
+          dbPrice = dealPrice;
+        }
+      }
+
+      const itemPrice = dbPrice > 0
+        ? dbPrice
+        : typeof item.unitPrice === "number" && item.unitPrice > 0
         ? item.unitPrice
-        : typeof product.price === "number"
-        ? product.price
-        : parseFloat(String(product.price).replace(/[^0-9.]/g, "")) || 0;
+        : 0;
 
       return {
         productId: product.id,

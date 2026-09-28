@@ -19,11 +19,16 @@ export async function GET() {
   }
 }
 
+import { revalidatePath } from "next/cache";
+
 export async function PATCH(request: NextRequest) {
   try {
     await requireAdmin();
     const body = await request.json();
     const settings = await setAnnouncementTickerEnabled(body.tickerEnabled);
+    revalidatePath("/");
+    revalidatePath("/dashboard/announcements");
+    revalidatePath("/api/announcements");
     return NextResponse.json({ success: true, data: settings });
   } catch (error) {
     if (error instanceof AuthError) {
@@ -32,4 +37,8 @@ export async function PATCH(request: NextRequest) {
     const message = error instanceof Error ? error.message : "Unable to update ticker settings.";
     return NextResponse.json({ success: false, error: message }, { status: 400 });
   }
+}
+
+export async function POST(request: NextRequest) {
+  return PATCH(request);
 }

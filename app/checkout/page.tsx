@@ -125,7 +125,7 @@ function CheckoutContent() {
     }
 
     // Load active deal of the day info
-    fetch("/api/deal-of-the-day", { cache: "no-store" })
+    fetch(`/api/deal-of-the-day?_t=${Date.now()}`, { cache: "no-store" })
       .then((res) => res.json())
       .then((dealJson) => {
         if (!isSubscribed || !dealJson.success || !dealJson.data) return;
@@ -142,7 +142,7 @@ function CheckoutContent() {
       })
       .catch(() => {});
 
-    fetch("/api/products", { cache: "no-store" })
+    fetch(`/api/products?_t=${Date.now()}`, { cache: "no-store" })
       .then((res) => res.json())
       .then((json) => {
         if (!isSubscribed || !json.success || !Array.isArray(json.data)) return;
@@ -245,6 +245,13 @@ function CheckoutContent() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMounted, searchParams]);
+
+  // Re-sync live prices whenever cart items are loaded or updated
+  const orderItemsCount = orderItems.length;
+  useEffect(() => {
+    if (!isMounted || orderItemsCount === 0) return;
+    syncLivePrices();
+  }, [isMounted, orderItemsCount, syncLivePrices]);
 
   // Auth check
   useEffect(() => {

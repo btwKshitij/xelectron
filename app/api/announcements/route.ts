@@ -14,7 +14,11 @@ export async function GET() {
       getAnnouncementSettings(),
     ]);
     return NextResponse.json({ success: true, data: announcements, tickerEnabled: settings.tickerEnabled }, {
-      headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" },
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to load announcements.";
