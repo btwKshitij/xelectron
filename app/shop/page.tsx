@@ -4,6 +4,9 @@ import Navbar from "@/components/navbar/navbar";
 import ShopContent, { type ShopProduct } from "@/components/shop/shop-content";
 import * as productsController from "@/lib/server/controllers/products.controller";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function ShopPage() {
   let products: ShopProduct[] = [];
 

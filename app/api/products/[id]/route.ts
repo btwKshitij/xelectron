@@ -16,7 +16,16 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     if (!product) {
       return NextResponse.json({ success: false, error: "Product not found" }, { status: 404 });
     }
-    return NextResponse.json({ success: true, data: product });
+    return NextResponse.json(
+      { success: true, data: product },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      }
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Internal server error";
     return NextResponse.json({ success: false, error: message }, { status: 500 });

@@ -204,24 +204,30 @@ export default function ProductDetail({
   }, [isSliderPlaying, product?.banners]);
 
   useEffect(() => {
-    // If initialProduct is already loaded from server, do not re-fetch
-    if (initialProduct && initialProduct.id) return;
-
-    const targetId = productId || searchProductId;
+    const targetId = productId || searchProductId || product?.slug || product?.id;
     if (!targetId) return;
 
-    Promise.all([
-      fetch(`/api/products/${encodeURIComponent(targetId)}`).then((res) => res.json()),
-      fetch(`/api/deal-of-the-day`).then((res) => res.json()).catch(() => null),
-    ])
-      .then(([productRes, dealRes]) => {
-        if (productRes.success && productRes.data) {
-          const activeDeal = dealRes && dealRes.success ? dealRes.data : null;
-          setApiProduct(toProductDetailItem(productRes.data, activeDeal));
-        }
-      })
-      .catch(() => {});
-  }, [productId, searchProductId, initialProduct]);
+    const syncLiveProduct = () => {
+      Promise.all([
+        fetch(`/api/products/${encodeURIComponent(targetId)}?_t=${Date.now()}`, { cache: "no-store" }).then((res) => res.json()),
+        fetch(`/api/deal-of-the-day?_t=${Date.now()}`, { cache: "no-store" }).then((res) => res.json()).catch(() => null),
+      ])
+        .then(([productRes, dealRes]) => {
+          if (productRes.success && productRes.data) {
+            const activeDeal = dealRes && dealRes.success ? dealRes.data : null;
+            setApiProduct(toProductDetailItem(productRes.data, activeDeal));
+          }
+        })
+        .catch(() => {});
+    };
+
+    if (!initialProduct || !initialProduct.id) {
+      syncLiveProduct();
+    }
+
+    window.addEventListener("focus", syncLiveProduct);
+    return () => window.removeEventListener("focus", syncLiveProduct);
+  }, [productId, searchProductId, initialProduct, product?.slug, product?.id]);
 
   useEffect(() => {
     if (product?.id) recordRecentlyViewedProduct(product.id);

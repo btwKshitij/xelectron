@@ -29,11 +29,50 @@ export type ShopProduct = {
   quantity?: number | null;
 };
 
-export default function ShopContent({ products }: { products: ShopProduct[] }) {
+export default function ShopContent({ products: initialProducts }: { products: ShopProduct[] }) {
   const searchParams = useSearchParams();
   const { addItem } = useCart();
   const filterParam = searchParams.get("filter") || "all";
+  const [products, setProducts] = useState<ShopProduct[]>(initialProducts);
   const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    setProducts(initialProducts);
+  }, [initialProducts]);
+
+  useEffect(() => {
+    const syncLiveProducts = async () => {
+      try {
+        const res = await fetch(`/api/products?_t=${Date.now()}`, { cache: "no-store" });
+        if (res.ok) {
+          const payload = await res.json();
+          if (payload.success && Array.isArray(payload.data)) {
+            setProducts((prev) => {
+              const liveMap = new Map<string, any>(payload.data.map((p: any) => [p.id, p]));
+              return prev.map((item) => {
+                const live: any = liveMap.get(item.id) || liveMap.get(item.slug);
+                if (!live) return item;
+                return {
+                  ...item,
+                  price: typeof live.price === "number" ? `₹${live.price.toLocaleString("en-IN")}` : String(live.price),
+                  oldPrice: live.oldPrice
+                    ? typeof live.oldPrice === "number"
+                      ? `₹${live.oldPrice.toLocaleString("en-IN")}`
+                      : String(live.oldPrice)
+                    : item.oldPrice,
+                  quantity: typeof live.quantity === "number" ? live.quantity : null,
+                };
+              });
+            });
+          }
+        }
+      } catch {}
+    };
+
+    syncLiveProducts();
+    window.addEventListener("focus", syncLiveProducts);
+    return () => window.removeEventListener("focus", syncLiveProducts);
+  }, []);
 
   useEffect(() => {
     const updateRecentlyViewed = () => setRecentlyViewedIds(getRecentlyViewedProductIds());

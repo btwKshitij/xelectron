@@ -5,6 +5,9 @@ import { redirect } from "next/navigation"
 import { verifySession } from "@/lib/server/dal/auth"
 import "./dashboard.css"
 
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 export default async function DashboardLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
