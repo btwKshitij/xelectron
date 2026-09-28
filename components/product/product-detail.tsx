@@ -221,10 +221,7 @@ export default function ProductDetail({
         .catch(() => {});
     };
 
-    if (!initialProduct || !initialProduct.id) {
-      syncLiveProduct();
-    }
-
+    syncLiveProduct();
     window.addEventListener("focus", syncLiveProduct);
     return () => window.removeEventListener("focus", syncLiveProduct);
   }, [productId, searchProductId, initialProduct, product?.slug, product?.id]);

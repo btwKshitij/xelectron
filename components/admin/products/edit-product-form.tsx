@@ -155,6 +155,29 @@ export function EditProductForm({ product, categories }: { product: EditableProd
   const [price, setPrice] = useState(inputValueForPrice(product.price));
   const [compareAtPrice, setCompareAtPrice] = useState(inputValueForPrice(product.oldPrice));
   const [quantity, setQuantity] = useState(String(product.quantity));
+  const isQuantityTouchedRef = useRef(false);
+
+  useEffect(() => {
+    if (!product?.id) return;
+    const syncLatestStock = async () => {
+      try {
+        const res = await fetch(`/api/products/${product.id}?_t=${Date.now()}`, { cache: "no-store" });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.data) {
+            const dbQty = typeof json.data.quantity === "number" ? json.data.quantity : 0;
+            if (!isQuantityTouchedRef.current) {
+              setQuantity(String(dbQty));
+            }
+          }
+        }
+      } catch {}
+    };
+
+    syncLatestStock();
+    window.addEventListener("focus", syncLatestStock);
+    return () => window.removeEventListener("focus", syncLatestStock);
+  }, [product?.id]);
   const [showInBestSellers, setShowInBestSellers] = useState(product.showInBestSellers);
   const [showInNavbar, setShowInNavbar] = useState(product.showInNavbar ?? false);
   const [variants, setVariants] = useState<any[]>(() => ((product as any).variants || []).map((v: any) => ({ ...v })));
@@ -688,7 +711,19 @@ export function EditProductForm({ product, categories }: { product: EditableProd
           <Card title="Inventory">
             <label className="grid gap-1.5 text-sm text-black/75">
               <span>Quantity</span>
-              <input aria-label="Quantity" type="number" min="0" step="1" value={quantity} onChange={(event) => setQuantity(event.target.value)} inputMode="numeric" className={`${inputClass} ${Number(quantity) <= 5 ? "border-red-400 bg-red-50 text-red-700 focus:border-red-500 focus:ring-red-500/20" : ""}`} />
+              <input
+                aria-label="Quantity"
+                type="number"
+                min="0"
+                step="1"
+                value={quantity}
+                onChange={(event) => {
+                  isQuantityTouchedRef.current = true;
+                  setQuantity(event.target.value);
+                }}
+                inputMode="numeric"
+                className={`${inputClass} ${Number(quantity) <= 5 ? "border-red-400 bg-red-50 text-red-700 focus:border-red-500 focus:ring-red-500/20" : ""}`}
+              />
             </label>
             <p className={`mt-2 text-xs ${Number(quantity) <= 5 ? "text-red-600 font-medium" : "text-black/55"}`}>
               {Number(quantity) <= 5 ? (Number(quantity) === 0 ? "Out of stock!" : "Low stock warning.") : "Number of units currently available for sale."}

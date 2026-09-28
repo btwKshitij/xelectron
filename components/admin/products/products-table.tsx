@@ -78,10 +78,15 @@ export function ProductsTable({ products }: { products: ProductTableItem[] }) {
         if (res.ok) {
           const payload = await res.json();
           if (payload.success && Array.isArray(payload.data)) {
+            const liveMap = new Map<string, any>();
+            for (const p of payload.data) {
+              if (p.id) liveMap.set(p.id, p);
+              if (p.slug) liveMap.set(p.slug, p);
+            }
+
             setProductList((prev) => {
-              const liveMap = new Map<string, any>(payload.data.map((p: any) => [p.id, p]));
               return prev.map((item) => {
-                const live: any = liveMap.get(item.id) || liveMap.get(item.slug);
+                const live: any = liveMap.get(item.id) || (item.slug ? liveMap.get(item.slug) : null);
                 if (!live) return item;
                 return {
                   ...item,
