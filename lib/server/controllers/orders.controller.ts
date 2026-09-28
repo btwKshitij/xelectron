@@ -4,6 +4,7 @@ import * as usersDal from "@/lib/server/dal/users.dal";
 import * as sessionsDal from "@/lib/server/dal/sessions.dal";
 import * as discountsDal from "@/lib/server/dal/discounts.dal";
 import bcrypt from "bcryptjs";
+import { revalidatePath } from "next/cache";
 import type { Discount } from "@prisma/client";
 
 // ─── List ────────────────────────────────────────────────────────────────────
@@ -154,6 +155,19 @@ export async function createOrder(data: ordersDal.CreateOrderInput) {
       ? data.total
       : calculatedSubtotal;
 
+  // Verify product inventory stock before creating the order
+  for (const item of resolvedItems) {
+    const product = await productsDal.getProductById(item.productId);
+    if (!product) continue;
+    if (typeof product.quantity === "number" && product.quantity < item.quantity) {
+      throw new Error(
+        product.quantity <= 0
+          ? `"${product.name}" is currently out of stock.`
+          : `Only ${product.quantity} unit(s) of "${product.name}" available in stock.`
+      );
+    }
+  }
+
   const createdOrder = await ordersDal.createOrder({
     ...data,
     customerEmail: cleanEmail,
@@ -169,6 +183,19 @@ export async function createOrder(data: ordersDal.CreateOrderInput) {
       productsDal.decrementProductStock(item.productId, item.quantity)
     )
   );
+
+  try {
+    revalidatePath("/shop", "page");
+    revalidatePath("/shop", "layout");
+    revalidatePath("/", "layout");
+    revalidatePath("/product", "layout");
+    revalidatePath("/product/[id]", "page");
+    revalidatePath("/checkout", "page");
+    revalidatePath("/dashboard/products", "page");
+    revalidatePath("/dashboard/products", "layout");
+    revalidatePath("/dashboard/products/[id]", "page");
+    revalidatePath("/api/products");
+  } catch {}
 
   // Increment discount usage count if a discount code or automatic discount was applied
   if (data.discountCode) {

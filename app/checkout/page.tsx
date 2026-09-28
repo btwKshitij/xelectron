@@ -26,6 +26,7 @@ import {
   Plus,
   ShoppingBag,
   Flame,
+  AlertTriangle,
 } from "lucide-react";
 import Navbar from "@/components/navbar/navbar";
 import { useSearchParams } from "next/navigation";
@@ -75,10 +76,35 @@ function CheckoutContent() {
   const processedProductParamRef = useRef<string | null>(null);
   const removedProductIdsRef = useRef<Set<string>>(new Set());
   const [dealProductIds, setDealProductIds] = useState<Set<string>>(new Set());
+  const [liveStockMap, setLiveStockMap] = useState<Map<string, number>>(new Map());
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Listen for window focus to keep stock strictly synchronized with database
+  useEffect(() => {
+    if (!isMounted) return;
+    const syncStock = () => {
+      fetch(`/api/products?_t=${Date.now()}`, { cache: "no-store" })
+        .then((res) => res.json())
+        .then((json) => {
+          if (json.success && Array.isArray(json.data)) {
+            const stockMap = new Map<string, number>();
+            for (const p of json.data) {
+              const stock = typeof p.quantity === "number" ? p.quantity : 0;
+              if (p.id) stockMap.set(p.id, stock);
+              if (p.slug) stockMap.set(p.slug, stock);
+            }
+            setLiveStockMap(stockMap);
+          }
+        })
+        .catch(() => {});
+    };
+
+    window.addEventListener("focus", syncStock);
+    return () => window.removeEventListener("focus", syncStock);
+  }, [isMounted]);
 
   // Remove item handler: deletes from cart, tracks in ref, and strips ?product= from URL
   const handleRemoveItem = useCallback((itemId: string, itemSlug?: string) => {
@@ -149,10 +175,15 @@ function CheckoutContent() {
 
         const productsMap = new Map<string, any>();
         const dealIds = new Set<string>();
+        const stockMap = new Map<string, number>();
 
         for (const p of json.data) {
           if (p.id) productsMap.set(p.id, p);
           if (p.slug) productsMap.set(p.slug, p);
+
+          const stock = typeof p.quantity === "number" ? p.quantity : 0;
+          if (p.id) stockMap.set(p.id, stock);
+          if (p.slug) stockMap.set(p.slug, stock);
 
           if (
             p.dealOfTheDay &&
@@ -164,6 +195,8 @@ function CheckoutContent() {
             if (p.dealOfTheDay.productId) dealIds.add(p.dealOfTheDay.productId);
           }
         }
+
+        setLiveStockMap(stockMap);
 
         if (dealIds.size > 0) {
           setDealProductIds((prev) => new Set([...prev, ...dealIds]));
@@ -379,6 +412,16 @@ function CheckoutContent() {
     [orderItems, isDealItem]
   );
 
+  const outOfStockItems = useMemo(() => {
+    if (liveStockMap.size === 0) return [];
+    return orderItems.filter((item) => {
+      const stock = liveStockMap.get(item.id) ?? (item.slug ? liveStockMap.get(item.slug) : undefined);
+      return stock !== undefined && stock < item.quantity;
+    });
+  }, [orderItems, liveStockMap]);
+
+  const hasOutOfStockItems = outOfStockItems.length > 0;
+
   const eligibleItems = useMemo(
     () => orderItems.filter((item) => !isDealItem(item)),
     [orderItems, isDealItem]
@@ -563,6 +606,11 @@ function CheckoutContent() {
       return;
     }
 
+    if (hasOutOfStockItems) {
+      alert("Some items in your cart are currently out of stock or exceed available quantity. Please update your cart before proceeding.");
+      return;
+    }
+
     if (!firstName || !phone || !email || !addressLine1 || !city || !state || !postalCode) {
       alert("Please fill in all required billing and address fields (*)");
       return;
@@ -588,6 +636,7 @@ function CheckoutContent() {
           body: JSON.stringify({
             amount: total,
             receipt: `rcpt_${Date.now()}`,
+            items: orderItems.map((item) => ({ id: item.id, quantity: item.quantity })),
             notes: {
               customerName: `${firstName} ${lastName}`.trim(),
               customerEmail: email,
@@ -1395,10 +1444,27 @@ function CheckoutContent() {
                 </span>
               </div>
 
+              {/* Stock Warning Banner */}
+              {hasOutOfStockItems && (
+                <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 flex items-start gap-2.5 shadow-2xs animate-in fade-in duration-150">
+                  <AlertTriangle className="size-4 shrink-0 text-rose-600 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="font-bold text-rose-900 leading-snug">Stock Alert</p>
+                    <p className="text-[11.5px] leading-relaxed text-rose-700">
+                      Some items in your cart are currently out of stock or exceed the quantity available in our warehouse. Please adjust quantities or remove them to proceed.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Order Items */}
               <div className="divide-y divide-slate-200/70">
                 {orderItems.map((item) => {
                   const itemTotal = item.price * item.quantity;
+                  const currentStock = liveStockMap.get(item.id) ?? (item.slug ? liveStockMap.get(item.slug) : undefined);
+                  const isOutOfStock = currentStock !== undefined && currentStock <= 0;
+                  const isExceedingStock = currentStock !== undefined && currentStock > 0 && currentStock < item.quantity;
+
                   return (
                     <div key={item.id} className="py-3 first:pt-0 last:pb-2">
                       <div className="flex items-start gap-3">
@@ -1415,9 +1481,22 @@ function CheckoutContent() {
                         {/* Details & Controls */}
                         <div className="min-w-0 flex-1">
                           <div className="flex items-start justify-between gap-2">
-                            <h4 className="text-xs sm:text-sm font-semibold text-slate-900 line-clamp-2 leading-snug">
-                              {item.name}
-                            </h4>
+                            <div className="min-w-0 pr-1">
+                              <h4 className="text-xs sm:text-sm font-semibold text-slate-900 line-clamp-2 leading-snug">
+                                {item.name}
+                              </h4>
+                              {isOutOfStock && (
+                                <span className="mt-1 inline-flex items-center gap-1 rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold text-rose-700">
+                                  <span className="size-1.5 rounded-full bg-rose-500 animate-pulse" />
+                                  Out of stock
+                                </span>
+                              )}
+                              {isExceedingStock && (
+                                <span className="mt-1 inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800">
+                                  Only {currentStock} available (requested {item.quantity})
+                                </span>
+                              )}
+                            </div>
                             <span className="text-xs sm:text-sm font-bold text-slate-900 shrink-0 whitespace-nowrap">
                               ₹{itemTotal.toLocaleString("en-IN", {
                                 minimumFractionDigits: itemTotal % 1 !== 0 ? 2 : 0,
@@ -1754,11 +1833,16 @@ function CheckoutContent() {
               {/* Submit CTA */}
               <button
                 type="submit"
-                disabled={isSubmitting || orderItems.length === 0}
+                disabled={isSubmitting || orderItems.length === 0 || hasOutOfStockItems}
                 className="mt-5 sm:mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#0a7ae6] py-3.5 text-center text-sm font-bold uppercase tracking-wider text-white shadow-lg shadow-[#0a7ae6]/25 transition-all hover:bg-[#086ac9] hover:shadow-xl active:scale-98 disabled:opacity-75 disabled:cursor-not-allowed cursor-pointer"
               >
                 {isSubmitting ? (
                   <div className="size-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                ) : hasOutOfStockItems ? (
+                  <>
+                    <AlertTriangle className="size-4 text-amber-300" />
+                    <span>Item(s) Out of Stock — Update Cart</span>
+                  </>
                 ) : (
                   <>
                     <Lock className="size-4" />

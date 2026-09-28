@@ -7,6 +7,7 @@ import {
 } from "@/lib/server/velocity";
 import * as ordersDal from "@/lib/server/dal/orders.dal";
 import * as usersDal from "@/lib/server/dal/users.dal";
+import * as productsDal from "@/lib/server/dal/products.dal";
 
 type CheckoutItem = {
   id?: string;
@@ -83,6 +84,30 @@ export async function POST(request: NextRequest) {
 
     // Validate credentials before creating an internal order.
     assertVelocityConfig();
+
+    // Validate product stock before creating order
+    for (const item of items) {
+      const pid = item.productId || item.id;
+      if (pid) {
+        const product = await productsDal.getProductById(pid);
+        if (!product) {
+          return NextResponse.json(
+            { success: false, error: "Product not found." },
+            { status: 400 }
+          );
+        }
+        const reqQty = item.quantity || 1;
+        if (product.quantity < reqQty) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: `"${product.name}" is out of stock (${product.quantity} remaining). Please update your cart before proceeding.`,
+            },
+            { status: 400 }
+          );
+        }
+      }
+    }
 
     // 1. Account matching / creation if requested
     let finalUserId = userId || null;

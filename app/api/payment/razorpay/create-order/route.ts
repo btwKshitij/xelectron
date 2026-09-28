@@ -5,13 +5,36 @@ import { getRazorpayInstance } from "@/lib/server/razorpay";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { amount, receipt, notes } = body;
+    const { amount, receipt, notes, items } = body;
 
     if (!amount || Number(amount) <= 0) {
       return NextResponse.json(
         { success: false, error: "Invalid order amount" },
         { status: 400 }
       );
+    }
+
+    if (Array.isArray(items) && items.length > 0) {
+      const { db } = await import("@/lib/db");
+      for (const item of items) {
+        if (!item?.id) continue;
+        const product = await db.product.findFirst({
+          where: { OR: [{ id: item.id }, { slug: item.id }] },
+          select: { name: true, quantity: true },
+        });
+        if (product && typeof product.quantity === "number" && product.quantity < (item.quantity || 1)) {
+          return NextResponse.json(
+            {
+              success: false,
+              error:
+                product.quantity <= 0
+                  ? `"${product.name}" is out of stock. Please remove it from your cart to proceed.`
+                  : `Only ${product.quantity} unit(s) of "${product.name}" available in stock.`,
+            },
+            { status: 400 }
+          );
+        }
+      }
     }
 
     const keyId = process.env.RAZORPAY_KEY_ID?.trim() || "";

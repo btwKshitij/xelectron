@@ -108,13 +108,15 @@ export async function POST(request: NextRequest) {
           },
         });
 
-        // Decrement product stock if not already decremented
-        if (order.items && order.items.length > 0) {
-          await Promise.all(
-            order.items.map((item: any) =>
-              productsDal.decrementProductStock(item.productId, item.quantity)
-            )
-          );
+        // Decrement product stock only if order was previously PENDING and not yet decremented
+        if (order.items && order.items.length > 0 && order.status === "PENDING") {
+          try {
+            await Promise.all(
+              order.items.map((item: any) =>
+                productsDal.decrementProductStock(item.productId, item.quantity).catch(() => null)
+              )
+            );
+          } catch {}
         }
       }
     } else if (event === "payment.failed") {
