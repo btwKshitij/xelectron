@@ -14,9 +14,15 @@ export async function POST() {
   try {
     revalidatePath("/", "layout")
     revalidatePath("/dashboard", "layout")
+    revalidatePath("/dashboard/products", "page")
+    revalidatePath("/dashboard/products", "layout")
     revalidatePath("/dashboard/banners", "page")
     revalidatePath("/api/banners")
+    revalidatePath("/api/products")
     revalidatePath("/shop", "layout")
+    revalidatePath("/shop", "page")
+    revalidatePath("/checkout", "page")
+    revalidatePath("/product", "layout")
 
     return NextResponse.json(
       {
