@@ -576,8 +576,8 @@ export default function FestivePopupEditor({ initialSettings }: Props) {
                           sizes="580px"
                         />
 
-                        {/* Transparent Direct Overlay (No enclosing box) */}
-                        <div className="absolute bottom-2.5 right-2.5 max-w-[280px] w-full z-20 bg-transparent border-0 p-0 shadow-none">
+                        {/* Compact Glass Card Overlay */}
+                        <div className="absolute bottom-2 right-2 sm:bottom-2.5 sm:right-3 max-w-[210px] w-full z-20 rounded-xl bg-black/85 backdrop-blur-md border border-slate-700/80 p-2 shadow-xl">
                           {previewTab === "form" ? (
                             <div className="flex flex-col gap-1.5">
                               <input
@@ -585,28 +585,31 @@ export default function FestivePopupEditor({ initialSettings }: Props) {
                                 placeholder="Enter Your Email Address"
                                 value={previewEmail}
                                 onChange={(e) => setPreviewEmail(e.target.value)}
-                                className="w-full h-7 rounded-full bg-black/75 backdrop-blur-md border border-white/30 px-3 text-[9px] text-white placeholder:text-slate-300 outline-none focus:border-[#0a7ae6] shadow-lg"
+                                className="w-full h-6.5 rounded-full bg-[#141923]/95 border border-[#0a7ae6]/70 px-2.5 text-[8.5px] text-white placeholder:text-slate-400 outline-none"
                               />
                               <button
                                 type="button"
                                 onClick={() => setPreviewTab("success")}
-                                className="w-full h-7 rounded-full bg-[#0a7ae6] hover:bg-[#0866c2] text-[9px] font-bold uppercase tracking-wider text-white shadow-[0_2px_10px_rgba(10,122,230,0.5)] transition cursor-pointer flex items-center justify-center gap-1"
+                                className="w-full h-6.5 rounded-full bg-[#0a7ae6] hover:bg-[#0866c2] text-[8.5px] font-bold uppercase tracking-wider text-white shadow-md transition cursor-pointer flex items-center justify-center gap-1"
                               >
                                 <span>{settings.buttonText || "UNLOCK MY OFFER"}</span>
                               </button>
                             </div>
                           ) : (
-                            <div className="flex flex-col gap-1 w-full">
-                              <div className="flex items-center justify-center text-[8px] font-bold text-sky-300 uppercase tracking-widest drop-shadow">
-                                <span>Offer Unlocked</span>
-                              </div>
-                              <div className="flex items-center justify-between rounded-full bg-black/80 backdrop-blur-md border border-white/30 px-2.5 py-0.5 shadow-lg">
-                                <span className="font-mono font-bold text-white text-[10px] tracking-wider">
+                            <div className="flex flex-col gap-1 w-full text-center">
+                              <span className="text-[8px] font-bold text-sky-300 uppercase tracking-widest">
+                                Offer Unlocked
+                              </span>
+                              <div className="flex items-center justify-between rounded-lg bg-[#181f2c] border border-slate-700/80 px-2 py-0.5">
+                                <span className="font-mono font-bold text-white text-[9px] tracking-wider">
                                   {settings.discountCode}
                                 </span>
-                                <span className="rounded-full bg-[#0a7ae6] px-2 py-0.5 text-[8px] font-bold uppercase text-white">
+                                <span className="rounded bg-[#0a7ae6] px-1.5 py-0.5 text-[7.5px] font-bold uppercase text-white">
                                   Copy
                                 </span>
+                              </div>
+                              <div className="rounded-full bg-emerald-600 py-0.5 text-[8px] font-bold uppercase text-white text-center">
+                                Shop Now
                               </div>
                             </div>
                           )}

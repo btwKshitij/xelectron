@@ -406,26 +406,26 @@ export default function FestiveOfferPopup() {
                 sizes="760px"
               />
 
-              {/* TRANSPARENT DIRECT OVERLAY (NO ENCLOSING BOX) */}
-              <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-6 w-[90%] max-w-[320px] sm:max-w-[340px] z-20 bg-transparent border-0 p-0 shadow-none">
+              {/* COMPACT FLOATING GLASS CARD OVERLAY */}
+              <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-6 md:right-8 w-[86%] max-w-[260px] sm:max-w-[280px] z-20 rounded-2xl bg-black/85 backdrop-blur-md border border-slate-700/80 p-2.5 sm:p-3 shadow-[0_12px_40px_rgba(0,0,0,0.85)]">
                 {!isSuccess ? (
-                  <form onSubmit={handleSubmit} className="flex flex-col gap-2.5">
+                  <form onSubmit={handleSubmit} className="flex flex-col gap-2">
                     <input
                       type="email"
                       required
                       placeholder="Enter Your Email Address"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full h-10 sm:h-11 rounded-full bg-black/75 backdrop-blur-md border border-white/30 px-5 text-xs sm:text-[13px] text-white placeholder:text-slate-300 focus:border-[#0a7ae6] focus:outline-none focus:ring-2 focus:ring-[#0a7ae6]/50 shadow-xl transition"
+                      className="w-full h-8 sm:h-9 rounded-full bg-[#141923]/95 border border-[#0a7ae6]/70 px-3.5 text-xs text-white placeholder:text-slate-400 focus:border-[#0a7ae6] focus:outline-none shadow-inner"
                     />
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="w-full h-10 sm:h-11 rounded-full bg-[#0a7ae6] hover:bg-[#0866c2] active:scale-[0.98] text-xs sm:text-sm font-bold uppercase tracking-wider text-white shadow-[0_4px_18px_rgba(10,122,230,0.55)] transition disabled:opacity-60 cursor-pointer flex items-center justify-center gap-2"
+                      className="w-full h-8 sm:h-9 rounded-full bg-[#0a7ae6] hover:bg-[#0866c2] active:scale-[0.98] text-xs font-bold uppercase tracking-wider text-white shadow-md transition disabled:opacity-60 cursor-pointer flex items-center justify-center gap-1.5"
                     >
                       {isSubmitting ? (
                         <>
-                          <Loader2 className="size-4 animate-spin text-white" />
+                          <Loader2 className="size-3.5 animate-spin text-white" />
                           <span>Unlocking...</span>
                         </>
                       ) : (
@@ -434,19 +434,19 @@ export default function FestiveOfferPopup() {
                     </button>
                   </form>
                 ) : (
-                  <div className="flex flex-col gap-2 w-full">
-                    <div className="flex items-center justify-center text-[11px] font-bold text-sky-300 uppercase tracking-widest drop-shadow-md">
-                      <span>Festive Offer Unlocked</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-2 rounded-full bg-black/80 backdrop-blur-md border border-white/30 px-4 py-1.5 shadow-xl">
-                      <div className="flex items-center gap-2 font-mono font-bold text-white text-sm sm:text-base tracking-wider">
-                        <Tag className="size-3.5 text-[#0a7ae6]" />
+                  <div className="flex flex-col gap-2 w-full text-center">
+                    <span className="text-[10px] font-bold text-sky-300 uppercase tracking-widest">
+                      Offer Unlocked
+                    </span>
+                    <div className="flex items-center justify-between gap-1.5 rounded-xl bg-[#181f2c] border border-slate-700/80 px-2.5 py-1">
+                      <div className="flex items-center gap-1.5 font-mono font-bold text-white text-xs sm:text-sm tracking-wider">
+                        <Tag className="size-3 text-[#0a7ae6]" />
                         <span>{discountCode}</span>
                       </div>
                       <button
                         type="button"
                         onClick={handleCopyCode}
-                        className="inline-flex items-center gap-1 rounded-full bg-[#0a7ae6] px-3 py-1 text-xs font-bold uppercase text-white hover:bg-[#0866c2] transition active:scale-95 cursor-pointer shadow-sm"
+                        className="inline-flex items-center gap-1 rounded-md bg-[#0a7ae6] px-2.5 py-1 text-[10px] font-bold uppercase text-white hover:bg-[#0866c2] transition active:scale-95 cursor-pointer shadow-sm"
                       >
                         {copied ? (
                           <>
@@ -467,7 +467,7 @@ export default function FestiveOfferPopup() {
                         handleClose();
                         router.push("/shop");
                       }}
-                      className="w-full h-10 rounded-full bg-emerald-600 hover:bg-emerald-700 py-2 text-xs sm:text-sm font-bold uppercase tracking-wide text-white transition active:scale-95 cursor-pointer shadow-[0_4px_16px_rgba(16,185,129,0.45)]"
+                      className="w-full h-8 rounded-full bg-emerald-600 hover:bg-emerald-700 text-xs font-bold uppercase tracking-wide text-white transition active:scale-95 cursor-pointer shadow-md"
                     >
                       Shop Now
                     </button>
