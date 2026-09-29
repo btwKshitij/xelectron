@@ -34,6 +34,7 @@ type Props = {
 export default function FestivePopupEditor({ initialSettings }: Props) {
   const router = useRouter();
   const [settings, setSettings] = useState<FestivePopupSettingsItem>(initialSettings);
+  const [imageAspect, setImageAspect] = useState<number>(1.31);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [previewTab, setPreviewTab] = useState<"form" | "success">("form");
@@ -42,6 +43,17 @@ export default function FestivePopupEditor({ initialSettings }: Props) {
   const [previewCopied, setPreviewCopied] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!settings.imageUrl) return;
+    const img = new window.Image();
+    img.src = settings.imageUrl;
+    img.onload = () => {
+      if (img.naturalWidth && img.naturalHeight) {
+        setImageAspect(img.naturalWidth / img.naturalHeight);
+      }
+    };
+  }, [settings.imageUrl]);
 
   useEffect(() => {
     let mounted = true;
@@ -113,7 +125,10 @@ export default function FestivePopupEditor({ initialSettings }: Props) {
       setSettings(data.settings);
       router.refresh();
       try {
+        sessionStorage.removeItem("xelectron_festive_closed");
+        sessionStorage.removeItem("xelectron_festive_tab_dismissed");
         localStorage.setItem("xelectron:festive-popup-updated", String(Date.now()));
+        localStorage.setItem("xelectron_festive_last_image", settings.imageUrl);
       } catch { /* Storefront also refreshes settings when it regains focus. */ }
       toast.success("Festive popup settings saved and published to storefront!");
     } catch (err: any) {
@@ -123,10 +138,12 @@ export default function FestivePopupEditor({ initialSettings }: Props) {
     }
   };
 
-  const isDefaultPreset =
+  const isDefaultGanesh =
     settings.imageUrl === DEFAULT_BANNER &&
     settings.heading === "BRING HOME MORE JOY" &&
     settings.offerText === "GET 5% OFF";
+
+  const isWideCreative = imageAspect >= 1.2 || isDefaultGanesh;
 
   return (
     <div className="space-y-6 pb-12">
@@ -496,7 +513,7 @@ export default function FestivePopupEditor({ initialSettings }: Props) {
                   </div>
 
                   {previewDevice === "desktop" ? (
-                    isDefaultPreset ? (
+                    isDefaultGanesh ? (
                       /* Desktop Default Preset Artwork */
                       <div className="relative w-full aspect-[770/588]">
                         <Image
@@ -536,6 +553,60 @@ export default function FestivePopupEditor({ initialSettings }: Props) {
                                   {settings.discountCode}
                                 </span>
                                 <span className="rounded bg-[#0a7ae6] px-1.5 py-0.5 text-[9px] font-bold uppercase text-white">
+                                  Copy
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : isWideCreative ? (
+                      /* Desktop Full Creative Banner (Auto-adjusts to image) */
+                      <div
+                        className="relative w-full overflow-hidden bg-slate-950 flex items-center justify-center"
+                        style={{
+                          aspectRatio: `${imageAspect}`,
+                          maxHeight: "380px",
+                        }}
+                      >
+                        <Image
+                          src={settings.imageUrl}
+                          alt="Custom Festive Creative"
+                          fill
+                          className="object-contain"
+                          sizes="580px"
+                        />
+
+                        {/* Floating Overlay Form */}
+                        <div className="absolute bottom-2.5 right-2.5 max-w-[280px] w-full z-20 rounded-xl bg-black/80 backdrop-blur-md border border-slate-700/80 p-2.5 shadow-2xl">
+                          {previewTab === "form" ? (
+                            <div className="flex flex-col gap-1.5">
+                              <input
+                                type="email"
+                                placeholder="Enter Your Email Address"
+                                value={previewEmail}
+                                onChange={(e) => setPreviewEmail(e.target.value)}
+                                className="w-full h-7 rounded-full bg-[#141923]/95 border border-[#0a7ae6]/70 px-2.5 text-[9px] text-white placeholder:text-slate-400 outline-none"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setPreviewTab("success")}
+                                className="w-full h-7 rounded-full bg-[#0a7ae6] hover:bg-[#0866c2] text-[9px] font-bold uppercase tracking-wider text-white shadow-md transition cursor-pointer flex items-center justify-center gap-1"
+                              >
+                                <span>{settings.buttonText || "UNLOCK MY OFFER"}</span>
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="rounded-lg bg-[#0f141d]/98 border border-[#0a7ae6]/60 p-2 text-center shadow-xl">
+                              <div className="flex items-center justify-center gap-1 text-[8px] font-bold text-sky-300 uppercase tracking-widest">
+                                <Sparkles className="size-2 text-[#0a7ae6]" />
+                                <span>Offer Unlocked</span>
+                              </div>
+                              <div className="mt-1 flex items-center justify-between rounded-lg bg-[#181f2c] border border-slate-700/80 px-2 py-0.5">
+                                <span className="font-mono font-bold text-white text-[10px] tracking-wider">
+                                  {settings.discountCode}
+                                </span>
+                                <span className="rounded bg-[#0a7ae6] px-1 py-0.2 text-[8px] font-bold uppercase text-white">
                                   Copy
                                 </span>
                               </div>
@@ -615,15 +686,21 @@ export default function FestivePopupEditor({ initialSettings }: Props) {
                   ) : (
                     /* Mobile Stacked Preview */
                     <div className="flex flex-col bg-[#0c1017] text-white">
-                      <div className="relative h-[150px] w-full overflow-hidden bg-gradient-to-b from-[#080c14] to-[#0c1017]">
+                      <div
+                        className="relative w-full overflow-hidden bg-gradient-to-b from-[#080c14] to-[#0c1017] flex items-center justify-center"
+                        style={{
+                          aspectRatio: `${imageAspect}`,
+                          maxHeight: "180px",
+                        }}
+                      >
                         <Image
                           src={settings.imageUrl}
                           alt="Mobile Banner"
                           fill
-                          className="object-cover object-left"
+                          className="object-contain"
                           sizes="340px"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#0c1017] via-[#0c1017]/40 to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#0c1017] via-[#0c1017]/30 to-transparent pointer-events-none" />
                       </div>
 
                       <div className="p-4 pt-1 text-center space-y-2.5">

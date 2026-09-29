@@ -33,6 +33,7 @@ export default function FestiveOfferPopup() {
   const router = useRouter();
 
   const [settings, setSettings] = useState<FestiveOfferSettings>(DEFAULT_SETTINGS);
+  const [imageAspect, setImageAspect] = useState<number>(1.31);
   const [isOpen, setIsOpen] = useState(false);
   const [hasDismissed, setHasDismissed] = useState(false);
   const [isTabDismissed, setIsTabDismissed] = useState(false);
@@ -43,6 +44,18 @@ export default function FestiveOfferPopup() {
   const [discountCode, setDiscountCode] = useState(DEFAULT_SETTINGS.discountCode);
   const [loadedPath, setLoadedPath] = useState<string | null>(null);
   const isMounted = loadedPath === pathname;
+
+  // Track image natural dimensions to automatically adjust section proportions
+  useEffect(() => {
+    if (!settings.imageUrl) return;
+    const img = new window.Image();
+    img.src = settings.imageUrl;
+    img.onload = () => {
+      if (img.naturalWidth && img.naturalHeight) {
+        setImageAspect(img.naturalWidth / img.naturalHeight);
+      }
+    };
+  }, [settings.imageUrl]);
 
   // Check stored dismissal and unlocked code on mount
   useEffect(() => {
@@ -76,11 +89,30 @@ export default function FestiveOfferPopup() {
       controller = new AbortController();
       const { signal } = controller;
       try {
-        const response = await fetch("/api/festive-offer", { cache: "no-store", signal });
+        const response = await fetch(`/api/festive-offer?_t=${Date.now()}`, {
+          cache: "no-store",
+          headers: { Pragma: "no-cache", "Cache-Control": "no-cache" },
+          signal,
+        });
         if (!response.ok) throw new Error("Failed to load popup settings");
         const data = await response.json();
         if (!data.success || typeof data.settings?.isActive !== "boolean") throw new Error("Invalid popup settings");
         if (signal.aborted) return;
+
+        // Auto-detect if image has been updated by admin, if so reset dismissal
+        try {
+          const lastImage = localStorage.getItem("xelectron_festive_last_image");
+          if (lastImage && data.settings.imageUrl !== lastImage) {
+            sessionStorage.removeItem("xelectron_festive_closed");
+            sessionStorage.removeItem("xelectron_festive_tab_dismissed");
+            setHasDismissed(false);
+            setIsTabDismissed(false);
+          }
+          if (data.settings.imageUrl) {
+            localStorage.setItem("xelectron_festive_last_image", data.settings.imageUrl);
+          }
+        } catch {}
+
         setSettings(data.settings);
         setDiscountCode(data.settings.discountCode);
         if (!data.settings.isActive) setIsOpen(false);
@@ -93,7 +125,16 @@ export default function FestiveOfferPopup() {
       }
     };
     const handleSettingsChange = (event: StorageEvent) => {
-      if (event.key === "xelectron:festive-popup-updated") void refreshSettings();
+      if (event.key === "xelectron:festive-popup-updated") {
+        try {
+          sessionStorage.removeItem("xelectron_festive_closed");
+          sessionStorage.removeItem("xelectron_festive_tab_dismissed");
+        } catch {}
+        setHasDismissed(false);
+        setIsTabDismissed(false);
+        void refreshSettings();
+        setIsOpen(true);
+      }
     };
     void refreshSettings();
     window.addEventListener("focus", refreshSettings);
@@ -193,10 +234,12 @@ export default function FestiveOfferPopup() {
     return null;
   }
 
-  const isDefaultPreset =
+  const isDefaultGanesh =
     settings.imageUrl === "/ganesh-chaturthi-popup-clean.png" &&
     settings.heading === "BRING HOME MORE JOY" &&
     settings.offerText === "GET 5% OFF";
+
+  const isWideCreative = imageAspect >= 1.2 || isDefaultGanesh;
 
   return (
     <>
@@ -258,7 +301,7 @@ export default function FestiveOfferPopup() {
 
         {/* ── DESKTOP & TABLET VIEW ── */}
         <div className="hidden sm:block">
-          {isDefaultPreset ? (
+          {isDefaultGanesh ? (
             /* EXACT PIXEL-PERFECT ARTWORK FOR DEFAULT PRESET */
             <div className="relative w-full aspect-[770/588]">
               <Image
@@ -346,8 +389,86 @@ export default function FestiveOfferPopup() {
                 )}
               </div>
             </div>
+          ) : isWideCreative ? (
+            /* FULL CREATIVE BANNER - AUTO-ADJUSTS PROPORTIONALLY TO IMAGE */
+            <div
+              className="relative w-full overflow-hidden bg-slate-950 flex items-center justify-center"
+              style={{
+                aspectRatio: `${imageAspect}`,
+                maxHeight: "82vh",
+              }}
+            >
+              <Image
+                src={settings.imageUrl}
+                alt={settings.heading || "Festive Offer"}
+                fill
+                priority
+                className="object-contain"
+                sizes="760px"
+              />
+
+              {/* SLEEK FLOATING GLASS INTERACTIVE OVERLAY */}
+              <div className="absolute bottom-3 right-3 lg:bottom-4 lg:right-4 w-[92%] max-w-[340px] z-20 rounded-2xl bg-black/80 backdrop-blur-md border border-slate-700/80 p-3.5 shadow-[0_12px_40px_rgba(0,0,0,0.85)]">
+                {!isSuccess ? (
+                  <form onSubmit={handleSubmit} className="flex flex-col gap-2.5">
+                    <input
+                      type="email"
+                      required
+                      placeholder="Enter Your Email Address"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full h-9.5 rounded-full bg-[#141923]/95 border border-[#0a7ae6]/70 px-4 text-xs text-white placeholder:text-slate-400 focus:border-[#0a7ae6] focus:outline-none shadow-inner"
+                    />
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full h-10 rounded-full bg-[#0a7ae6] hover:bg-[#0866c2] active:scale-[0.98] text-xs font-bold uppercase tracking-wider text-white shadow-md transition disabled:opacity-60 cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="size-3.5 animate-spin text-white" />
+                          <span>Unlocking...</span>
+                        </>
+                      ) : (
+                        <span>{settings.buttonText || "UNLOCK MY OFFER"}</span>
+                      )}
+                    </button>
+                  </form>
+                ) : (
+                  <div className="rounded-xl bg-[#0f141d]/98 border border-[#0a7ae6]/60 p-2.5 text-center shadow-xl">
+                    <div className="flex items-center justify-center gap-1 text-[10px] font-bold text-sky-300 uppercase tracking-widest">
+                      <Sparkles className="size-3 text-[#0a7ae6]" />
+                      <span>Festive Offer Unlocked</span>
+                    </div>
+                    <div className="mt-1.5 flex items-center justify-between gap-1.5 rounded-lg bg-[#181f2c] border border-slate-700/80 px-2.5 py-1">
+                      <div className="flex items-center gap-1 font-mono font-bold text-white text-xs tracking-wider">
+                        <Tag className="size-3 text-[#0a7ae6]" />
+                        <span>{discountCode}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleCopyCode}
+                        className="inline-flex items-center gap-1 rounded bg-[#0a7ae6] px-2 py-0.5 text-[10px] font-bold uppercase text-white hover:bg-[#0866c2]"
+                      >
+                        {copied ? "Copied" : "Copy"}
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleClose();
+                        router.push("/shop");
+                      }}
+                      className="mt-2 w-full rounded-lg bg-emerald-600 hover:bg-emerald-700 py-1.5 text-[11px] font-bold uppercase text-white"
+                    >
+                      Shop Now
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           ) : (
-            /* DYNAMIC SPLIT LAYOUT FOR CUSTOM UPLOADED IMAGE OR CUSTOM HEADINGS */
+            /* DYNAMIC SPLIT LAYOUT FOR PORTRAIT / SQUARE IMAGES */
             <div className="grid grid-cols-12 min-h-[420px] bg-[#0c1017]">
               {/* Left Column: Image Banner */}
               <div className="col-span-5 relative min-h-[420px] bg-gradient-to-br from-slate-900 to-black overflow-hidden border-r border-slate-800/80">
@@ -460,17 +581,23 @@ export default function FestiveOfferPopup() {
 
         {/* ── MOBILE RESPONSIVE VIEW ── */}
         <div className="sm:hidden flex flex-col bg-[#0c1017] text-white">
-          {/* Header Visual */}
-          <div className="relative h-[210px] w-full overflow-hidden bg-gradient-to-b from-[#080c14] to-[#0c1017]">
+          {/* Header Visual - automatically proportional */}
+          <div
+            className="relative w-full overflow-hidden bg-gradient-to-b from-[#080c14] to-[#0c1017] flex items-center justify-center"
+            style={{
+              aspectRatio: `${imageAspect}`,
+              maxHeight: "45vh",
+            }}
+          >
             <Image
               src={settings.imageUrl}
               alt={settings.heading || "Special Offer"}
               fill
               priority
-              className="object-cover object-left"
+              className="object-contain"
               sizes="100vw"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0c1017] via-[#0c1017]/40 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0c1017] via-[#0c1017]/30 to-transparent pointer-events-none" />
           </div>
 
           {/* Offer Details & Form Content */}

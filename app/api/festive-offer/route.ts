@@ -7,19 +7,29 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const settings = await getFestivePopupSettings();
-    return NextResponse.json({
-      success: true,
-      settings: {
-        isActive: settings.isActive,
-        imageUrl: settings.imageUrl,
-        badgeTitle: settings.badgeTitle,
-        heading: settings.heading,
-        offerText: settings.offerText,
-        subtext: settings.subtext,
-        buttonText: settings.buttonText,
-        discountCode: settings.discountCode,
+    return NextResponse.json(
+      {
+        success: true,
+        settings: {
+          isActive: settings.isActive,
+          imageUrl: settings.imageUrl,
+          badgeTitle: settings.badgeTitle,
+          heading: settings.heading,
+          offerText: settings.offerText,
+          subtext: settings.subtext,
+          buttonText: settings.buttonText,
+          discountCode: settings.discountCode,
+          updatedAt: settings.updatedAt,
+        },
       },
-    }, { headers: { "Cache-Control": "no-store" } });
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      }
+    );
   } catch (err: any) {
     console.error("Failed to load festive popup settings for storefront:", err);
     return NextResponse.json({
