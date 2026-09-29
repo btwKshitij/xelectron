@@ -9,6 +9,10 @@ import {
   CheckCircle2,
   FileText,
   Search,
+  Loader2,
+  AlertCircle,
+  Calendar,
+  Award,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -30,40 +34,39 @@ export default function WarrantyRegistrationPage() {
 
   // Check Status State
   const [searchSerial, setSearchSerial] = useState("");
-  const [searchResult, setSearchResult] = useState<{ product: string; status: string; serial: string; validUntil: string; coverage: string } | null>(null);
+  const [isChecking, setIsChecking] = useState(false);
+  const [searchNotFound, setSearchNotFound] = useState<string | null>(null);
+  const [searchResult, setSearchResult] = useState<{
+    product: string;
+    status: string;
+    serial: string;
+    invoice?: string;
+    validUntil: string;
+    coverage: string;
+    customerName?: string;
+  } | null>(null);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!regData.name || !regData.serialNumber || !regData.invoiceNumber) {
+    if (!regData.name || !regData.email || !regData.serialNumber || !regData.invoiceNumber) {
       toast.error("Please fill in all required fields.");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const message = `Warranty Registration Details:
-Product Model: ${regData.productModel || "N/A"}
-Serial Number: ${regData.serialNumber}
-Invoice Number: ${regData.invoiceNumber}
-Purchase Date: ${regData.purchaseDate || "N/A"}`;
-
-      const response = await fetch("/api/contact", {
+      const response = await fetch("/api/warranty", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: regData.name,
-          email: regData.email,
-          phone: regData.phone,
-          department: "Customer Help Desk (Warranty Registration)",
-          targetEmail: "customercare@xelectron.com",
-          message,
-        }),
+        body: JSON.stringify(regData),
       });
 
       const result = await response.json();
-      if (!response.ok || !result.success) throw new Error(result.error || "Unable to register. Please try again.");
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "Unable to register. Please try again.");
+      }
       setRegSuccess(true);
-      toast.success("Warranty request received for review.");
+      toast.success("Warranty registered successfully!");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unable to submit. Please try again.");
     } finally {
@@ -71,15 +74,37 @@ Purchase Date: ${regData.purchaseDate || "N/A"}`;
     }
   };
 
-  const handleCheckStatus = (e: React.FormEvent) => {
+  const handleCheckStatus = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchSerial.trim()) {
+    const query = searchSerial.trim();
+    if (!query) {
       toast.error("Enter a valid Serial Number or Invoice Number.");
       return;
     }
 
+    setIsChecking(true);
     setSearchResult(null);
-    toast.info("Contact customercare@xelectron.com with your serial or invoice number to confirm warranty status.");
+    setSearchNotFound(null);
+
+    try {
+      const res = await fetch(`/api/warranty?query=${encodeURIComponent(query)}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Could not check warranty status.");
+      }
+
+      if (data.found && data.data) {
+        setSearchResult(data.data);
+        toast.success("Active warranty record found!");
+      } else {
+        setSearchNotFound(data.message || `No active warranty record found for "${query}".`);
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error checking warranty status.");
+    } finally {
+      setIsChecking(false);
+    }
   };
 
   return (
@@ -289,31 +314,113 @@ Purchase Date: ${regData.purchaseDate || "N/A"}`;
                 <input
                   type="text"
                   required
-                  placeholder="Enter Serial Number (e.g. XE-9908123)..."
+                  placeholder="Enter Serial Number or Invoice (e.g. XE-9908123)..."
                   value={searchSerial}
                   onChange={(e) => setSearchSerial(e.target.value)}
-                  className="flex-1 rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-3 text-base sm:text-sm outline-none focus:border-[#0a7ae6] focus:bg-white focus:ring-2 focus:ring-[#0a7ae6]/10 transition uppercase font-mono"
+                  className="flex-1 rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-base sm:text-sm outline-none focus:border-[#0a7ae6] focus:bg-white focus:ring-2 focus:ring-[#0a7ae6]/10 transition uppercase font-mono"
                 />
                 <button
                   type="submit"
-                  className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-6 py-3 text-xs font-bold text-white hover:bg-[#0a7ae6] transition cursor-pointer"
+                  disabled={isChecking}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-6 py-3 text-xs font-bold text-white hover:bg-[#0a7ae6] transition cursor-pointer disabled:opacity-60 shadow-sm"
                 >
-                  <Search className="size-4" /> Search
+                  {isChecking ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin" />
+                      <span>Checking...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Search className="size-4" />
+                      <span>Check Status</span>
+                    </>
+                  )}
                 </button>
               </form>
 
+              {/* SEARCH RESULTS */}
               {searchResult && (
-                <div className="rounded-2xl border border-blue-100 bg-blue-50/50 p-6 space-y-3 animate-in fade-in">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-900">{searchResult.product}</span>
-                    <span className="bg-emerald-600 text-white text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full">
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-6 space-y-4 animate-in fade-in">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-emerald-100 pb-3">
+                    <div className="flex items-center gap-2">
+                      <Award className="size-5 text-emerald-600" />
+                      <h3 className="text-base font-bold text-slate-900">{searchResult.product}</h3>
+                    </div>
+                    <span className="bg-emerald-600 text-white text-[11px] font-extrabold uppercase px-3 py-1 rounded-full shadow-sm">
                       {searchResult.status}
                     </span>
                   </div>
-                  <div className="text-xs text-slate-600 space-y-1 pt-2 border-t border-blue-100">
-                    <p><span className="font-semibold text-slate-800">Serial Number:</span> <span className="font-mono">{searchResult.serial}</span></p>
-                    <p><span className="font-semibold text-slate-800">Valid Until:</span> {searchResult.validUntil}</p>
-                    <p><span className="font-semibold text-slate-800">Coverage:</span> {searchResult.coverage}</p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-700">
+                    <div className="rounded-xl bg-white/80 border border-emerald-100 p-3">
+                      <span className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Serial Number</span>
+                      <span className="font-mono font-bold text-sm text-slate-900">{searchResult.serial}</span>
+                    </div>
+                    {searchResult.invoice && (
+                      <div className="rounded-xl bg-white/80 border border-emerald-100 p-3">
+                        <span className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Invoice Number</span>
+                        <span className="font-mono font-bold text-sm text-slate-900">{searchResult.invoice}</span>
+                      </div>
+                    )}
+                    <div className="rounded-xl bg-white/80 border border-emerald-100 p-3">
+                      <span className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Coverage Validity</span>
+                      <span className="font-semibold text-slate-900 flex items-center gap-1.5 mt-0.5">
+                        <Calendar className="size-3.5 text-emerald-600" /> Valid Until: {searchResult.validUntil}
+                      </span>
+                    </div>
+                    <div className="rounded-xl bg-white/80 border border-emerald-100 p-3">
+                      <span className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Coverage Type</span>
+                      <span className="font-semibold text-slate-900 mt-0.5 block">{searchResult.coverage}</span>
+                    </div>
+                  </div>
+
+                  {searchResult.customerName && (
+                    <p className="text-xs text-slate-600 italic">
+                      Registered to: <span className="font-semibold text-slate-800">{searchResult.customerName}</span>
+                    </p>
+                  )}
+
+                  <div className="pt-2 flex flex-wrap gap-3">
+                    <Link
+                      href="/repair-replacement"
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2 transition"
+                    >
+                      File a Replacement / Repair Claim
+                    </Link>
+                    <Link
+                      href="/contact"
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold px-4 py-2 transition"
+                    >
+                      Contact Customer Support
+                    </Link>
+                  </div>
+                </div>
+              )}
+
+              {/* NOT FOUND STATE */}
+              {searchNotFound && (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-5 space-y-3 animate-in fade-in">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="size-5 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="text-sm font-bold text-amber-900">Warranty Record Not Found</h4>
+                      <p className="text-xs text-amber-800 mt-1 leading-relaxed">{searchNotFound}</p>
+                    </div>
+                  </div>
+                  <div className="pt-2 flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("register")}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-4 py-2 transition cursor-pointer shadow-sm"
+                    >
+                      Register This Device Now
+                    </button>
+                    <Link
+                      href="/contact"
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-white hover:bg-amber-100/50 text-amber-900 border border-amber-300 text-xs font-bold px-4 py-2 transition"
+                    >
+                      Contact Support
+                    </Link>
                   </div>
                 </div>
               )}
