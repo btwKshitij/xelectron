@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { verifySession } from "@/lib/server/dal/auth";
 import {
   getBrandMarqueeItem,
@@ -24,7 +25,13 @@ export async function GET(
     if (!item) {
       return NextResponse.json({ error: "Item not found" }, { status: 404 });
     }
-    return NextResponse.json(item);
+    return NextResponse.json(item, {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
+    });
   } catch (error: any) {
     return NextResponse.json(
       { error: error?.message || "Failed to fetch item" },
@@ -48,7 +55,20 @@ export async function POST(
     const body = await request.json();
     if (body?._method === "DELETE") {
       await deleteBrandMarqueeItem(id);
-      return NextResponse.json({ success: true });
+      try {
+        revalidatePath("/", "layout");
+        revalidatePath("/", "page");
+        revalidatePath("/dashboard/brand-marquee", "page");
+        revalidatePath("/dashboard/brand-marquee", "layout");
+        revalidatePath("/api/admin/brand-marquee");
+      } catch {}
+      return NextResponse.json({ success: true }, {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      });
     }
 
     const updateData: any = {};
@@ -61,7 +81,21 @@ export async function POST(
     if (body.isActive !== undefined) updateData.isActive = Boolean(body.isActive);
 
     const updated = await updateBrandMarqueeItem(id, updateData);
-    return NextResponse.json(updated);
+    try {
+      revalidatePath("/", "layout");
+      revalidatePath("/", "page");
+      revalidatePath("/dashboard/brand-marquee", "page");
+      revalidatePath("/dashboard/brand-marquee", "layout");
+      revalidatePath("/api/admin/brand-marquee");
+    } catch {}
+
+    return NextResponse.json(updated, {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
+    });
   } catch (error: any) {
     console.error("Failed to process brand marquee item:", error);
     return NextResponse.json(

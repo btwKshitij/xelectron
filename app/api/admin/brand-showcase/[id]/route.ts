@@ -25,7 +25,13 @@ export async function GET(
     if (!item) {
       return NextResponse.json({ error: "Item not found" }, { status: 404 });
     }
-    return NextResponse.json(item);
+    return NextResponse.json(item, {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
+    });
   } catch (error: any) {
     return NextResponse.json(
       { error: error?.message || "Failed to fetch item" },
@@ -64,8 +70,20 @@ export async function POST(
     if (body.isActive !== undefined) updateData.isActive = Boolean(body.isActive);
 
     const updated = await updateBrandShowcaseItem(id, updateData);
-    revalidatePath("/");
-    return NextResponse.json(updated);
+    try {
+      revalidatePath("/", "layout");
+      revalidatePath("/", "page");
+      revalidatePath("/dashboard/brand-showcase", "page");
+      revalidatePath("/dashboard/brand-showcase", "layout");
+      revalidatePath("/api/admin/brand-showcase");
+    } catch {}
+    return NextResponse.json(updated, {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
+    });
   } catch (error: any) {
     console.error("Failed to process brand showcase item:", error);
     return NextResponse.json(

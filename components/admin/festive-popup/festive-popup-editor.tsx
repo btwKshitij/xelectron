@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Sparkles,
   Upload,
@@ -31,6 +32,7 @@ type Props = {
 };
 
 export default function FestivePopupEditor({ initialSettings }: Props) {
+  const router = useRouter();
   const [settings, setSettings] = useState<FestivePopupSettingsItem>(initialSettings);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -40,6 +42,31 @@ export default function FestivePopupEditor({ initialSettings }: Props) {
   const [previewCopied, setPreviewCopied] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    const syncLiveSettings = async () => {
+      try {
+        const res = await fetch(`/api/admin/festive-popup?_t=${Date.now()}`, {
+          cache: "no-store",
+          headers: { Pragma: "no-cache", "Cache-Control": "no-cache" },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (mounted && data.success && data.settings) {
+            setSettings(data.settings);
+          }
+        }
+      } catch {}
+    };
+
+    syncLiveSettings();
+    window.addEventListener("focus", syncLiveSettings);
+    return () => {
+      mounted = false;
+      window.removeEventListener("focus", syncLiveSettings);
+    };
+  }, []);
 
   const handleImageUpload = async (file: File) => {
     try {
@@ -66,6 +93,7 @@ export default function FestivePopupEditor({ initialSettings }: Props) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          _method: "PUT",
           isActive: settings.isActive,
           imageUrl: settings.imageUrl,
           badgeTitle: settings.badgeTitle,
@@ -83,6 +111,7 @@ export default function FestivePopupEditor({ initialSettings }: Props) {
       }
 
       setSettings(data.settings);
+      router.refresh();
       try {
         localStorage.setItem("xelectron:festive-popup-updated", String(Date.now()));
       } catch { /* Storefront also refreshes settings when it regains focus. */ }

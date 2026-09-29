@@ -16,7 +16,16 @@ export async function GET() {
 
   try {
     const settings = await getFestivePopupSettings();
-    return NextResponse.json({ success: true, settings });
+    return NextResponse.json(
+      { success: true, settings },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      }
+    );
   } catch (error: any) {
     console.error("Failed to fetch festive popup settings:", error);
     return NextResponse.json(
@@ -37,13 +46,26 @@ export async function PUT(request: Request) {
     const settings = await updateFestivePopupSettings(body);
 
     try {
-      revalidatePath("/");
-      revalidatePath("/dashboard/festive-popup");
+      revalidatePath("/", "layout");
+      revalidatePath("/", "page");
+      revalidatePath("/dashboard/festive-popup", "page");
+      revalidatePath("/dashboard/festive-popup", "layout");
+      revalidatePath("/api/admin/festive-popup");
+      revalidatePath("/api/festive-offer");
     } catch (revalErr) {
       console.warn("Could not revalidate paths:", revalErr);
     }
 
-    return NextResponse.json({ success: true, settings });
+    return NextResponse.json(
+      { success: true, settings },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      }
+    );
   } catch (error: any) {
     console.error("Failed to update festive popup settings:", error);
     return NextResponse.json(

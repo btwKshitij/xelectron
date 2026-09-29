@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { AppSidebar } from "@/components/admin/navigation/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,6 +15,7 @@ export const metadata: Metadata = {
 };
 
 export default async function BrandShowcasePage() {
+  await headers();
   const [items, categories] = await Promise.all([
     listBrandShowcaseItems(false),
     categoriesController.listCategories().catch(() => []),
@@ -25,12 +27,14 @@ export default async function BrandShowcasePage() {
     slug: c.slug,
   }));
 
+  const dynamicKey = items.map((i: any) => `${i.id}_${i.isActive}_${i.sortOrder}`).join("_") || Date.now();
+
   return (
     <TooltipProvider>
       <SidebarProvider className="min-h-svh">
         <AppSidebar />
         <SidebarInset>
-          <BrandShowcaseManager initialItems={items} categories={mappedCategories} />
+          <BrandShowcaseManager key={dynamicKey} initialItems={items} categories={mappedCategories} />
         </SidebarInset>
       </SidebarProvider>
     </TooltipProvider>

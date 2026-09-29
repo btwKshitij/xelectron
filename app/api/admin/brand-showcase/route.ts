@@ -17,7 +17,13 @@ export async function GET() {
 
   try {
     const items = await listBrandShowcaseItems(false);
-    return NextResponse.json(items);
+    return NextResponse.json(items, {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
+    });
   } catch (error: any) {
     console.error("Failed to fetch admin brand showcase items:", error);
     return NextResponse.json(
@@ -52,8 +58,22 @@ export async function POST(request: Request) {
       isActive: body.isActive !== undefined ? Boolean(body.isActive) : true,
     });
 
-    revalidatePath("/");
-    return NextResponse.json(item, { status: 201 });
+    try {
+      revalidatePath("/", "layout");
+      revalidatePath("/", "page");
+      revalidatePath("/dashboard/brand-showcase", "page");
+      revalidatePath("/dashboard/brand-showcase", "layout");
+      revalidatePath("/api/admin/brand-showcase");
+    } catch {}
+
+    return NextResponse.json(item, {
+      status: 201,
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
+    });
   } catch (error: any) {
     console.error("Failed to create brand showcase item:", error);
     return NextResponse.json(

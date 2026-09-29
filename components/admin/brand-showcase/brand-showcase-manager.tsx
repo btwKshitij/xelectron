@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Plus,
   Trash2,
@@ -42,6 +43,7 @@ export function BrandShowcaseManager({
   initialItems: BrandShowcaseItemDTO[];
   categories?: CategoryOption[];
 }) {
+  const router = useRouter();
   const [items, setItems] = useState<BrandShowcaseItemDTO[]>(initialItems);
   const [categories, setCategories] = useState<CategoryOption[]>(propCategories);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -72,17 +74,31 @@ export function BrandShowcaseManager({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (initialItems && initialItems.length > 0) {
-      setItems(initialItems);
-    } else {
-      fetch("/api/admin/brand-showcase")
-        .then((res) => res.json())
-        .then((data) => {
-          if (Array.isArray(data)) setItems(data);
-        })
-        .catch(() => {});
-    }
+    let mounted = true;
+    const syncShowcase = async () => {
+      try {
+        const res = await fetch(`/api/admin/brand-showcase?_t=${Date.now()}`, {
+          cache: "no-store",
+          headers: { Pragma: "no-cache", "Cache-Control": "no-cache" },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (mounted && Array.isArray(data)) {
+            setItems(data);
+          }
+        }
+      } catch {}
+    };
 
+    syncShowcase();
+    window.addEventListener("focus", syncShowcase);
+    return () => {
+      mounted = false;
+      window.removeEventListener("focus", syncShowcase);
+    };
+  }, []);
+
+  useEffect(() => {
     if (propCategories && propCategories.length > 0) {
       setCategories(propCategories);
     } else {
@@ -101,7 +117,7 @@ export function BrandShowcaseManager({
         })
         .catch(() => {});
     }
-  }, [initialItems, propCategories]);
+  }, [propCategories]);
 
   const syncLinkTypeFromUrl = (url: string) => {
     if (!url) {
@@ -275,6 +291,7 @@ export function BrandShowcaseManager({
         body: JSON.stringify({ _method: "PATCH", isActive: nextActive }),
       });
       if (!res.ok) throw new Error("Failed to update status");
+      router.refresh();
       toast.success(nextActive ? "Item enabled" : "Item disabled");
     } catch (err: any) {
       toast.error(err.message || "Failed to update status");
@@ -306,6 +323,7 @@ export function BrandShowcaseManager({
           body: JSON.stringify({ _method: "PATCH", sortOrder: updated[targetIndex].sortOrder }),
         }),
       ]);
+      router.refresh();
     } catch {
       // background sync
     }
@@ -321,6 +339,7 @@ export function BrandShowcaseManager({
       });
       if (!res.ok) throw new Error("Failed to delete item");
       setItems((prev) => prev.filter((i) => i.id !== deleteTargetId));
+      router.refresh();
       toast.success("Item removed");
       setDeleteTargetId(null);
     } catch (err: any) {

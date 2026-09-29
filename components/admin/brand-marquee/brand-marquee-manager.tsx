@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import {
   Plus,
   Trash2,
@@ -26,6 +27,7 @@ export function BrandMarqueeManager({
 }: {
   initialItems?: BrandMarqueeItemDTO[];
 }) {
+  const router = useRouter();
   const [items, setItems] = useState<BrandMarqueeItemDTO[]>(initialItems);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<BrandMarqueeItemDTO | null>(null);
@@ -45,17 +47,29 @@ export function BrandMarqueeManager({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (initialItems && initialItems.length > 0) {
-      setItems(initialItems);
-    } else {
-      fetch("/api/admin/brand-marquee")
-        .then((res) => res.json())
-        .then((data) => {
-          if (Array.isArray(data)) setItems(data);
-        })
-        .catch(() => {});
-    }
-  }, [initialItems]);
+    let mounted = true;
+    const syncMarquee = async () => {
+      try {
+        const res = await fetch(`/api/admin/brand-marquee?_t=${Date.now()}`, {
+          cache: "no-store",
+          headers: { Pragma: "no-cache", "Cache-Control": "no-cache" },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (mounted && Array.isArray(data)) {
+            setItems(data);
+          }
+        }
+      } catch {}
+    };
+
+    syncMarquee();
+    window.addEventListener("focus", syncMarquee);
+    return () => {
+      mounted = false;
+      window.removeEventListener("focus", syncMarquee);
+    };
+  }, []);
 
   const handleOpenAdd = () => {
     setEditingItem(null);
@@ -161,6 +175,7 @@ export function BrandMarqueeManager({
         body: JSON.stringify({ _method: "PATCH", isActive: newStatus }),
       });
       if (!res.ok) throw new Error("Failed to update status");
+      router.refresh();
       toast.success(`${item.name} is now ${newStatus ? "Visible" : "Hidden"}`);
     } catch {
       setItems((prev) =>
@@ -180,6 +195,7 @@ export function BrandMarqueeManager({
       });
       if (!res.ok) throw new Error("Failed to delete brand");
       setItems((prev) => prev.filter((i) => i.id !== id));
+      router.refresh();
       toast.success("Brand deleted successfully");
       setDeleteTargetId(null);
     } catch (err: any) {

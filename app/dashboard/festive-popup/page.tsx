@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { AppSidebar } from "@/components/admin/navigation/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,6 +14,7 @@ export const metadata: Metadata = {
 };
 
 export default async function FestivePopupPage() {
+  await headers();
   const settings = await getFestivePopupSettings();
 
   return (
@@ -21,7 +23,10 @@ export default async function FestivePopupPage() {
         <AppSidebar />
         <SidebarInset>
           <div className="flex-1 p-6 lg:p-8 max-w-7xl">
-            <FestivePopupEditor initialSettings={settings} />
+            <FestivePopupEditor
+              key={`${settings.isActive}_${settings.updatedAt ? new Date(settings.updatedAt).getTime() : Date.now()}`}
+              initialSettings={settings}
+            />
           </div>
         </SidebarInset>
       </SidebarProvider>
