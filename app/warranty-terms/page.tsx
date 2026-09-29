@@ -162,7 +162,7 @@ export default function WarrantyTermsPage() {
               {/* Quick Actions */}
               <div className="flex flex-wrap items-center gap-3">
                 <Link
-                  href="/warranty"
+                  href="/warranty-registration"
                   className="inline-flex items-center gap-2 rounded-xl bg-[#0a7ae6] px-5 py-3 text-xs font-semibold uppercase tracking-wider text-white shadow-sm transition hover:bg-[#0868c4] active:scale-95"
                 >
                   Register Warranty <ArrowRight className="size-3.5" />

@@ -916,8 +916,8 @@ export default function Navbar() {
                       </h4>
                       <ul className="space-y-0.5">
                         {[
-                          { name: "Check Coverage", href: "/warranty" },
-                          { name: "Register Product", href: "/warranty" },
+                          { name: "Check Coverage", href: "/warranty-registration" },
+                          { name: "Register Product", href: "/warranty-registration" },
                           { name: "Terms & Policy", href: "/terms-policy" },
                         ].map((item) => (
                           <li key={item.name}>
@@ -944,7 +944,7 @@ export default function Navbar() {
                       <div className="space-y-0.5">
                         {[
                           { name: "Free Pickup & Drop Service", href: "/pickup-drop-service", badge: "FREE" },
-                          { name: "Service Status Tracking", href: "/warranty" },
+                          { name: "Service Status Tracking", href: "/warranty-registration" },
                           { name: "Replacement Claims", href: "/repair-replacement" },
                           { name: "Authorized Service Centers", href: "/service-centers" },
                         ].map((srv) => (
@@ -1166,8 +1166,8 @@ export default function Navbar() {
                       : group.label === "WARRANTY"
                         ? [
                           { key: "pickup-drop-service", label: "Free Pickup & Drop Service", href: "/pickup-drop-service" },
-                          { key: "check-coverage", label: "Check Coverage", href: "/warranty" },
-                          { key: "register-product", label: "Register Product", href: "/warranty" },
+                          { key: "check-coverage", label: "Check Coverage", href: "/warranty-registration" },
+                          { key: "register-product", label: "Register Product", href: "/warranty-registration" },
                           { key: "terms-policy", label: "Terms & Policy", href: "/terms-policy" },
                           { key: "service-centers", label: "Authorized Service Centers", href: "/service-centers" },
                           { key: "replacement-claims", label: "Replacement Claims", href: "/repair-replacement" },

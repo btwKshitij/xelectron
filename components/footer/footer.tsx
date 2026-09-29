@@ -20,7 +20,7 @@ export const customerServiceLinks: FooterLink[] = [
   { label: "Troubleshooting", href: "/troubleshooting" },
   { label: "Repair & Replacement", href: "/repair-replacement" },
   { label: "Order Tracking", href: "/orders" },
-  { label: "Warranty Registration", href: "/warranty" },
+  { label: "Warranty Registration", href: "/warranty-registration" },
   { label: "Warranty Terms & Conditions", href: "/warranty-terms" },
   { label: "Contact Us", href: "/contact" },
   { label: "Bulk Orders & Corporate", href: "/bulk-order" },
