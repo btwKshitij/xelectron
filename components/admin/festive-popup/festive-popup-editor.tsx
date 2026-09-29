@@ -544,8 +544,7 @@ export default function FestivePopupEditor({ initialSettings }: Props) {
                             </div>
                           ) : (
                             <div className="rounded-xl bg-[#0f141d]/98 border border-[#0a7ae6]/60 p-2 text-center shadow-xl">
-                              <div className="flex items-center justify-center gap-1 text-[9px] font-bold text-sky-300 uppercase tracking-widest">
-                                <Sparkles className="size-2.5 text-[#0a7ae6]" />
+                              <div className="flex items-center justify-center text-[9px] font-bold text-sky-300 uppercase tracking-widest">
                                 <span>Offer Unlocked</span>
                               </div>
                               <div className="mt-1 flex items-center justify-between rounded-lg bg-[#181f2c] border border-slate-700/80 px-2 py-1">
@@ -577,8 +576,8 @@ export default function FestivePopupEditor({ initialSettings }: Props) {
                           sizes="580px"
                         />
 
-                        {/* Floating Overlay Form */}
-                        <div className="absolute bottom-2.5 right-2.5 max-w-[280px] w-full z-20 rounded-xl bg-black/80 backdrop-blur-md border border-slate-700/80 p-2.5 shadow-2xl">
+                        {/* Transparent Direct Overlay (No enclosing box) */}
+                        <div className="absolute bottom-2.5 right-2.5 max-w-[280px] w-full z-20 bg-transparent border-0 p-0 shadow-none">
                           {previewTab === "form" ? (
                             <div className="flex flex-col gap-1.5">
                               <input
@@ -586,27 +585,26 @@ export default function FestivePopupEditor({ initialSettings }: Props) {
                                 placeholder="Enter Your Email Address"
                                 value={previewEmail}
                                 onChange={(e) => setPreviewEmail(e.target.value)}
-                                className="w-full h-7 rounded-full bg-[#141923]/95 border border-[#0a7ae6]/70 px-2.5 text-[9px] text-white placeholder:text-slate-400 outline-none"
+                                className="w-full h-7 rounded-full bg-black/75 backdrop-blur-md border border-white/30 px-3 text-[9px] text-white placeholder:text-slate-300 outline-none focus:border-[#0a7ae6] shadow-lg"
                               />
                               <button
                                 type="button"
                                 onClick={() => setPreviewTab("success")}
-                                className="w-full h-7 rounded-full bg-[#0a7ae6] hover:bg-[#0866c2] text-[9px] font-bold uppercase tracking-wider text-white shadow-md transition cursor-pointer flex items-center justify-center gap-1"
+                                className="w-full h-7 rounded-full bg-[#0a7ae6] hover:bg-[#0866c2] text-[9px] font-bold uppercase tracking-wider text-white shadow-[0_2px_10px_rgba(10,122,230,0.5)] transition cursor-pointer flex items-center justify-center gap-1"
                               >
                                 <span>{settings.buttonText || "UNLOCK MY OFFER"}</span>
                               </button>
                             </div>
                           ) : (
-                            <div className="rounded-lg bg-[#0f141d]/98 border border-[#0a7ae6]/60 p-2 text-center shadow-xl">
-                              <div className="flex items-center justify-center gap-1 text-[8px] font-bold text-sky-300 uppercase tracking-widest">
-                                <Sparkles className="size-2 text-[#0a7ae6]" />
+                            <div className="flex flex-col gap-1 w-full">
+                              <div className="flex items-center justify-center text-[8px] font-bold text-sky-300 uppercase tracking-widest drop-shadow">
                                 <span>Offer Unlocked</span>
                               </div>
-                              <div className="mt-1 flex items-center justify-between rounded-lg bg-[#181f2c] border border-slate-700/80 px-2 py-0.5">
+                              <div className="flex items-center justify-between rounded-full bg-black/80 backdrop-blur-md border border-white/30 px-2.5 py-0.5 shadow-lg">
                                 <span className="font-mono font-bold text-white text-[10px] tracking-wider">
                                   {settings.discountCode}
                                 </span>
-                                <span className="rounded bg-[#0a7ae6] px-1 py-0.2 text-[8px] font-bold uppercase text-white">
+                                <span className="rounded-full bg-[#0a7ae6] px-2 py-0.5 text-[8px] font-bold uppercase text-white">
                                   Copy
                                 </span>
                               </div>
@@ -668,7 +666,7 @@ export default function FestivePopupEditor({ initialSettings }: Props) {
                           ) : (
                             <div className="rounded-xl bg-[#0f141d] border border-[#0a7ae6]/60 p-3 text-center space-y-1.5 shadow-xl">
                               <p className="text-[10px] font-bold text-sky-300 uppercase tracking-wider">
-                                ✨ Offer Unlocked!
+                                Offer Unlocked!
                               </p>
                               <div className="flex items-center justify-between rounded-lg bg-[#181f2c] border border-slate-700/80 px-2.5 py-1">
                                 <span className="font-mono font-bold text-white text-xs tracking-wider">

@@ -346,8 +346,7 @@ export default function FestiveOfferPopup() {
                 ) : (
                   /* SUCCESS VOUCHER CARD */
                   <div className="rounded-2xl bg-[#0f141d]/98 border border-[#0a7ae6]/60 p-3.5 text-center shadow-2xl backdrop-blur-md animate-in zoom-in-95 duration-200">
-                    <div className="flex items-center justify-center gap-1.5 text-[11px] lg:text-xs font-bold text-sky-300 uppercase tracking-widest">
-                      <Sparkles className="size-3.5 text-[#0a7ae6]" />
+                    <div className="flex items-center justify-center text-[11px] lg:text-xs font-bold text-sky-300 uppercase tracking-widest">
                       <span>Festive Offer Unlocked</span>
                     </div>
 
@@ -407,8 +406,8 @@ export default function FestiveOfferPopup() {
                 sizes="760px"
               />
 
-              {/* SLEEK FLOATING GLASS INTERACTIVE OVERLAY */}
-              <div className="absolute bottom-3 right-3 lg:bottom-4 lg:right-4 w-[92%] max-w-[340px] z-20 rounded-2xl bg-black/80 backdrop-blur-md border border-slate-700/80 p-3.5 shadow-[0_12px_40px_rgba(0,0,0,0.85)]">
+              {/* TRANSPARENT DIRECT OVERLAY (NO ENCLOSING BOX) */}
+              <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-6 w-[90%] max-w-[320px] sm:max-w-[340px] z-20 bg-transparent border-0 p-0 shadow-none">
                 {!isSuccess ? (
                   <form onSubmit={handleSubmit} className="flex flex-col gap-2.5">
                     <input
@@ -417,16 +416,16 @@ export default function FestiveOfferPopup() {
                       placeholder="Enter Your Email Address"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full h-9.5 rounded-full bg-[#141923]/95 border border-[#0a7ae6]/70 px-4 text-xs text-white placeholder:text-slate-400 focus:border-[#0a7ae6] focus:outline-none shadow-inner"
+                      className="w-full h-10 sm:h-11 rounded-full bg-black/75 backdrop-blur-md border border-white/30 px-5 text-xs sm:text-[13px] text-white placeholder:text-slate-300 focus:border-[#0a7ae6] focus:outline-none focus:ring-2 focus:ring-[#0a7ae6]/50 shadow-xl transition"
                     />
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="w-full h-10 rounded-full bg-[#0a7ae6] hover:bg-[#0866c2] active:scale-[0.98] text-xs font-bold uppercase tracking-wider text-white shadow-md transition disabled:opacity-60 cursor-pointer flex items-center justify-center gap-1.5"
+                      className="w-full h-10 sm:h-11 rounded-full bg-[#0a7ae6] hover:bg-[#0866c2] active:scale-[0.98] text-xs sm:text-sm font-bold uppercase tracking-wider text-white shadow-[0_4px_18px_rgba(10,122,230,0.55)] transition disabled:opacity-60 cursor-pointer flex items-center justify-center gap-2"
                     >
                       {isSubmitting ? (
                         <>
-                          <Loader2 className="size-3.5 animate-spin text-white" />
+                          <Loader2 className="size-4 animate-spin text-white" />
                           <span>Unlocking...</span>
                         </>
                       ) : (
@@ -435,22 +434,31 @@ export default function FestiveOfferPopup() {
                     </button>
                   </form>
                 ) : (
-                  <div className="rounded-xl bg-[#0f141d]/98 border border-[#0a7ae6]/60 p-2.5 text-center shadow-xl">
-                    <div className="flex items-center justify-center gap-1 text-[10px] font-bold text-sky-300 uppercase tracking-widest">
-                      <Sparkles className="size-3 text-[#0a7ae6]" />
+                  <div className="flex flex-col gap-2 w-full">
+                    <div className="flex items-center justify-center text-[11px] font-bold text-sky-300 uppercase tracking-widest drop-shadow-md">
                       <span>Festive Offer Unlocked</span>
                     </div>
-                    <div className="mt-1.5 flex items-center justify-between gap-1.5 rounded-lg bg-[#181f2c] border border-slate-700/80 px-2.5 py-1">
-                      <div className="flex items-center gap-1 font-mono font-bold text-white text-xs tracking-wider">
-                        <Tag className="size-3 text-[#0a7ae6]" />
+                    <div className="flex items-center justify-between gap-2 rounded-full bg-black/80 backdrop-blur-md border border-white/30 px-4 py-1.5 shadow-xl">
+                      <div className="flex items-center gap-2 font-mono font-bold text-white text-sm sm:text-base tracking-wider">
+                        <Tag className="size-3.5 text-[#0a7ae6]" />
                         <span>{discountCode}</span>
                       </div>
                       <button
                         type="button"
                         onClick={handleCopyCode}
-                        className="inline-flex items-center gap-1 rounded bg-[#0a7ae6] px-2 py-0.5 text-[10px] font-bold uppercase text-white hover:bg-[#0866c2]"
+                        className="inline-flex items-center gap-1 rounded-full bg-[#0a7ae6] px-3 py-1 text-xs font-bold uppercase text-white hover:bg-[#0866c2] transition active:scale-95 cursor-pointer shadow-sm"
                       >
-                        {copied ? "Copied" : "Copy"}
+                        {copied ? (
+                          <>
+                            <Check className="size-3 text-white" />
+                            <span>Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="size-3 text-white" />
+                            <span>Copy</span>
+                          </>
+                        )}
                       </button>
                     </div>
                     <button
@@ -459,7 +467,7 @@ export default function FestiveOfferPopup() {
                         handleClose();
                         router.push("/shop");
                       }}
-                      className="mt-2 w-full rounded-lg bg-emerald-600 hover:bg-emerald-700 py-1.5 text-[11px] font-bold uppercase text-white"
+                      className="w-full h-10 rounded-full bg-emerald-600 hover:bg-emerald-700 py-2 text-xs sm:text-sm font-bold uppercase tracking-wide text-white transition active:scale-95 cursor-pointer shadow-[0_4px_16px_rgba(16,185,129,0.45)]"
                     >
                       Shop Now
                     </button>
@@ -533,8 +541,7 @@ export default function FestiveOfferPopup() {
                   </form>
                 ) : (
                   <div className="rounded-2xl bg-[#0f141d] border border-[#0a7ae6]/60 p-4 text-center space-y-3 shadow-2xl animate-in zoom-in-95 duration-200">
-                    <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-sky-300 uppercase tracking-widest">
-                      <Sparkles className="size-4 text-[#0a7ae6]" />
+                    <div className="flex items-center justify-center text-xs font-bold text-sky-300 uppercase tracking-widest">
                       <span>Offer Unlocked!</span>
                     </div>
 
