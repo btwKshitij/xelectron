@@ -111,3 +111,22 @@ export async function DELETE(
     );
   }
 }
+
+// POST handler (WAF workaround — dispatches update/delete via _method field)
+export async function POST(
+  request: Request,
+  props: { params: Promise<{ id: string }> }
+) {
+  const clone = request.clone();
+  try {
+    const body = await clone.json();
+    if (body?._method === "DELETE") {
+      return DELETE(request, props);
+    }
+    if (body?._method === "PUT" || body?._method === "PATCH") {
+      return PUT(request, props);
+    }
+  } catch {}
+  return PUT(request, props);
+}
+

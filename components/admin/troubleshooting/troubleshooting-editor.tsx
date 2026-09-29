@@ -47,7 +47,7 @@ export function TroubleshootingEditor({ initialContent }: { initialContent: Trou
     setMessage("");
     try {
       const response = await fetch("/api/admin/troubleshooting", {
-        method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(parsed.data),
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(parsed.data),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Unable to save changes.");

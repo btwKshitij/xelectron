@@ -223,9 +223,9 @@ export function VerifiedReviewsManager({
   const handleToggleActive = async (id: string, currentStatus: boolean) => {
     try {
       const res = await fetch(`/api/admin/verified-reviews/${id}`, {
-        method: "PUT",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isActive: !currentStatus }),
+        body: JSON.stringify({ _method: "PUT", isActive: !currentStatus }),
       });
       if (res.ok) {
         setReviews((prev) =>
@@ -247,7 +247,11 @@ export function VerifiedReviewsManager({
     if (!confirm("Are you sure you want to delete this verified buyer review?")) return;
 
     try {
-      const res = await fetch(`/api/admin/verified-reviews/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/admin/verified-reviews/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ _method: "DELETE" }),
+      });
       if (res.ok) {
         setReviews((prev) => prev.filter((r) => r.id !== id));
         toast.success("Review deleted successfully");
@@ -309,9 +313,9 @@ export function VerifiedReviewsManager({
     try {
       if (editingReview) {
         const res = await fetch(`/api/admin/verified-reviews/${editingReview.id}`, {
-          method: "PUT",
+          method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: JSON.stringify({ _method: "PUT", ...payload }),
         });
         const data = await res.json();
         if (res.ok) {

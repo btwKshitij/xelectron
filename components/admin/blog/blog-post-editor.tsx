@@ -404,9 +404,9 @@ export function BlogPostEditor({ post }: { post?: BlogPostItem }) {
 
     try {
       const response = await fetch(post ? `/api/blog/${post.id}` : "/api/blog", {
-        method: post ? "PUT" : "POST",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(post ? { _method: "PUT", ...payload } : payload),
       });
       const result = await response.json();
       if (!response.ok || !result.success) {

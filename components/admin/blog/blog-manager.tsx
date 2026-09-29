@@ -19,7 +19,11 @@ export function BlogManager({ initialPosts }: { initialPosts: BlogPostItem[] }) 
     if (!window.confirm("Delete this blog post? This cannot be undone.")) return;
     setDeletingId(id);
     try {
-      const response = await fetch(`/api/blog/${id}`, { method: "DELETE" });
+      const response = await fetch(`/api/blog/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ _method: "DELETE" }),
+      });
       const result = await response.json();
       if (!response.ok || !result.success) {
         throw new Error(result.error || "Unable to delete this blog post.");

@@ -34,6 +34,47 @@ export async function GET(
   }
 }
 
+// POST handler (WAF workaround — dispatches update/delete via _method field)
+export async function POST(
+  request: Request,
+  props: { params: Promise<{ id: string }> }
+) {
+  const session = await verifySession();
+  if (!session || session.role !== "ADMIN") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { id } = await props.params;
+  try {
+    const body = await request.json();
+    if (body?._method === "DELETE") {
+      await deleteBrandShowcaseItem(id);
+      revalidatePath("/");
+      return NextResponse.json({ success: true });
+    }
+
+    const updateData: any = {};
+
+    if (body.title !== undefined) updateData.title = body.title.trim();
+    if (body.subtitle !== undefined) updateData.subtitle = body.subtitle.trim();
+    if (body.image !== undefined) updateData.image = body.image.trim();
+    if (body.mobileImage !== undefined) updateData.mobileImage = typeof body.mobileImage === "string" ? body.mobileImage.trim() || null : null;
+    if (body.linkUrl !== undefined) updateData.linkUrl = body.linkUrl ? body.linkUrl.trim() : null;
+    if (body.sortOrder !== undefined) updateData.sortOrder = Number(body.sortOrder) || 0;
+    if (body.isActive !== undefined) updateData.isActive = Boolean(body.isActive);
+
+    const updated = await updateBrandShowcaseItem(id, updateData);
+    revalidatePath("/");
+    return NextResponse.json(updated);
+  } catch (error: any) {
+    console.error("Failed to process brand showcase item:", error);
+    return NextResponse.json(
+      { error: error?.message || "Failed to process item" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PATCH(
   request: Request,
   props: { params: Promise<{ id: string }> }

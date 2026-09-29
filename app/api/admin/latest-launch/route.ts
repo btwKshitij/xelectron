@@ -24,3 +24,8 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "Unable to save Latest Launch products." }, { status: 500 });
   }
 }
+
+export async function POST(request: Request) {
+  return PUT(request);
+}
+

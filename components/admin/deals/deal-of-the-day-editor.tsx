@@ -315,7 +315,7 @@ export function DealOfTheDayEditor({ deal, products }: { deal: EditableDeal | nu
         : (effectiveCompareAtFormatted || null);
 
       const response = await fetch("/api/deal-of-the-day", {
-        method: "PUT",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           productId,

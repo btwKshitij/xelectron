@@ -107,7 +107,11 @@ export function ReviewsManager({ initialReviews, products }: ReviewsManagerProps
     if (!confirm("Are you sure you want to delete this customer review?")) return;
 
     try {
-      const res = await fetch(`/api/reviews/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/reviews/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ _method: "DELETE" }),
+      });
       const data = await res.json();
       if (data.success) {
         setReviews((prev) => prev.filter((r) => r.id !== id));
@@ -124,9 +128,9 @@ export function ReviewsManager({ initialReviews, products }: ReviewsManagerProps
   const handleToggleVerified = async (id: string, currentStatus: boolean) => {
     try {
       const res = await fetch(`/api/reviews/${id}`, {
-        method: "PATCH",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ verified: !currentStatus }),
+        body: JSON.stringify({ _method: "PATCH", verified: !currentStatus }),
       });
       const data = await res.json();
       if (data.success) {

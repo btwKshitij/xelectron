@@ -36,7 +36,8 @@ export async function POST(
       )
     }
 
-    const updated = await updateBanner(id, body)
+    const { _method, action, ...updatePayload } = body || {}
+    const updated = await updateBanner(id, updatePayload)
     try {
       revalidatePath("/", "layout")
       revalidatePath("/dashboard", "layout")

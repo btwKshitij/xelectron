@@ -47,3 +47,19 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
     return NextResponse.json({ error: error?.message || "Failed to delete creator video" }, { status: 500 });
   }
 }
+
+// POST handler (WAF workaround — dispatches update/delete via _method field)
+export async function POST(request: Request, props: { params: Promise<{ id: string }> }) {
+  const clone = request.clone();
+  try {
+    const body = await clone.json();
+    if (body?._method === "DELETE") {
+      return DELETE(request, props);
+    }
+    if (body?._method === "PATCH" || body?._method === "PUT") {
+      return PATCH(request, props);
+    }
+  } catch {}
+  return PATCH(request, props);
+}
+

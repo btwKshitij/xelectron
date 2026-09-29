@@ -32,7 +32,7 @@ export function LatestLaunchManager({ products, initialIds }: { products: Produc
   async function save() {
     setSaving(true);
     try {
-      const response = await fetch("/api/admin/latest-launch", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ productIds: ids }) });
+      const response = await fetch("/api/admin/latest-launch", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ productIds: ids }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Unable to save products");
       setSavedIds([...ids]);

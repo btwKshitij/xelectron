@@ -63,3 +63,37 @@ export async function DELETE(
     return NextResponse.json({ success: false, error: message }, { status: 400 });
   }
 }
+
+// POST /api/blog/:id (WAF workaround — dispatches update/delete via _method field)
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    await requireAdmin();
+    const { id } = await params;
+    const body = await request.json();
+
+    if (body?._method === "DELETE") {
+      await blogController.deleteBlogPost(id);
+      revalidatePath("/dashboard/blog");
+      revalidatePath("/");
+      revalidatePath("/blog");
+      return NextResponse.json({ success: true });
+    }
+
+    const { _method, ...updateData } = body || {};
+    const post = await blogController.updateBlogPost(id, updateData);
+    revalidatePath("/dashboard/blog");
+    revalidatePath("/");
+    revalidatePath("/blog");
+    return NextResponse.json({ success: true, data: post });
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ success: false, error: error.message }, { status: error.status });
+    }
+    const message = error instanceof Error ? error.message : "Internal server error";
+    return NextResponse.json({ success: false, error: message }, { status: 400 });
+  }
+}
+

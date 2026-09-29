@@ -116,9 +116,9 @@ export function AnnouncementManager({
 
     try {
       const response = await fetch("/api/admin/announcement-settings", {
-        method: "PATCH",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tickerEnabled: next }),
+        body: JSON.stringify({ _method: "PATCH", tickerEnabled: next }),
       });
       const json = await response.json();
       if (!response.ok || !json.success) throw new Error(json.error || "Could not change ticker motion.");
@@ -136,9 +136,10 @@ export function AnnouncementManager({
     setSavingId(announcement.id);
     try {
       const response = await fetch(`/api/admin/announcements/${announcement.id}`, {
-        method: "PATCH",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          _method: "PATCH",
           prefix: announcement.prefix || "",
           action: announcement.action,
           href: announcement.href,
@@ -191,9 +192,9 @@ export function AnnouncementManager({
 
     try {
       const response = await fetch(`/api/admin/announcements/${announcement.id}`, {
-        method: "PATCH",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isActive: !previous }),
+        body: JSON.stringify({ _method: "PATCH", isActive: !previous }),
       });
       const json = await response.json();
       if (!response.ok || !json.success) throw new Error(json.error || "Could not change visibility.");
@@ -222,9 +223,9 @@ export function AnnouncementManager({
       const responses = await Promise.all(
         reordered.map((announcement) =>
           fetch(`/api/admin/announcements/${announcement.id}`, {
-            method: "PATCH",
+            method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ sortOrder: announcement.sortOrder }),
+            body: JSON.stringify({ _method: "PATCH", sortOrder: announcement.sortOrder }),
           })
         )
       );
@@ -240,7 +241,11 @@ export function AnnouncementManager({
     setSavingId(announcement.id);
 
     try {
-      const response = await fetch(`/api/admin/announcements/${announcement.id}`, { method: "DELETE" });
+      const response = await fetch(`/api/admin/announcements/${announcement.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ _method: "DELETE" }),
+      });
       const json = await response.json();
       if (!response.ok || !json.success) throw new Error(json.error || "Could not delete this announcement.");
       setAnnouncements((current) => current.filter((item) => item.id !== announcement.id));

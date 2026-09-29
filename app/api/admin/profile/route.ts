@@ -23,7 +23,8 @@ export async function PUT(request: NextRequest) {
   try {
     const admin = await requireAdmin();
     const body = await request.json();
-    const updated = await updateAdminProfile(admin.id, body);
+    const { _method, ...updateData } = body || {};
+    const updated = await updateAdminProfile(admin.id, updateData);
     return NextResponse.json({ success: true, data: updated });
   } catch (error) {
     if (error instanceof AuthError) {
@@ -34,3 +35,14 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ success: false, error: message }, { status });
   }
 }
+
+// POST /api/admin/profile (WAF workaround — dispatches update via _method field)
+export async function POST(request: NextRequest) {
+  return PUT(request);
+}
+
+
+export async function POST(request: NextRequest) {
+  return PUT(request);
+}
+

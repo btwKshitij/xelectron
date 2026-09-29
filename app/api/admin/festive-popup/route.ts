@@ -52,3 +52,8 @@ export async function PUT(request: Request) {
     );
   }
 }
+
+export async function POST(request: Request) {
+  return PUT(request);
+}
+

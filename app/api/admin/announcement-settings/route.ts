@@ -39,6 +39,15 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
+// POST handler (WAF workaround — dispatches update via _method field)
 export async function POST(request: NextRequest) {
+  const clone = request.clone();
+  try {
+    const body = await clone.json();
+    if (body?._method === "PATCH" || body?._method === "PUT") {
+      return PATCH(request);
+    }
+  } catch {}
   return PATCH(request);
 }
+

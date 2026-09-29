@@ -44,7 +44,7 @@ export function AdminProfileClient({ initialProfile }: AdminProfileProps) {
 
     try {
       const res = await fetch("/api/admin/profile", {
-        method: "PUT",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: formData.email,

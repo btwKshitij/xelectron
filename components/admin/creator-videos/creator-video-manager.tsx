@@ -288,9 +288,9 @@ export function CreatorVideoManager({
 
     try {
       const res = await fetch(`/api/admin/creator-videos/${item.id}`, {
-        method: "PATCH",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isActive: newStatus }),
+        body: JSON.stringify({ _method: "PATCH", isActive: newStatus }),
       })
       if (!res.ok) throw new Error("Failed to update status")
       toast.success(newStatus ? "Video enabled" : "Video disabled")
@@ -307,7 +307,9 @@ export function CreatorVideoManager({
     setIsSubmitting(true)
     try {
       const res = await fetch(`/api/admin/creator-videos/${id}`, {
-        method: "DELETE",
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ _method: "DELETE" }),
       })
       if (!res.ok) throw new Error("Failed to delete video")
       setVideos((prev) => prev.filter((v) => v.id !== id))
@@ -356,9 +358,9 @@ export function CreatorVideoManager({
       if (editingVideo) {
         // Update
         const res = await fetch(`/api/admin/creator-videos/${editingVideo.id}`, {
-          method: "PATCH",
+          method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: JSON.stringify({ _method: "PATCH", ...payload }),
         })
         if (!res.ok) {
           const errData = await res.json().catch(() => ({}))

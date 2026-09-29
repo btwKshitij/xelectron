@@ -63,7 +63,7 @@ export default function FestivePopupEditor({ initialSettings }: Props) {
     try {
       setIsSaving(true);
       const res = await fetch("/api/admin/festive-popup", {
-        method: "PUT",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           isActive: settings.isActive,

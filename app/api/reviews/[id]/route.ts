@@ -34,7 +34,7 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const body = await req.json();
+    const { _method, ...body } = await req.json();
     const updated = await reviewsController.updateProductReview(id, body);
     return NextResponse.json({ success: true, review: updated });
   } catch (error: any) {
@@ -44,3 +44,22 @@ export async function PATCH(
     );
   }
 }
+
+// POST handler (WAF workaround — dispatches update/delete via _method field)
+export async function POST(
+  req: NextRequest,
+  props: { params: Promise<{ id: string }> }
+) {
+  const clone = req.clone();
+  try {
+    const body = await clone.json();
+    if (body?._method === "DELETE") {
+      return DELETE(req, props);
+    }
+    if (body?._method === "PATCH" || body?._method === "PUT") {
+      return PATCH(req, props);
+    }
+  } catch {}
+  return PATCH(req, props);
+}
+

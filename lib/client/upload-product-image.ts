@@ -320,9 +320,9 @@ export async function uploadProductImagesBatch(
 export async function deleteProductImage(keyOrUrl: string): Promise<boolean> {
   try {
     const response = await fetch("/api/media", {
-      method: "DELETE",
+      method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key: keyOrUrl, url: keyOrUrl }),
+      body: JSON.stringify({ _method: "DELETE", key: keyOrUrl, url: keyOrUrl }),
     });
     const result = await response.json();
     return Boolean(response.ok && result.success);

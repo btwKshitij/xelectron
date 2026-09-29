@@ -231,9 +231,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     setStatusMessage("");
     try {
       const response = await fetch(`/api/orders/${orderId}`, {
-        method: "PUT",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          _method: "PUT",
           shippingCarrier: "",
           trackingNumber: "",
           trackingUrl: "",
@@ -264,8 +265,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     const submittedNotes = internalNotes.trim();
     try {
       const response = await fetch(`/api/orders/${orderId}`, {
-        method: "PUT", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ internalNotes: submittedNotes, notifyCustomer: false }),
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ _method: "PUT", internalNotes: submittedNotes, notifyCustomer: false }),
       });
       const result = await response.json();
       if (!response.ok || !result.success) throw new Error(result.error || "Unable to save the note.");
@@ -314,9 +315,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       };
 
       const res = await fetch(`/api/orders/${orderId}`, {
-        method: "PUT",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ _method: "PUT", ...payload }),
       });
       const json = await res.json();
       if (res.ok && json.success && json.data) {
@@ -360,7 +361,11 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     if (!window.confirm("Permanently delete this unconfirmed checkout attempt? This cannot be undone.")) return;
     setIsUpdating(true);
     try {
-      const res = await fetch(`/api/orders/${orderId}`, { method: "DELETE" });
+      const res = await fetch(`/api/orders/${orderId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ _method: "DELETE" }),
+      });
       const json = await res.json();
       if (res.ok && json.success) {
         router.push("/dashboard/orders");

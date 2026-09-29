@@ -228,9 +228,9 @@ export function BrandShowcaseManager({
 
       if (editingItem) {
         const res = await fetch(`/api/admin/brand-showcase/${editingItem.id}`, {
-          method: "PATCH",
+          method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: JSON.stringify({ _method: "PATCH", ...payload }),
         });
         if (!res.ok) {
           const errData = await res.json().catch(() => ({}));
@@ -270,9 +270,9 @@ export function BrandShowcaseManager({
         prev.map((i) => (i.id === item.id ? { ...i, isActive: nextActive } : i))
       );
       const res = await fetch(`/api/admin/brand-showcase/${item.id}`, {
-        method: "PATCH",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isActive: nextActive }),
+        body: JSON.stringify({ _method: "PATCH", isActive: nextActive }),
       });
       if (!res.ok) throw new Error("Failed to update status");
       toast.success(nextActive ? "Item enabled" : "Item disabled");
@@ -296,14 +296,14 @@ export function BrandShowcaseManager({
     try {
       await Promise.all([
         fetch(`/api/admin/brand-showcase/${updated[index].id}`, {
-          method: "PATCH",
+          method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sortOrder: updated[index].sortOrder }),
+          body: JSON.stringify({ _method: "PATCH", sortOrder: updated[index].sortOrder }),
         }),
         fetch(`/api/admin/brand-showcase/${updated[targetIndex].id}`, {
-          method: "PATCH",
+          method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sortOrder: updated[targetIndex].sortOrder }),
+          body: JSON.stringify({ _method: "PATCH", sortOrder: updated[targetIndex].sortOrder }),
         }),
       ]);
     } catch {
@@ -315,7 +315,9 @@ export function BrandShowcaseManager({
     if (!deleteTargetId) return;
     try {
       const res = await fetch(`/api/admin/brand-showcase/${deleteTargetId}`, {
-        method: "DELETE",
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ _method: "DELETE" }),
       });
       if (!res.ok) throw new Error("Failed to delete item");
       setItems((prev) => prev.filter((i) => i.id !== deleteTargetId));

@@ -45,6 +45,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   }
 }
 
+// POST handler (WAF workaround — dispatches update/delete via _method field)
 export async function POST(request: NextRequest, context: RouteParams) {
   const clone = request.clone();
   try {
@@ -52,6 +53,10 @@ export async function POST(request: NextRequest, context: RouteParams) {
     if (body?._method === "DELETE" || body?.action === "delete") {
       return DELETE(request, context);
     }
+    if (body?._method === "PATCH" || body?._method === "PUT") {
+      return PATCH(request, context);
+    }
   } catch {}
   return PATCH(request, context);
 }
+
