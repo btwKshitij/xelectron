@@ -28,6 +28,8 @@ export async function POST(request: NextRequest) {
     revalidatePath("/dashboard/products/navbar");
     revalidatePath("/");
     revalidatePath("/shop");
+    revalidatePath("/about-us");
+    revalidatePath("/about");
     return NextResponse.json({ success: true, data: category }, { status: 201 });
   } catch (error) {
     if (error instanceof AuthError) {

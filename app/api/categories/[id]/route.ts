@@ -72,6 +72,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     revalidatePath("/dashboard/products/navbar");
     revalidatePath("/");
     revalidatePath("/shop");
+    revalidatePath("/about-us");
+    revalidatePath("/about");
     return NextResponse.json({ success: true, data: category });
   } catch (error) {
     if (error instanceof AuthError) {
@@ -94,6 +96,8 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
     revalidatePath("/dashboard/products/navbar");
     revalidatePath("/");
     revalidatePath("/shop");
+    revalidatePath("/about-us");
+    revalidatePath("/about");
     return NextResponse.json({ success: true, message: "Category deleted" });
   } catch (error) {
     if (error instanceof AuthError) {

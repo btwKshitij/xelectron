@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import Navbar from "@/components/navbar/navbar";
 import Footer from "@/components/footer/footer";
+import * as categoriesController from "@/lib/server/controllers/categories.controller";
+import { resolveCategoryImage } from "@/lib/shared/category-utils";
+import { AboutCategoryImage } from "@/components/about/about-category-image";
 import {
   Sparkles,
   ShieldCheck,
@@ -25,6 +27,8 @@ import {
   Quote,
 } from "lucide-react";
 
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   title: "About Us | XElectron Official Company Profile",
   description:
@@ -38,12 +42,12 @@ const STATS = [
   { value: "Pan-India", label: "Trusted Presence", description: "Homes, Classrooms & Offices" },
 ];
 
-const PRODUCT_CATEGORIES = [
+const DEFAULT_PRODUCT_CATEGORIES = [
   {
     title: "Smart Projectors",
     subtitle: "Android & Google TV Cinema Projectors",
     description: "Immersive 4K-supported theater projection with auto-focus, keystone correction, and smart OS for living rooms, offices, and classrooms.",
-    image: "/category-projector.png",
+    fallbackImage: "/category-projector.png",
     tag: "Flagship Category",
     slug: "projectors",
   },
@@ -51,7 +55,7 @@ const PRODUCT_CATEGORIES = [
     title: "Digital Photo Frames",
     subtitle: "Touch Screen, Wi-Fi & IPS Displays",
     description: "India's first smart cloud frames enabling families across the world to share and preserve memories in real time.",
-    image: "/category-frame.png",
+    fallbackImage: "/category-frame.png",
     tag: "Pioneering Innovation",
     slug: "digital-photo-frames",
   },
@@ -59,7 +63,7 @@ const PRODUCT_CATEGORIES = [
     title: "LED Televisions & Smart Displays",
     subtitle: "Vibrant Visuals & Smart OS",
     description: "Cinema-grade 4K UHD and Full HD smart TVs engineered for rich contrast, immersive audio, and seamless streaming.",
-    image: "/category-tv.png",
+    fallbackImage: "/category-tv.png",
     tag: "Home Entertainment",
     slug: "tv",
   },
@@ -67,7 +71,7 @@ const PRODUCT_CATEGORIES = [
     title: "Portable Monitors & Accessories",
     subtitle: "Flexible Displays for Modern Workflows",
     description: "Ultra-slim plug-and-play USB-C monitors & display solutions empowering professionals, coders, and creators on the move.",
-    image: "/category-monitor.png",
+    fallbackImage: "/category-monitor.png",
     tag: "Workplace & Productivity",
     slug: "portable-monitors",
   },
@@ -160,7 +164,59 @@ const BRAND_PROMISES = [
   { label: "Responsible Growth", desc: "Energy-efficient architectures and sustainable design for future generations." },
 ];
 
-export default function AboutPage() {
+type DbCategoryItem = {
+  slug?: string | null;
+  title?: string | null;
+  image?: string | null;
+  products?: { mainImage?: string | null }[];
+};
+
+export default async function AboutPage() {
+  const dbCategories = await categoriesController.listCategories().catch(() => []);
+
+  const productCategories = DEFAULT_PRODUCT_CATEGORIES.map((cat) => {
+    const normSlug = cat.slug.toLowerCase();
+    const keywords =
+      normSlug.includes("projector")
+        ? ["projector"]
+        : normSlug.includes("frame") || normSlug.includes("photo")
+        ? ["frame", "photo", "dpf"]
+        : normSlug.includes("tv") || normSlug.includes("display")
+        ? ["tv", "television", "display"]
+        : normSlug.includes("monitor")
+        ? ["monitor"]
+        : [normSlug];
+
+    const matched = (dbCategories as DbCategoryItem[]).find((dbCat) => {
+      const cSlug = (dbCat.slug || "").toLowerCase();
+      const cTitle = (dbCat.title || "").toLowerCase();
+      if (cSlug === normSlug) return true;
+      if (cSlug.includes(normSlug) || normSlug.includes(cSlug)) return true;
+      return keywords.some((kw) => cSlug.includes(kw) || cTitle.includes(kw));
+    });
+
+    let image = cat.fallbackImage;
+    if (matched) {
+      const dbImg = matched.image || matched.products?.[0]?.mainImage;
+      if (dbImg) {
+        const resolved = resolveCategoryImage(
+          dbImg,
+          matched.slug ?? undefined,
+          matched.title ?? undefined
+        );
+        if (resolved) {
+          image = resolved;
+        }
+      }
+    }
+
+    return {
+      ...cat,
+      image,
+      slug: matched?.slug || cat.slug,
+    };
+  });
+
   return (
     <main className="min-h-screen bg-white text-slate-900 selection:bg-[#0a7ae6] selection:text-white">
       <Navbar />
@@ -399,7 +455,7 @@ export default function AboutPage() {
 
           {/* Categories Grid */}
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {PRODUCT_CATEGORIES.map((cat) => (
+            {productCategories.map((cat) => (
               <div
                 key={cat.title}
                 className="group flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300"
@@ -407,12 +463,10 @@ export default function AboutPage() {
                 <div>
                   {/* Category Image */}
                   <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center p-4">
-                    <Image
+                    <AboutCategoryImage
                       src={cat.image}
+                      fallbackSrc={cat.fallbackImage}
                       alt={cat.title}
-                      fill
-                      className="object-contain p-2 transition-transform duration-300 group-hover:scale-105"
-                      sizes="(min-width: 1024px) 25vw, 50vw"
                     />
                   </div>
 

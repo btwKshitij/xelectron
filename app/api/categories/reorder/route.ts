@@ -36,6 +36,8 @@ export async function PUT(request: NextRequest) {
     revalidatePath("/dashboard/products/navbar");
     revalidatePath("/");
     revalidatePath("/shop");
+    revalidatePath("/about-us");
+    revalidatePath("/about");
 
     return NextResponse.json({ success: true });
   } catch (error) {
