@@ -24,6 +24,15 @@ const nextConfig: NextConfig = {
       static: 30,
     },
   },
+  async redirects() {
+    return [
+      {
+        source: "/about",
+        destination: "/about-us",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {

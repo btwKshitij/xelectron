@@ -660,7 +660,7 @@ export default function Navbar() {
               />
               )
             ))}
-            <FlatNavLink label="ABOUT US" href="/about" onMouseEnter={() => handleOpenMenu(null)} />
+            <FlatNavLink label="ABOUT US" href="/about-us" onMouseEnter={() => handleOpenMenu(null)} />
             <FlatNavLink label="CONTACT US" href="/contact-us" onMouseEnter={() => handleOpenMenu(null)} />
             <FlatNavLink label="BULK ORDERS" href="/bulk-orders" onMouseEnter={() => handleOpenMenu(null)} />
           </nav>
@@ -1240,7 +1240,7 @@ export default function Navbar() {
 
                   {/* Flat Nav Items */}
                   <Link prefetch={false}
-                    href="/about"
+                    href="/about-us"
                     onClick={handleNavigate}
                     className="flex items-center gap-3 rounded-xl px-3.5 py-3 text-[14px] font-semibold text-slate-800 hover:bg-slate-100 hover:text-[#0a7ae6]"
                   >

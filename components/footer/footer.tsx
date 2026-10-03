@@ -27,7 +27,7 @@ export const customerServiceLinks: FooterLink[] = [
 ];
 
 export const companyLinks: FooterLink[] = [
-  { label: "About Us", href: "/about" },
+  { label: "About Us", href: "/about-us" },
   { label: "Blog", href: "/blog" },
   { label: "Find a Store", href: "/find-a-store" },
   { label: "Careers", href: "/careers" },
