@@ -5,7 +5,13 @@ import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/server/mail";
 
-export const RESET_MESSAGE = "If an account exists for this email, you will receive a password reset link. Check your inbox and spam folder.";
+export const RESET_MESSAGE = "Your reset email has been accepted for sending. Check your inbox and spam folder.";
+export class AccountNotRegisteredError extends Error {
+  constructor() {
+    super("No account is registered with this email. Please create an account first.");
+    this.name = "AccountNotRegisteredError";
+  }
+}
 export const INVALID_RESET = "This reset link is invalid or has expired. Please request a new link.";
 const hash = (token: string) => createHash("sha256").update(token).digest("hex");
 
@@ -25,8 +31,8 @@ export function getResetOrigin(developmentOrigin?: string) {
 
 export async function requestPasswordReset(email: string, developmentOrigin?: string) {
   const origin = getResetOrigin(developmentOrigin);
-  const user = await db.user.findUnique({ where: { email } });
-  if (!user) return;
+  const user = await db.user.findFirst({ where: { email: { equals: email.trim().toLowerCase(), mode: "insensitive" } } });
+  if (!user) throw new AccountNotRegisteredError();
   const token = randomBytes(32).toString("hex");
   const tokenHash = hash(token);
   await db.passwordResetToken.deleteMany({ where: { expiresAt: { lt: new Date() } } });
@@ -39,12 +45,13 @@ export async function requestPasswordReset(email: string, developmentOrigin?: st
   const result = await sendEmail({
     to: user.email,
     subject: "Reset your XElectron password",
+    html: `<div style="background:#f3f7fc;padding:32px 16px;font-family:Arial,sans-serif;color:#10243a"><div style="max-width:520px;margin:auto;background:#fff;border:1px solid #dce6f0;border-radius:16px;padding:32px"><p style="font-size:24px;font-weight:700;margin:0 0 32px"><span style="color:#0a7ae6">X</span>Electron</p><h1 style="font-size:26px">Reset your password</h1><p style="line-height:1.7;color:#526277">Use the button below to choose a new password for your XElectron account.</p><p style="margin:28px 0"><a href="${link.toString().replace(/&/g, "&amp;").replace(/"/g, "&quot;")}" style="display:inline-block;background:#0a7ae6;color:white;padding:15px 24px;border-radius:8px;text-decoration:none;font-weight:bold">Reset password</a></p><p style="font-size:14px;line-height:1.7;color:#526277">This link expires in 30 minutes and can be used once. If you did not request it, you can safely ignore this email.</p><p style="font-size:12px;line-height:1.6;color:#526277;word-break:break-all">Button not working? Copy this link into your browser:<br>${link.toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;")}</p></div></div>`,
     text: `Reset your XElectron password using this link:\n\n${link.toString()}\n\nThis link expires in 30 minutes and can only be used once. If you did not request a password reset, you can ignore this email.`,
   });
   if (!result.success) {
     await db.passwordResetToken.deleteMany({ where: { tokenHash } });
-    // Do not reveal account existence through different public responses.
-    console.error("Password reset email delivery failed");
+    // Never report success when SMTP did not accept the reset message.
+    throw new Error("Password reset email delivery failed");
   }
 }
 

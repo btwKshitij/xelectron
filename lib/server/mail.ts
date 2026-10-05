@@ -11,11 +11,16 @@ export function getMailTransporter() {
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
     throw new Error("SMTP_PORT must be a valid port number.");
   }
+  const secureSetting = process.env.SMTP_SECURE?.trim().toLowerCase();
+  if (secureSetting && !["true", "false"].includes(secureSetting)) {
+    throw new Error("SMTP_SECURE must be true or false.");
+  }
+  const secure = secureSetting ? secureSetting === "true" : port === 465;
   return nodemailer.createTransport({
     host,
     port,
-    secure: port === 465,
-    requireTLS: port !== 465,
+    secure,
+    requireTLS: !secure,
     auth: { user, pass },
     connectionTimeout: 15000,
     greetingTimeout: 15000,
@@ -28,7 +33,6 @@ export interface SendMailOptions {
   subject: string;
   html?: string;
   text?: string;
-  from?: string;
   replyTo?: string;
   cc?: string | string[];
   bcc?: string | string[];
@@ -48,10 +52,8 @@ async function sendEmailNow(options: SendMailOptions) {
   let transporter: ReturnType<typeof getMailTransporter> | undefined;
   try {
     transporter = getMailTransporter();
-    const fromAddress =
-      options.from ||
-      process.env.SMTP_FROM ||
-      `"XElectron Technologies" <${process.env.SMTP_USER}>`;
+    // Use only the authenticated mailbox; SMTP_FROM cannot override the sender.
+    const fromAddress = process.env.SMTP_USER!.trim();
 
     const info = await transporter.sendMail({
       from: fromAddress,
@@ -67,7 +69,10 @@ async function sendEmailNow(options: SendMailOptions) {
       },
     });
 
-    console.log("Email sent successfully:", info.messageId);
+    if (!info.accepted?.length || info.rejected?.length) {
+      throw new Error("SMTP did not accept all email recipients");
+    }
+    console.log("Email accepted by SMTP:", info.messageId);
     return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error("Failed to send email via SMTP:", error);

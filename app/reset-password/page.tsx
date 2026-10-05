@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Navbar from "@/components/navbar/navbar";
 import type { Metadata } from "next";
 import { PasswordRecoveryForm } from "@/components/auth/password-recovery-form";
 
@@ -9,5 +10,5 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <main className="min-h-screen bg-white"><Suspense fallback={<p role="status" className="p-12 text-center">Loading?</p>}><PasswordRecoveryForm mode="reset" /></Suspense></main>;
+  return <main className="min-h-screen bg-white flex flex-col justify-between"><Navbar /><Suspense fallback={<p role="status" className="p-12 text-center">Loading...</p>}><PasswordRecoveryForm mode="reset" /></Suspense></main>;
 }

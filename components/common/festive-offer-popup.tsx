@@ -79,6 +79,8 @@ export default function FestiveOfferPopup() {
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/admin") ||
     pathname.startsWith("/login") ||
+    pathname.startsWith("/forgot-password") ||
+    pathname.startsWith("/reset-password") ||
     pathname.startsWith("/checkout");
 
   useEffect(() => {
