@@ -1,6 +1,8 @@
 "use client";
 
 import Image from "next/image";
+import { authClient } from "@/lib/auth-client";
+import { toast } from "sonner";
 import Link from "next/link";
 import {
   ChevronDown,
@@ -380,11 +382,11 @@ export default function Navbar() {
   }, []);
 
   const handleLogout = async () => {
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-      window.location.href = "/login";
-    } catch {
-      window.location.href = "/login";
+    const result = await authClient.signOut();
+    if (result.success) {
+      window.location.replace("/login");
+    } else {
+      toast.error("Unable to log out. Please try again.");
     }
   };
 

@@ -1,23 +1,8 @@
 "use client"
 
 import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
   SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from "@/components/ui/sidebar"
 import {
   AlertDialog,
@@ -31,16 +16,14 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { authClient } from "@/lib/auth-client"
-import { ChevronsUpDownIcon, LogOutIcon, UserIcon } from "lucide-react"
+import { LogOutIcon, UserIcon } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { useState } from "react"
 
 export function NavUser() {
-  const { isMobile } = useSidebar()
-  const router = useRouter()
   const { data: session } = authClient.useSession()
   const [isSigningOut, setIsSigningOut] = useState(false)
+  const [logoutError, setLogoutError] = useState("")
   const user = {
     name: session?.user?.name ?? "Xelectron Admin",
     email: session?.user?.email ?? "admin@xelectron.com",
@@ -54,10 +37,16 @@ export function NavUser() {
     .toUpperCase()
 
   async function handleSignOut() {
+    if (isSigningOut) return
     setIsSigningOut(true)
-    await authClient.signOut()
-    router.replace("/login")
-    router.refresh()
+    setLogoutError("")
+    const result = await authClient.signOut()
+    if (!result.success) {
+      setLogoutError("Unable to log out. Please try again.")
+      setIsSigningOut(false)
+      return
+    }
+    window.location.replace("/login")
   }
 
   return (
@@ -108,10 +97,11 @@ export function NavUser() {
                   You will be signed out of your account and redirected to the login page.
                 </AlertDialogDescription>
               </AlertDialogHeader>
+              {logoutError && <p role="alert" className="text-sm text-red-600">{logoutError}</p>}
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => void handleSignOut()}>
-                  Log out
+                <AlertDialogCancel disabled={isSigningOut}>Cancel</AlertDialogCancel>
+                <AlertDialogAction disabled={isSigningOut} onClick={() => void handleSignOut()}>
+                  {isSigningOut ? "Logging out?" : "Log out"}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

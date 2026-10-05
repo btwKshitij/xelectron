@@ -32,13 +32,15 @@ export async function setSessionCookie(token: string): Promise<void> {
 /** Clear the session cookie. */
 export async function clearSessionCookie(): Promise<void> {
   const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE_NAME, "", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 0,
-  });
+  for (const name of new Set([SESSION_COOKIE_NAME, "__Host-session", "session"])) {
+    cookieStore.set(name, "", {
+      httpOnly: true,
+      secure: name.startsWith("__Host-") || process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
+    });
+  }
 }
 
 /** Read the raw session token from the cookie jar (returns undefined if absent). */

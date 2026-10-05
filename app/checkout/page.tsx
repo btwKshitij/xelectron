@@ -44,8 +44,8 @@ import {
 } from "@/components/checkout/payment-logos";
 
 const CHECKOUT_SESSION_KEY = "xelectron-active-checkout";
-const EMI_TENURES = [3, 6, 9, 12] as const;
-type EmiTenure = (typeof EMI_TENURES)[number];
+const EMI_TENURE = 3;
+
 
 function createCheckoutSessionToken() {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -333,7 +333,6 @@ function CheckoutContent() {
 
   // Payment State
   const [paymentMethod, setPaymentMethod] = useState<"razorpay" | "velocity" | "cod">("razorpay");
-  const [selectedEmiTenure, setSelectedEmiTenure] = useState<EmiTenure>(3);
 
   // Product-page EMI links arrive with the Velocity method already selected.
   useEffect(() => {
@@ -343,10 +342,6 @@ function CheckoutContent() {
       setPaymentMethod("velocity");
     }
 
-    const requestedTenure = Number(searchParams.get("emiTenure"));
-    if (EMI_TENURES.includes(requestedTenure as EmiTenure)) {
-      setSelectedEmiTenure(requestedTenure as EmiTenure);
-    }
   }, [isMounted, searchParams]);
 
   // Submission State
@@ -795,7 +790,7 @@ function CheckoutContent() {
             discountAmount,
             discountCode: appliedCoupon || undefined,
             shippingAddress: fullAddress,
-            emiTenure: selectedEmiTenure,
+            emiTenure: EMI_TENURE,
           }),
         });
 
@@ -1710,9 +1705,9 @@ function CheckoutContent() {
                     </div>
 
                     <div className="flex items-center justify-between pl-5 sm:pl-6 text-[10.5px] sm:text-[11px] text-slate-500 gap-1 pt-0.5">
-                      <span className="truncate">{selectedEmiTenure}-mo preference • plans 3–12 mo</span>
+                      <span className="truncate">3-month no-cost EMI</span>
                       <span className="font-bold text-[#0a7ae6] shrink-0 whitespace-nowrap">
-                        ₹{Math.ceil(total / selectedEmiTenure).toLocaleString("en-IN")}/mo
+                        ₹{Math.ceil(total / EMI_TENURE).toLocaleString("en-IN")}/mo
                       </span>
                     </div>
                   </button>
@@ -1761,55 +1756,6 @@ function CheckoutContent() {
                       <span className="truncate">Instant UPI, Cards, NetBanking & Wallets</span>
                     </span>
                     <span className="font-bold text-emerald-700 shrink-0 whitespace-nowrap text-[9.5px] sm:text-[10px]">Zero Extra Fees</span>
-                  </div>
-                )}
-
-                {/* Improved Velocity No-Cost EMI Section */}
-                {paymentMethod === "velocity" && (
-                  <div className="mt-3 rounded-xl border border-sky-200/80 bg-gradient-to-b from-sky-50/80 to-blue-50/30 p-2.5 sm:p-3 text-slate-700 space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] sm:text-xs font-semibold text-slate-800">
-                        Choose No-Cost EMI Plan
-                      </span>
-                      <span className="rounded-full bg-emerald-100/90 text-emerald-800 px-2 py-0.5 text-[9.5px] sm:text-[10px] font-bold tracking-tight whitespace-nowrap">
-                        0% Interest • No Hidden Charges
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-4 gap-1.5">
-                      {EMI_TENURES.map((tenure) => {
-                        const monthly = Math.ceil(total / tenure);
-                        const isSelected = selectedEmiTenure === tenure;
-                        return (
-                          <button
-                            key={tenure}
-                            type="button"
-                            onClick={() => setSelectedEmiTenure(tenure)}
-                            className={`flex flex-col items-center justify-center rounded-lg border py-1.5 px-1 text-center transition-all cursor-pointer ${
-                              isSelected
-                                ? "border-[#0a7ae6] bg-[#0a7ae6] text-white shadow-xs font-bold"
-                                : "border-slate-200/90 bg-white text-slate-700 hover:border-sky-300 hover:bg-sky-50/60"
-                            }`}
-                          >
-                            <span className="text-[11px] sm:text-xs leading-tight">{tenure} Mo</span>
-                            <span
-                              className={`text-[9.5px] sm:text-[10px] leading-tight mt-0.5 ${
-                                isSelected ? "text-white/90" : "text-slate-500 font-normal"
-                              }`}
-                            >
-                              ₹{monthly.toLocaleString("en-IN")}/m
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    <div className="flex items-center justify-between text-[10.5px] sm:text-[11px] text-slate-600 pt-1 border-t border-sky-100/80">
-                      <span className="font-medium">
-                        Pay ₹{Math.ceil(total / selectedEmiTenure).toLocaleString("en-IN")}/mo for {selectedEmiTenure} months
-                      </span>
-                      <span className="font-semibold text-[#0a7ae6]">Zero Down Payment</span>
-                    </div>
                   </div>
                 )}
 

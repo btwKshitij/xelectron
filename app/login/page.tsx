@@ -505,13 +505,12 @@ function AuthForm() {
                     <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-900">
                       PASSWORD
                     </label>
-                    <button
-                      type="button"
-                      onClick={() => alert("Password reset instructions sent.")}
+                    <Link
+                      href={`/forgot-password?email=${encodeURIComponent(formData.email)}`}
                       className="text-[11px] font-normal text-slate-500 hover:text-slate-900 underline underline-offset-2"
                     >
                       Forgot password?
-                    </button>
+                    </Link>
                   </div>
                   <div className="relative">
                     <input

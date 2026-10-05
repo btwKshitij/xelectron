@@ -62,10 +62,9 @@ export async function POST(request: NextRequest) {
       shippingAddress,
       createAccount,
       password,
-      emiTenure,
     } = body;
     const orderTotal = typeof total === "number" ? total : Number.NaN;
-    const preferredEmiTenure = [3, 6, 9, 12].includes(emiTenure || 0) ? emiTenure : undefined;
+    const preferredEmiTenure = 3;
 
     if (
       !customerEmail ||
