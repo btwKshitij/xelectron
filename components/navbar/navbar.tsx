@@ -1,4 +1,6 @@
 "use client";
+import { TrackedProduct } from "@/components/analytics/product-tracking";
+import { cartEcommerce, trackEcommerce, trackSearch, trackPromotion } from "@/lib/analytics";
 
 import Image from "next/image";
 import { authClient } from "@/lib/auth-client";
@@ -49,7 +51,7 @@ function AnnouncementTickerMessages({ items, clone = false }: { items: Announcem
           {items.map((item, idx) => (
             <div key={item.id} className="flex items-center gap-4 lg:gap-7">
               <Link prefetch={false}
-                href={item.href}
+                href={item.href} onClick={() => trackPromotion(String(item.id), `${item.prefix || ""} ${item.action}`, "announcement_bar")}
                 tabIndex={clone || repeatIndex > 0 ? -1 : undefined}
                 className="inline-flex items-center gap-1 text-white hover:text-white/90 transition-opacity group"
               >
@@ -122,7 +124,7 @@ function TopAnnouncementBar() {
           <div className="hidden min-h-5 flex-wrap items-center justify-center gap-x-6 gap-y-1.5 text-center md:flex">
             {items.map((item, idx) => (
               <div key={item.id} className="inline-flex items-center gap-2.5">
-                <Link prefetch={false} href={item.href} className="inline-flex items-center gap-1 text-white hover:text-white/90 hover:underline">
+                <Link prefetch={false} href={item.href} onClick={() => trackPromotion(String(item.id), `${item.prefix || ""} ${item.action}`, "announcement_bar")} className="inline-flex items-center gap-1 text-white hover:text-white/90 hover:underline">
                   {item.prefix && <span className="opacity-95">{item.prefix}</span>}
                   <strong className="font-bold underline decoration-white/50 underline-offset-2">{item.action}</strong>
                   {item.discountCode && <span className="rounded border border-white/35 bg-white/10 px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide">CODE: {item.discountCode}</span>}
@@ -136,7 +138,7 @@ function TopAnnouncementBar() {
         {/* Mobile View: Rotating single line ticker */}
         <div className="flex md:hidden items-center justify-center text-center">
           <Link prefetch={false}
-            href={currentAnnouncement.href}
+            href={currentAnnouncement.href} onClick={() => trackPromotion(String(currentAnnouncement.id), `${currentAnnouncement.prefix || ""} ${currentAnnouncement.action}`, "announcement_bar")}
             className="inline-flex items-center gap-1 text-white hover:underline transition-all duration-300"
           >
             {currentAnnouncement.prefix && <span className="opacity-95">{currentAnnouncement.prefix}</span>}
@@ -332,6 +334,7 @@ function menuProductImage(product: SearchDrawerProduct) {
 export default function Navbar() {
   const {
     items: cartItems,
+    hasLoadedCart,
     cartCount,
     subtotal: cartSubtotal,
     addItem,
@@ -589,6 +592,23 @@ export default function Navbar() {
         return Package;
     }
   };
+
+  const cartViewed = useRef(false);
+  useEffect(() => {
+    if (!isCartOpen) { cartViewed.current = false; return; }
+    if (!hasLoadedCart || cartViewed.current) return;
+    cartViewed.current = true;
+    trackEcommerce("view_cart", cartEcommerce(cartItems));
+  }, [isCartOpen, hasLoadedCart, cartItems]);
+
+  const lastSearch = useRef("");
+  useEffect(() => {
+    if (!isSearchDrawerOpen) { lastSearch.current = ""; return; }
+    const term = searchQuery.trim();
+    if (!term || term === lastSearch.current) return;
+    const timer = setTimeout(() => { lastSearch.current = term; trackSearch(term); }, 600);
+    return () => clearTimeout(timer);
+  }, [searchQuery, isSearchDrawerOpen]);
 
   const searchTerm = searchQuery.trim().toLocaleLowerCase();
   const visibleSearchProducts = searchTerm
@@ -1640,8 +1660,8 @@ export default function Navbar() {
                 </p>
 
                 <div className="mb-6 grid grid-cols-2 gap-3">
-                  {searchProductCards.map((product) => (
-                    <Link prefetch={false}
+                  {searchProductCards.map((product, index) => (
+                    <TrackedProduct key={product.id} product={{ id: product.id, name: product.name, price: product.price || 0, category: searchProductCategory(product) }} index={index + 0} listId="search_results" listName="Search Results"><Link prefetch={false}
                       key={product.id}
                       href={`/product/${product.slug || product.id}`}
                       onClick={() => setIsSearchDrawerOpen(false)}
@@ -1665,7 +1685,7 @@ export default function Navbar() {
                       <span className="mt-1 text-xs font-black text-slate-900">
                         {searchProductPrice(product.price)}
                       </span>
-                    </Link>
+                    </Link></TrackedProduct>
                   ))}
                 </div>
 
@@ -1674,8 +1694,8 @@ export default function Navbar() {
                     <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                       {searchTerm ? "More results" : "More popular products"}
                     </p>
-                    {searchProductListItems.map((product) => (
-                      <Link prefetch={false}
+                    {searchProductListItems.map((product, index) => (
+                      <TrackedProduct key={product.id} product={{ id: product.id, name: product.name, price: product.price || 0, category: searchProductCategory(product) }} index={index + 4} listId="search_results" listName="Search Results"><Link prefetch={false}
                         key={product.id}
                         href={`/product/${product.slug || product.id}`}
                         onClick={() => setIsSearchDrawerOpen(false)}
@@ -1698,7 +1718,7 @@ export default function Navbar() {
                             {searchProductCategory(product)} • <span className="font-bold text-slate-950">{searchProductPrice(product.price)}</span>
                           </p>
                         </div>
-                      </Link>
+                      </Link></TrackedProduct>
                     ))}
                   </div>
                 ) : null}

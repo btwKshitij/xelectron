@@ -1,4 +1,5 @@
 "use client";
+import { trackPromotion } from "@/lib/analytics";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -119,7 +120,7 @@ export default function BrandSetupSection({
               );
 
               return item.linkUrl ? (
-                <Link prefetch={false} key={item.id} href={item.linkUrl} className="block shrink-0">
+                <Link prefetch={false} key={item.id} href={item.linkUrl} onClick={() => trackPromotion(String(item.id), item.title, "home_brand_showcase")} className="block shrink-0">
                   {cardContent}
                 </Link>
               ) : (
@@ -193,7 +194,7 @@ export default function BrandSetupSection({
             return item.linkUrl ? (
               <Link prefetch={false}
                 key={item.id}
-                href={item.linkUrl}
+                href={item.linkUrl} onClick={() => trackPromotion(String(item.id), item.title, "home_brand_showcase")}
                 className={`h-full transition-all duration-500 ease-in-out ${
                   isActive ? "flex-[12] lg:flex-[16]" : "flex-[1]"
                 }`}

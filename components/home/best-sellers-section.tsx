@@ -1,4 +1,5 @@
 "use client";
+import { TrackedProduct } from "@/components/analytics/product-tracking";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -195,7 +196,7 @@ function MobileBestSellers({ items }: { items: BestSellerItem[] }) {
           onTouchEnd={handleTouchEnd}
           className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto pb-3 pt-1 scroll-smooth"
         >
-          {items.map((item) => {
+          {items.map((item, index) => {
             const cleanPrice = item.price.split(".")[0].replace(/[^\d]/g, "");
             const numPrice = parseInt(cleanPrice || "3000", 10);
             const cleanOldPrice = item.oldPrice ? item.oldPrice.split(".")[0].replace(/[^\d]/g, "") : "";
@@ -207,7 +208,7 @@ function MobileBestSellers({ items }: { items: BestSellerItem[] }) {
                 : null);
 
             return (
-              <Link
+              <TrackedProduct key={item.id} product={item} index={index} listId="home_best_sellers" listName="Home - Best Sellers"><Link
                 key={`mobile-bestseller-${item.id}`}
                 href={`/product/${item.slug || item.id}`}
                 prefetch={false}
@@ -238,7 +239,7 @@ function MobileBestSellers({ items }: { items: BestSellerItem[] }) {
                           name: item.name,
                           price: numPrice,
                           image: item.image,
-                          category: "Electronics",
+                          category: item.category,
                         });
                         toast.success(`${item.name} added to cart!`);
                       }}
@@ -279,7 +280,7 @@ function MobileBestSellers({ items }: { items: BestSellerItem[] }) {
                     </span>
                   </div>
                 </div>
-              </Link>
+              </Link></TrackedProduct>
             );
           })}
         </div>
@@ -555,7 +556,7 @@ export default function BestSellersSection({ additionalItems = [] }: { additiona
         <div className="relative z-10 grid w-full flex-1 min-h-0 items-center gap-6 sm:gap-8 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.25fr)] lg:gap-8 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.35fr)] xl:gap-12">
           <div className="relative order-2 h-full min-h-0 lg:order-1 flex items-center">
             {items.map((item, index) => (
-              <div
+              <TrackedProduct key={item.id} product={item} index={index} listId="home_best_sellers" listName="Home - Best Sellers"><div
                 key={item.id}
                 ref={(node) => {
                   cardRefs.current[index] = node;
@@ -606,6 +607,7 @@ export default function BestSellersSection({ additionalItems = [] }: { additiona
                   </Link>
                 </div>
               </div>
+              </TrackedProduct>
             ))}
           </div>
 

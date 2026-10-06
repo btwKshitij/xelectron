@@ -6,9 +6,11 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
+import { cartChanges, cartEcommerce, trackEcommerce } from "@/lib/analytics";
 
 const CART_STORAGE_KEY = "xelectron-shopping-cart";
 const WISHLIST_STORAGE_KEY = "xelectron-wishlist";
@@ -21,6 +23,8 @@ export type CartItem = {
   image: string;
   category: string;
   quantity: number;
+  brand?: string;
+  variant?: string;
 };
 
 export type CartProduct = Omit<CartItem, "quantity">;
@@ -30,6 +34,7 @@ export type WishlistItem = CartProduct & {
 };
 
 type CartContextValue = {
+  hasLoadedCart: boolean;
   items: CartItem[];
   cartCount: number;
   subtotal: number;
@@ -48,6 +53,7 @@ type CartContextValue = {
 };
 
 const defaultCartContext: CartContextValue = {
+  hasLoadedCart: false,
   items: [],
   cartCount: 0,
   subtotal: 0,
@@ -135,6 +141,32 @@ export default function CartProvider({ children }: { children: ReactNode }) {
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
   const [hasLoadedCart, setHasLoadedCart] = useState(false);
   const [hasLoadedWishlist, setHasLoadedWishlist] = useState(false);
+  const previousCart = useRef<CartItem[] | null>(null);
+  const previousWishlist = useRef<WishlistItem[] | null>(null);
+  const clearingCart = useRef(false);
+  const cartAction = useRef(false);
+
+  // Observe committed state, never emit inside React state updaters (which can replay).
+  useEffect(() => {
+    if (!hasLoadedCart) return;
+    if (previousCart.current && cartAction.current && !clearingCart.current) {
+      const { added, removed } = cartChanges(previousCart.current, items);
+      if (added.length) trackEcommerce("add_to_cart", cartEcommerce(added));
+      if (removed.length) trackEcommerce("remove_from_cart", cartEcommerce(removed));
+    }
+    previousCart.current = items;
+    clearingCart.current = false;
+    cartAction.current = false;
+  }, [items, hasLoadedCart]);
+
+  useEffect(() => {
+    if (!hasLoadedWishlist) return;
+    if (previousWishlist.current) {
+      const added = wishlistItems.filter(item => !previousWishlist.current!.some(old => old.id === item.id));
+      if (added.length) trackEcommerce("add_to_wishlist", cartEcommerce(added));
+    }
+    previousWishlist.current = wishlistItems;
+  }, [wishlistItems, hasLoadedWishlist]);
 
   useEffect(() => {
     const loadCart = window.setTimeout(() => {
@@ -158,6 +190,7 @@ export default function CartProvider({ children }: { children: ReactNode }) {
   }, [hasLoadedWishlist, wishlistItems]);
 
   const addItem = useCallback((product: CartProduct) => {
+    cartAction.current = true;
     setItems((currentItems) => {
       const existingItem = currentItems.find((item) => item.id === product.id);
 
@@ -174,6 +207,7 @@ export default function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addItems = useCallback((products: CartProduct[]) => {
+    cartAction.current = true;
     setItems((currentItems) => {
       const nextItems = [...currentItems];
 
@@ -195,6 +229,7 @@ export default function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const updateQuantity = useCallback((id: string, change: number) => {
+    cartAction.current = true;
     setItems((currentItems) =>
       currentItems
         .map((item) => {
@@ -244,10 +279,13 @@ export default function CartProvider({ children }: { children: ReactNode }) {
           const liveImage = matched.mainImage || item.image;
           const liveSlug = matched.slug || item.slug;
 
-          if (livePrice > 0 && (item.price !== livePrice || item.name !== liveName || item.image !== liveImage)) {
+          const liveCategory = matched.category?.title || item.category;
+          if (livePrice > 0 && (item.id !== matched.id || item.category !== liveCategory || item.price !== livePrice || item.name !== liveName || item.image !== liveImage)) {
             changed = true;
             return {
               ...item,
+              id: matched.id,
+              category: liveCategory,
               price: livePrice,
               name: liveName,
               image: liveImage,
@@ -276,10 +314,12 @@ export default function CartProvider({ children }: { children: ReactNode }) {
   }, [hasLoadedCart, syncLivePrices]);
 
   const removeItem = useCallback((id: string) => {
+    cartAction.current = true;
     setItems((currentItems) => currentItems.filter((item) => item.id !== id));
   }, []);
 
   const clearCart = useCallback(() => {
+    clearingCart.current = true;
     setItems([]);
   }, []);
 
@@ -301,6 +341,7 @@ export default function CartProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<CartContextValue>(
     () => ({
+      hasLoadedCart,
       items,
       cartCount: items.reduce((total, item) => total + item.quantity, 0),
       subtotal: items.reduce((total, item) => total + item.price * item.quantity, 0),
@@ -318,6 +359,7 @@ export default function CartProvider({ children }: { children: ReactNode }) {
       clearWishlist,
     }),
     [
+      hasLoadedCart,
       addItem,
       addItems,
       clearCart,

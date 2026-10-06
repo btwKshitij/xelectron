@@ -1,3 +1,4 @@
+import { getPurchaseAnalytics } from "@/lib/server/purchase-analytics";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getVelocityOrderSessions, parseVelocityStateToken } from "@/lib/server/velocity";
@@ -50,6 +51,7 @@ export async function POST(request: NextRequest) {
         if (updated && updated.paymentVerified) {
           return NextResponse.json({
             success: true,
+            analytics: await getPurchaseAnalytics(updated.id),
             data: {
               id: updated.id,
               orderNumber: `XE-${updated.id.slice(-6).toUpperCase()}`,
@@ -93,6 +95,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      analytics: await getPurchaseAnalytics(order.id),
       data: {
         id: order.id,
         orderNumber: `XE-${order.id.slice(-6).toUpperCase()}`,

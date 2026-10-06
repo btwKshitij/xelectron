@@ -1,4 +1,5 @@
 "use client";
+import { trackBulkLead } from "@/lib/analytics";
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
@@ -212,6 +213,7 @@ export default function BulkOrderPage() {
       }
 
       setSubmittedReference(data.reference);
+      trackBulkLead();
       toast.success("Bulk order inquiry sent directly to Corporate Sales (sales@xelectron.com)!");
     } catch (err: any) {
       toast.error(err.message || "An unexpected error occurred. Please contact our corporate desk.");

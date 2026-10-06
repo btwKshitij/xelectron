@@ -1,4 +1,5 @@
 "use client";
+import { trackPromotion } from "@/lib/analytics";
 
 import { orderedTopics, getCategoryOrder } from "@/lib/shared/category-order";
 import Image from "next/image";
@@ -238,6 +239,7 @@ export default function CategorySection({ categories }: { categories?: Storefron
                 >
                   <Link
                     href={`/shop?filter=${encodeURIComponent(category.slug)}`}
+                    onClick={() => trackPromotion(String(category.id), category.title, "home_categories")}
                     prefetch={false}
                     className="group/card flex h-[190px] flex-col items-center justify-between rounded-2xl border border-slate-200 bg-white p-3 text-center transition-all duration-200 hover:border-[#0a7ae6] hover:shadow-sm sm:h-[230px] sm:p-5"
                   >

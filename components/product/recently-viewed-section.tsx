@@ -1,4 +1,5 @@
 "use client";
+import { TrackedProduct } from "@/components/analytics/product-tracking";
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
@@ -107,12 +108,12 @@ export default function RecentlyViewedSection({
         </div>
 
         <div className="mt-5 grid grid-cols-1 gap-3 px-4 sm:grid-cols-2 sm:gap-4 sm:px-6 lg:grid-cols-4 lg:gap-4 lg:px-8">
-          {recentProducts.map((product) => {
+          {recentProducts.map((product, index) => {
             const hasHoverImage = Boolean(product.hoverImage && product.hoverImage !== product.image);
             const isOutOfStock = typeof product.quantity === "number" && product.quantity === 0;
 
             return (
-              <Link prefetch={false}
+              <TrackedProduct key={product.id} product={{ ...product, quantity: 1 }} index={index} listId="recently_viewed" listName="Recently Viewed"><Link prefetch={false}
                 key={product.id}
                 href={`/product/${product.slug}`}
                 className="group flex min-h-[320px] flex-col rounded-[12px] border border-slate-100 bg-white p-3 shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(15,23,42,0.08)] sm:min-h-[360px]"
@@ -191,7 +192,7 @@ export default function RecentlyViewedSection({
                   </button>
                 )}
               </div>
-            </Link>
+            </Link></TrackedProduct>
             );
           })}
         </div>

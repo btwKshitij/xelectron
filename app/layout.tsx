@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import PageTracking from "@/components/analytics/page-tracking";
 import type { Metadata } from "next";
 import Script from "next/script";
 import "./globals.css";
@@ -46,21 +48,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 })(window,document,'script','dataLayer','GTM-NB43H649');`,
           }}
         />
-        {/* Google tag (gtag.js) */}
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-85W9EGF2W1"
-          strategy="afterInteractive"
-        />
-        <Script
-          id="google-analytics"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-gtag('js', new Date());
-gtag('config', 'G-85W9EGF2W1');`,
-          }}
-        />
       </head>
       <body className="min-h-dvh flex flex-col">
         {/* Google Tag Manager (noscript) */}
@@ -74,6 +61,7 @@ gtag('config', 'G-85W9EGF2W1');`,
         </noscript>
         {/* End Google Tag Manager (noscript) */}
         <ChunkErrorHandler />
+        <Suspense fallback={null}><PageTracking /></Suspense>
         <CartProvider>
           <SmoothScrollProvider>{children}</SmoothScrollProvider>
           <FestiveOfferPopup />

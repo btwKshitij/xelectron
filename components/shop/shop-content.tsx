@@ -1,4 +1,5 @@
 "use client";
+import { TrackedProduct } from "@/components/analytics/product-tracking";
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -164,8 +165,8 @@ export default function ShopContent({ products: initialProducts }: { products: S
 
       {filteredProducts.length > 0 ? (
         <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 xl:grid-cols-3">
-          {filteredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} onAddToCart={addProductToCart} />
+          {filteredProducts.map((product, index) => (
+            <TrackedProduct key={product.id} product={{ ...product, quantity: 1 }} index={index} listId={`shop_${filterParam}_products`} listName={`Shop - ${heading}`}><ProductCard key={product.id} product={product} onAddToCart={addProductToCart} /></TrackedProduct>
           ))}
         </div>
       ) : (
@@ -185,8 +186,8 @@ export default function ShopContent({ products: initialProducts }: { products: S
           </div>
 
           <div className="grid grid-cols-2 gap-2.5 sm:gap-6 lg:grid-cols-4">
-            {recommendations.map((product) => (
-              <CompactProductCard key={product.id} product={product} />
+            {recommendations.map((product, index) => (
+              <TrackedProduct key={product.id} product={{ ...product, quantity: 1 }} index={index} listId="shop_recommendations" listName="Shop - Recommendations"><CompactProductCard key={product.id} product={product} /></TrackedProduct>
             ))}
           </div>
         </section>
@@ -203,8 +204,8 @@ export default function ShopContent({ products: initialProducts }: { products: S
 
         {recentlyViewedProducts.length > 0 ? (
           <div className="grid grid-cols-2 gap-2.5 sm:gap-6 lg:grid-cols-4">
-            {recentlyViewedProducts.slice(0, 4).map((product) => (
-              <CompactProductCard key={product.id} product={product} />
+            {recentlyViewedProducts.slice(0, 4).map((product, index) => (
+              <TrackedProduct key={product.id} product={{ ...product, quantity: 1 }} index={index} listId="shop_recently_viewed" listName="Shop - Recently Viewed"><CompactProductCard key={product.id} product={product} /></TrackedProduct>
             ))}
           </div>
         ) : (

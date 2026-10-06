@@ -1,4 +1,5 @@
 "use client";
+import { TrackedProduct } from "@/components/analytics/product-tracking";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -64,12 +65,12 @@ export default function ProductShowcaseSection({ products }: { products: Storefr
         </div>
 
         <div className="grid grid-cols-2 gap-2.5 sm:gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {products.slice(0, 4).map((product) => {
+          {products.slice(0, 4).map((product, index) => {
             const isWishlisted = wishlistItems.some((item) => item.id === product.id);
             const isOutOfStock = typeof product.quantity === "number" && product.quantity === 0;
 
             return (
-              <Link
+              <TrackedProduct key={product.id} product={{ ...product, quantity: 1 }} index={index} listId="home_latest_launch" listName="Home - Latest Launch"><Link
               key={product.id}
               href={`/product/${product.slug}`}
               prefetch={false}
@@ -197,7 +198,7 @@ export default function ProductShowcaseSection({ products }: { products: Storefr
                   </div>
                 </div>
               </article>
-              </Link>
+              </Link></TrackedProduct>
             );
           })}
         </div>

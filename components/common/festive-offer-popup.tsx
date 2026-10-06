@@ -1,4 +1,5 @@
 "use client";
+import { trackPromotion } from "@/lib/analytics";
 
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
@@ -190,6 +191,7 @@ export default function FestiveOfferPopup() {
   const handleCopyCode = async () => {
     try {
       await navigator.clipboard.writeText(discountCode);
+      trackPromotion(discountCode, settings.heading, "festive_popup_copy_code");
       setCopied(true);
       toast.success("Coupon code copied to clipboard!");
       setTimeout(() => setCopied(false), 2500);
@@ -380,6 +382,7 @@ export default function FestiveOfferPopup() {
                       type="button"
                       onClick={() => {
                         handleClose();
+                        trackPromotion(discountCode, settings.heading, "festive_popup");
                         router.push("/shop");
                       }}
                       className="mt-2.5 w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 py-2 text-xs font-bold uppercase tracking-wide text-white transition active:scale-95 cursor-pointer shadow-md"
@@ -467,6 +470,7 @@ export default function FestiveOfferPopup() {
                       type="button"
                       onClick={() => {
                         handleClose();
+                        trackPromotion(discountCode, settings.heading, "festive_popup");
                         router.push("/shop");
                       }}
                       className="w-full h-8 rounded-full bg-emerald-600 hover:bg-emerald-700 text-xs font-bold uppercase tracking-wide text-white transition active:scale-95 cursor-pointer shadow-md"
@@ -575,6 +579,7 @@ export default function FestiveOfferPopup() {
                       type="button"
                       onClick={() => {
                         handleClose();
+                        trackPromotion(discountCode, settings.heading, "festive_popup");
                         router.push("/shop");
                       }}
                       className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 py-2.5 text-xs font-bold uppercase tracking-wide text-white transition active:scale-95 cursor-pointer shadow-md"
@@ -677,7 +682,8 @@ export default function FestiveOfferPopup() {
                   type="button"
                   onClick={() => {
                     handleClose();
-                    router.push("/shop");
+                    trackPromotion(discountCode, settings.heading, "festive_popup");
+                        router.push("/shop");
                   }}
                   className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 py-2 text-xs font-bold uppercase tracking-wide text-white transition shadow-md"
                 >

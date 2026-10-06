@@ -1,4 +1,5 @@
 "use client";
+import { trackPromotion } from "@/lib/analytics";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -353,6 +354,7 @@ export default function HeroShowcase({ initialBanners }: { initialBanners?: Bann
             >
               <Link prefetch={false}
                 href={banner.linkUrl || "/shop"}
+                onClick={() => trackPromotion(banner.src, banner.title || banner.alt, `home_hero_${index}`, banner.title)}
                 className="block relative h-full w-full overflow-hidden"
               >
                 {/* RESPONSIVE BANNER MEDIA */}

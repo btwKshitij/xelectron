@@ -1,4 +1,5 @@
 "use client";
+import { cartEcommerce, trackEcommerce } from "@/lib/analytics";
 
 import { ProductGallery } from "@/components/product/product-gallery";
 import { Facebook, Instagram } from "@/components/ui/social-icons";
@@ -247,6 +248,13 @@ export default function ProductDetail({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const viewedProduct = useRef("");
+  useEffect(() => {
+    if (!product.id || viewedProduct.current === product.id) return;
+    viewedProduct.current = product.id;
+    trackEcommerce("view_item", cartEcommerce([{ ...product, quantity: 1 }]));
+  }, [product]);
+
   const productImages = useMemo(
     () => [...new Set([product.mainImage, ...(product.images || [])].filter(Boolean))],
     [product.images, product.mainImage]
@@ -279,6 +287,7 @@ export default function ProductDetail({
         price: numericPrice,
         image: product.mainImage,
         category: product.category,
+        variant: [selectedVariant?.name || product.variants?.[0]?.name, selectedColor || product.colors?.[0]?.name].filter(Boolean).join(" / "),
       });
     }
   };
@@ -294,6 +303,7 @@ export default function ProductDetail({
       oldPrice: product.oldPrice ? priceToNumber(product.oldPrice) : undefined,
       image: product.mainImage,
       category: product.category,
+      variant: [selectedVariant?.name || product.variants?.[0]?.name, selectedColor || product.colors?.[0]?.name].filter(Boolean).join(" / "),
     });
   };
 

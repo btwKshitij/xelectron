@@ -1,3 +1,4 @@
+import { getPurchaseAnalytics } from "@/lib/server/purchase-analytics";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import * as ordersController from "@/lib/server/controllers/orders.controller";
@@ -96,7 +97,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({ success: true, data: order }, { status: 201 });
+    return NextResponse.json({ success: true, data: order, analytics: await getPurchaseAnalytics(order.id) }, { status: 201 });
   } catch (error) {
     if (error instanceof AuthError) {
       return NextResponse.json({ success: false, error: error.message }, { status: error.status });

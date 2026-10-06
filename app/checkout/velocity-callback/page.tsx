@@ -1,4 +1,5 @@
 "use client";
+import { trackPurchase, type Purchase } from "@/lib/analytics";
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -27,6 +28,7 @@ type VelocityOrderData = {
 };
 
 type VelocityVerificationResponse = {
+  analytics?: Purchase | null;
   success?: boolean;
   pending?: boolean;
   paymentStatus?: string;
@@ -81,6 +83,7 @@ function VelocityCallbackContent() {
           }
 
           if (json.success && json.data) {
+            void trackPurchase(json.analytics);
             setOrderData(json.data);
             clearCart();
 

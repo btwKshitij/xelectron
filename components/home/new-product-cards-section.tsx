@@ -1,4 +1,5 @@
 "use client";
+import { TrackedProduct } from "@/components/analytics/product-tracking";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -26,11 +27,11 @@ export default function NewProductCardsSection({ products = [] }: { products?: S
         </div>
 
         <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
-          {products.map((product) => {
+          {products.map((product, index) => {
             const isOutOfStock = typeof product.quantity === "number" && product.quantity === 0;
 
             return (
-              <Link prefetch={false} key={product.id} href={`/product/${product.slug}`} className="group block h-full" aria-label={`View ${product.name}`}>
+              <TrackedProduct key={product.id} product={{ ...product, quantity: 1 }} index={index} listId="home_products" listName="Home - Products"><Link prefetch={false} key={product.id} href={`/product/${product.slug}`} className="group block h-full" aria-label={`View ${product.name}`}>
                 <article className="flex h-full flex-col overflow-hidden rounded-lg border border-slate-200/80 bg-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(15,23,42,0.08)]">
                   <div className="relative flex h-[140px] items-center justify-center bg-slate-50/60 p-2 sm:h-[200px] sm:p-4 lg:h-[220px]">
                     {isOutOfStock && (
@@ -109,7 +110,7 @@ export default function NewProductCardsSection({ products = [] }: { products?: S
                     </div>
                   </div>
                 </article>
-              </Link>
+              </Link></TrackedProduct>
             );
           })}
         </div>

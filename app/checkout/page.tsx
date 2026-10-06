@@ -1,4 +1,5 @@
 "use client";
+import { cartEcommerce, trackEcommerce, trackPurchase, rememberOrderContext } from "@/lib/analytics";
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
@@ -65,10 +66,15 @@ function CheckoutContent() {
     updateQuantity,
     updateItemPrice,
     syncLivePrices,
+    hasLoadedCart,
   } = useCart();
   const searchParams = useSearchParams();
   const [isMounted, setIsMounted] = useState(false);
   const [productParamLoading, setProductParamLoading] = useState(false);
+  const [catalogReady, setCatalogReady] = useState(false);
+  const [catalogIds, setCatalogIds] = useState<Set<string>>(new Set());
+  const checkoutTracked = useRef(false);
+  const acceptedSteps = useRef(new Set<string>());
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string; email: string } | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
 
@@ -197,6 +203,8 @@ function CheckoutContent() {
         }
 
         setLiveStockMap(stockMap);
+        setCatalogIds(new Set(json.data.map((product: { id: string }) => product.id)));
+        setCatalogReady(true);
 
         if (dealIds.size > 0) {
           setDealProductIds((prev) => new Set([...prev, ...dealIds]));
@@ -439,6 +447,28 @@ function CheckoutContent() {
   const shippingCost = 0; // Free shipping
   const total = Math.max(0, subtotal - discountAmount + shippingCost);
 
+  useEffect(() => {
+    const unresolvedProduct = searchParams.get("product") && processedProductParamRef.current !== searchParams.get("product");
+    if (!hasLoadedCart || !catalogReady || productParamLoading || unresolvedProduct || !orderItems.length || orderItems.some(item => !catalogIds.has(item.id)) || hasOutOfStockItems || checkoutTracked.current) return;
+    checkoutTracked.current = true;
+    trackEcommerce("begin_checkout", cartEcommerce(orderItems, { value: total, coupon: paymentMethod === "cod" ? "" : appliedCoupon || "" }));
+  }, [hasLoadedCart, catalogReady, catalogIds, productParamLoading, searchParams, orderItems, hasOutOfStockItems, total, appliedCoupon, paymentMethod]);
+
+  function trackAcceptedSteps() {
+    const ecommerce = cartEcommerce(orderItems, { value: total, coupon: paymentMethod === "cod" ? "" : appliedCoupon || "" });
+    const shippingKey = JSON.stringify([ecommerce, addressLine1, addressLine2, city, state, postalCode]);
+    // Address is used only for local duplicate detection, never sent to dataLayer.
+    if (!acceptedSteps.current.has(shippingKey)) {
+      acceptedSteps.current.add(shippingKey);
+      trackEcommerce("add_shipping_info", { ...ecommerce, shipping_tier: "Standard" });
+    }
+    const paymentKey = JSON.stringify([ecommerce, paymentMethod]);
+    if (!acceptedSteps.current.has(paymentKey)) {
+      acceptedSteps.current.add(paymentKey);
+      trackEcommerce("add_payment_info", { ...ecommerce, payment_type: paymentMethod === "razorpay" ? "Razorpay" : paymentMethod === "velocity" ? "Velocity EMI" : "COD" });
+    }
+  }
+
   // Auto-remove applied coupon if user modifies cart to only contain Deal of the Day items
   useEffect(() => {
     if (appliedCoupon && allItemsAreDeal) {
@@ -650,6 +680,7 @@ function CheckoutContent() {
           throw new Error("Unable to load Razorpay SDK. Please check your internet connection.");
         }
 
+        trackAcceptedSteps();
         const options = {
           key: rzpOrderData.keyId,
           amount: rzpOrderData.amount,
@@ -712,6 +743,8 @@ function CheckoutContent() {
                 throw new Error(verifyData.error || "Payment verification failed");
               }
 
+              rememberOrderContext(verifyData.data?.id, orderItems, appliedCoupon || "");
+              void trackPurchase(verifyData.analytics);
               const rawId = verifyData?.data?.id;
               const newOrderId = rawId
                 ? `XE-${rawId.slice(-6).toUpperCase()}`
@@ -799,6 +832,8 @@ function CheckoutContent() {
           throw new Error(velData.error || "Failed to initialize Velocity EMI checkout");
         }
 
+        trackAcceptedSteps();
+        rememberOrderContext(velData.orderId, orderItems, appliedCoupon || "");
         window.location.href = velData.redirectUrl;
         return;
       }
@@ -889,6 +924,9 @@ function CheckoutContent() {
         throw new Error(orderData.error || "Failed to place COD order");
       }
 
+      trackAcceptedSteps();
+      rememberOrderContext(orderData.data?.id, orderItems);
+      void trackPurchase(orderData.analytics);
       const rawId = orderData?.data?.id;
       const newOrderId = rawId
         ? `XE-${rawId.slice(-6).toUpperCase()}`

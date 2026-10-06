@@ -2,6 +2,7 @@ export type BestSellerItem = {
   id: string;
   slug?: string;
   name: string;
+  category: string;
   price: string;
   oldPrice?: string;
   discount?: string;

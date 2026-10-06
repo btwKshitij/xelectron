@@ -169,7 +169,7 @@ export async function POST(request: NextRequest) {
       state: state || "",
       pincode: pincode || "",
       country: "India",
-      internalNotes: `Payment method: VELOCITY_BNPL${preferredEmiTenure ? `\nEMI preference: ${preferredEmiTenure} months` : ""}`,
+      internalNotes: `Payment method: VELOCITY_BNPL${discountCode && /^[A-Za-z0-9_-]{1,100}$/.test(discountCode) ? `\nCoupon applied: ${discountCode}` : ""}${preferredEmiTenure ? `\nEMI preference: ${preferredEmiTenure} months` : ""}`,
       items: items.map((item) => ({
         productId: item.productId || item.id || "",
         quantity: item.quantity || 1,

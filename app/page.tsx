@@ -66,7 +66,8 @@ export default async function Home() {
   }
 
   const selectedBestSellers: BestSellerItem[] = (bestSellerProductsResult || []).map((product: any) => ({
-    id: product.slug,
+    id: product.id,
+    category: product.category?.title || "Uncategorized",
     slug: product.slug,
     name: product.name,
     price: product.price,

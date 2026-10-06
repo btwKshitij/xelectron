@@ -1,3 +1,4 @@
+import { getPurchaseAnalytics } from "@/lib/server/purchase-analytics";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import crypto from "crypto";
@@ -102,6 +103,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: order,
+      analytics: await getPurchaseAnalytics(order.id, orderDetails?.discountCode || ""),
       paymentId: razorpay_payment_id,
     });
   } catch (error) {
