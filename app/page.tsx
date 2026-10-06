@@ -29,8 +29,8 @@ const VerifiedReviewsSection = dynamic(() => import("@/components/home/verified-
 const FaqSection = dynamic(() => import("@/components/home/faq-section"));
 const BlogSection = dynamic(() => import("@/components/home/blog-section"));
 
-// Cache the homepage with ISR (revalidates every 60 seconds, or instantly when cleared from admin)
-export const revalidate = 60;
+// Read current offers on every visit, including after an admin changes the deal.
+export const revalidate = 0;
 
 export default async function Home() {
   // Execute all database queries in parallel for ultra-fast TTFB

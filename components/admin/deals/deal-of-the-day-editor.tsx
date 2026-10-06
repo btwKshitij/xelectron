@@ -210,6 +210,7 @@ export function DealOfTheDayEditor({ deal, products }: { deal: EditableDeal | nu
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState("");
+  const [hasSaved, setHasSaved] = useState(false);
 
   const selectedProduct = useMemo(() => products.find((product) => product.id === productId), [productId, products]);
   const unitsLeftValue = Number(unitsLeft);
@@ -305,6 +306,7 @@ export function DealOfTheDayEditor({ deal, products }: { deal: EditableDeal | nu
     if (!canSave) return;
     setIsSaving(true);
     setError("");
+    setHasSaved(false);
 
     try {
       const finalDealPrice = isCustomPricing
@@ -335,6 +337,7 @@ export function DealOfTheDayEditor({ deal, products }: { deal: EditableDeal | nu
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || "Could not save the deal");
       setInitialFormState(currentFormState);
+      setHasSaved(true);
       router.refresh();
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Could not save the deal");
@@ -346,13 +349,16 @@ export function DealOfTheDayEditor({ deal, products }: { deal: EditableDeal | nu
   return (
     <main className="min-h-full flex-1 bg-[#f5f5f5] p-4 text-black sm:p-5">
       <form className="mx-auto max-w-[1050px]" onSubmit={saveDeal}>
-        <header className="flex flex-wrap items-center justify-between gap-3">
+        <header className="sticky top-0 z-40 flex flex-wrap items-center justify-between gap-3 bg-[#f5f5f5] py-3">
           <div>
             <h1 className="flex items-center gap-1.5 text-lg font-semibold"><Flame className="size-4" /><ChevronRight className="size-4 text-black/45" /> Deal of the day</h1>
             <p className="mt-1 text-sm text-black/55">Choose the product and limited-time offer customers see on the home page.</p>
           </div>
           <div className="flex items-center gap-2"><Link prefetch={false} href="/dashboard" className="inline-flex h-8 items-center rounded-lg bg-black/[0.06] px-3 text-xs font-medium transition hover:bg-black/10">Discard</Link><button type="submit" disabled={!canSave} className="inline-flex h-8 items-center rounded-lg bg-black px-3 text-xs font-semibold text-white transition hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-black/15">{isSaving ? "Saving…" : "Save deal"}</button></div>
         </header>
+        <p role="status" className={`mt-2 text-sm ${isDirty ? "text-amber-700" : "text-emerald-700"}`}>
+          {isDirty ? "Unsaved changes — click Save deal to update the website." : hasSaved ? "Deal saved. The updated offer is now available on the website." : ""}
+        </p>
 
         <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
           <div className="space-y-4">

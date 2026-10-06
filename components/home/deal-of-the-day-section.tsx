@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { formatINR, parsePriceNumber } from "@/lib/format-price";
 import { useEffect, useRef, useState } from "react";
@@ -73,6 +74,7 @@ function displayPrice(price: string) {
 }
 
 export default function DealOfTheDaySection({ deal }: { deal: StorefrontDealOfTheDay }) {
+  const router = useRouter();
   const sectionRef = useRef<HTMLDivElement>(null);
   const [isWhite, setIsWhite] = useState(false);
   const [timerInfo, setTimerInfo] = useState(() => getTimeLeftInfo(deal.endsAt));
@@ -81,6 +83,15 @@ export default function DealOfTheDaySection({ deal }: { deal: StorefrontDealOfTh
   const numPrice = parsePriceNumber(deal.product.price);
   const numOld = parsePriceNumber(deal.product.oldPrice);
   const discountPercent = numOld > 0 && numPrice > 0 && numPrice < numOld ? Math.round(((numOld - numPrice) / numOld) * 100) : 0;
+
+  // A storefront tab can remain open while the deal is edited in another tab.
+  useEffect(() => {
+    const refreshDeal = () => {
+      if (document.visibilityState === "visible") router.refresh();
+    };
+    document.addEventListener("visibilitychange", refreshDeal);
+    return () => document.removeEventListener("visibilitychange", refreshDeal);
+  }, [router]);
 
   // COUNTDOWN TIMER
   useEffect(() => {
