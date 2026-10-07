@@ -1,4 +1,5 @@
 "use client";
+import { formatOrderReference } from "@/lib/order-reference";
 import { cartEcommerce, trackEcommerce, trackPurchase, rememberOrderContext } from "@/lib/analytics";
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -748,8 +749,8 @@ function CheckoutContent() {
               void trackPurchase(verifyData.analytics);
               const rawId = verifyData?.data?.id;
               const newOrderId = rawId
-                ? `XE-${rawId.slice(-6).toUpperCase()}`
-                : `XE-${Math.floor(100000 + Math.random() * 900000)}`;
+                ? formatOrderReference(rawId)
+                : "Reference unavailable";
               setOrderId(newOrderId);
               setPaidTotal(total);
 
@@ -930,8 +931,8 @@ function CheckoutContent() {
       void trackPurchase(orderData.analytics);
       const rawId = orderData?.data?.id;
       const newOrderId = rawId
-        ? `XE-${rawId.slice(-6).toUpperCase()}`
-        : `XE-${Math.floor(100000 + Math.random() * 900000)}`;
+        ? formatOrderReference(rawId)
+        : "Reference unavailable";
       setOrderId(newOrderId);
       setPaidTotal(total);
 

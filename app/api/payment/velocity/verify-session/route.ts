@@ -1,3 +1,4 @@
+import { formatOrderReference } from "@/lib/order-reference";
 import { getPurchaseAnalytics } from "@/lib/server/purchase-analytics";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest) {
             analytics: await getPurchaseAnalytics(updated.id),
             data: {
               id: updated.id,
-              orderNumber: `XE-${updated.id.slice(-6).toUpperCase()}`,
+              orderNumber: formatOrderReference(updated.id),
               total: updated.total,
               shippingCarrier: updated.shippingCarrier,
               trackingNumber: updated.trackingNumber,
@@ -98,7 +99,7 @@ export async function POST(request: NextRequest) {
       analytics: await getPurchaseAnalytics(order.id),
       data: {
         id: order.id,
-        orderNumber: `XE-${order.id.slice(-6).toUpperCase()}`,
+        orderNumber: formatOrderReference(order.id),
         total: order.total,
         shippingCarrier: order.shippingCarrier,
         trackingNumber: order.trackingNumber,

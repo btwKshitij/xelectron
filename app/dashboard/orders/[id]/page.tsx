@@ -1,5 +1,6 @@
 "use client";
 
+import { formatOrderReference } from "@/lib/order-reference";
 import { useEffect, useState, use } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -450,7 +451,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     minute: "2-digit",
   });
 
-  const orderRef = `#XE-${order.id.slice(-8).toUpperCase()}`;
+  const orderRef = `#${formatOrderReference(order.id)}`;
   const totalItemsCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
   const isFulfilled = order.status === "DELIVERED" || order.status === "SHIPPED";
   const hasLiveDelivery = deliveryDetails?.found === true;

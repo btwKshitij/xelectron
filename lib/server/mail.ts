@@ -1,3 +1,4 @@
+import { formatOrderReference } from "@/lib/order-reference";
 import nodemailer from "nodemailer";
 
 export function getMailTransporter() {
@@ -275,7 +276,7 @@ export interface SendOrderConfirmationOptions {
  * to info@xelectron.com and customercare@xelectron.com when an order is created.
  */
 export async function sendOrderConfirmationEmail(order: SendOrderConfirmationOptions) {
-  const orderNumber = `XE-${order.id.slice(-6).toUpperCase()}`;
+  const orderNumber = formatOrderReference(order.id);
   const formattedTotal = `₹${Math.round(order.total).toLocaleString("en-IN")}`;
   const currentYear = new Date().getFullYear();
   const deliveryAddress =

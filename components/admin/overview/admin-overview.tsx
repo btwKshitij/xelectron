@@ -1,5 +1,6 @@
 "use client"
 
+import { formatOrderReference } from "@/lib/order-reference";
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -42,8 +43,8 @@ const currencyFormatter = new Intl.NumberFormat("en-IN", {
   maximumFractionDigits: 2,
 })
 
-function formatOrderReference(id: string) {
-  return `#${id.slice(-8).toUpperCase()}`
+function displayOrderReference(id: string) {
+  return `#${formatOrderReference(id)}`
 }
 
 function formatOrderStatus(status: string) {
@@ -337,7 +338,7 @@ export function AdminOverview({ data }: { data: DashboardData }) {
             <div className="mt-3 divide-y divide-black/10">
               {currentData.recentOrders.map((order) => (
                 <Link prefetch={false} key={order.id} href="/dashboard/orders" className="flex items-center justify-between gap-3 py-3 text-xs hover:bg-black/[0.02] min-w-0">
-                  <span className="font-medium shrink-0">{formatOrderReference(order.id)}</span>
+                  <span className="font-medium shrink-0">{displayOrderReference(order.id)}</span>
                   <span className="text-black/55 truncate">{formatOrderStatus(order.status)}</span>
                   <span className="font-medium shrink-0">{currencyFormatter.format(order.total)}</span>
                 </Link>

@@ -1,3 +1,4 @@
+import { formatOrderReference } from "@/lib/order-reference";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CalendarDays, Package } from "lucide-react";
@@ -43,7 +44,7 @@ function formatStatus(status: string) {
 }
 
 function orderReference(id: string) {
-  return `#${id.slice(-8).toUpperCase()}`;
+  return `#${formatOrderReference(id)}`;
 }
 
 function statusClass(status: string) {

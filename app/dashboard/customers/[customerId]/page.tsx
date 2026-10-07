@@ -1,3 +1,4 @@
+import { formatOrderReference } from "@/lib/order-reference";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -40,7 +41,7 @@ const timeFormatter = new Intl.DateTimeFormat("en-IN", {
 });
 
 function orderReference(id: string) {
-  return `#${id.slice(-8).toUpperCase()}`;
+  return `#${formatOrderReference(id)}`;
 }
 
 export default async function CustomerDetailPage({ params }: { params: Promise<{ customerId: string }> }) {

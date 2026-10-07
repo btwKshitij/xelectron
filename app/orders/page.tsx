@@ -1,5 +1,6 @@
 "use client";
 
+import { formatOrderReference } from "@/lib/order-reference";
 import { Suspense, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -261,7 +262,7 @@ function OrdersContent() {
                       <div>
                         <span className="text-slate-400">Order ID:</span>{" "}
                         <span className="font-bold text-slate-900">
-                          #XE-{order.id.slice(-6).toUpperCase()}
+                          #{formatOrderReference(order.id)}
                         </span>
                       </div>
                       <div className="hidden sm:block text-slate-300">•</div>
