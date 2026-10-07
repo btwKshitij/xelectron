@@ -60,6 +60,19 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           />
         </noscript>
         {/* End Google Tag Manager (noscript) */}
+        {/* Meta Pixel: the JS loader lives in lib/meta-pixel.ts and fires on the first tracked page view. */}
+        {process.env.NEXT_PUBLIC_META_PIXEL_ID ? (
+          <noscript>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              height="1"
+              width="1"
+              style={{ display: "none" }}
+              alt=""
+              src={`https://www.facebook.com/tr?id=${process.env.NEXT_PUBLIC_META_PIXEL_ID}&ev=PageView&noscript=1`}
+            />
+          </noscript>
+        ) : null}
         <ChunkErrorHandler />
         <Suspense fallback={null}><PageTracking /></Suspense>
         <CartProvider>

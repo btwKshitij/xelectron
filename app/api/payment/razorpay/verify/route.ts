@@ -1,5 +1,7 @@
 import { getPurchaseAnalytics } from "@/lib/server/purchase-analytics";
-import { NextResponse } from "next/server";
+import { metaRequestContext } from "@/lib/server/meta-capi";
+import { sendMetaPurchase } from "@/lib/server/meta-purchase";
+import { after, NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import crypto from "crypto";
 import { getRazorpayInstance } from "@/lib/server/razorpay";
@@ -72,6 +74,10 @@ export async function POST(request: NextRequest) {
     if ((order as any).sessionToken) {
       await setSessionCookie((order as any).sessionToken);
     }
+
+    // Server-side Meta Purchase from the captured payment, with the shopper's browser signals.
+    const metaContext = metaRequestContext(request);
+    after(() => sendMetaPurchase(order.id, metaContext));
 
     // Trigger order confirmation email in background to customer and notify info@xelectron.com & customercare@xelectron.com
     if (order) {

@@ -1,6 +1,8 @@
 import { formatOrderReference } from "@/lib/order-reference";
 import { getPurchaseAnalytics } from "@/lib/server/purchase-analytics";
-import { NextRequest, NextResponse } from "next/server";
+import { metaRequestContext } from "@/lib/server/meta-capi";
+import { sendMetaPurchase } from "@/lib/server/meta-purchase";
+import { after, NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getVelocityOrderSessions, parseVelocityStateToken } from "@/lib/server/velocity";
 import { confirmVelocityOrder } from "@/lib/server/velocity-orders";
@@ -50,6 +52,8 @@ export async function POST(request: NextRequest) {
         await confirmVelocityOrder(order.id, successfulSession.session_uuid);
         const updated = await db.order.findUnique({ where: { id: order.id } });
         if (updated && updated.paymentVerified) {
+          const metaContext = metaRequestContext(request);
+          after(() => sendMetaPurchase(updated.id, metaContext, "/checkout/velocity-callback"));
           return NextResponse.json({
             success: true,
             analytics: await getPurchaseAnalytics(updated.id),
@@ -93,6 +97,10 @@ export async function POST(request: NextRequest) {
     if (!order.paymentVerified) {
       return NextResponse.json({ success: false, pending: true, error: "Payment is not verified yet." }, { status: 202 });
     }
+
+    // Already confirmed (usually by the webhook): a no-op once the Purchase marker is on the order.
+    const metaContext = metaRequestContext(request);
+    after(() => sendMetaPurchase(order.id, metaContext, "/checkout/velocity-callback"));
 
     return NextResponse.json({
       success: true,

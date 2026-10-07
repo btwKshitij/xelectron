@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { verifyRazorpayWebhook } from "@/lib/server/razorpay";
 import { db } from "@/lib/db";
 import * as productsDal from "@/lib/server/dal/products.dal";
+import { sendMetaPurchase } from "@/lib/server/meta-purchase";
 
 export async function GET() {
   return NextResponse.json({
@@ -118,6 +119,12 @@ export async function POST(request: NextRequest) {
             );
           } catch {}
         }
+      }
+
+      // Webhook-confirmed payment: send the Meta Purchase if the client verify path has not already.
+      if (order) {
+        const confirmedOrderId = order.id;
+        after(() => sendMetaPurchase(confirmedOrderId));
       }
     } else if (event === "payment.failed") {
       if (dbOrderId) {

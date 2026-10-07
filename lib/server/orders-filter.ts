@@ -28,15 +28,18 @@ export function isOrderPaidOrCod(order: {
   }
 
   // 3. If it is Cash on Delivery, it is a valid placed order awaiting payment on delivery
+  return isCodOrder(order);
+}
+
+/** Cash on Delivery orders are identified by the markers written at placement. */
+export function isCodOrder(order: { shippingAddress?: string | null; internalNotes?: string | null }): boolean {
   const address = order.shippingAddress || "";
   const notes = order.internalNotes || "";
-
-  const isCod =
+  return (
     /\[Payment:\s*COD/i.test(address) ||
     /Payment method:\s*COD/i.test(notes) ||
-    /\bCOD\b/i.test(notes);
-
-  return isCod;
+    /\bCOD\b/i.test(notes)
+  );
 }
 
 /**

@@ -16,6 +16,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
+import { trackLogin, trackSignUp } from "@/lib/analytics";
 
 function AuthForm() {
   const router = useRouter();
@@ -197,6 +198,7 @@ function AuthForm() {
           throw new Error(data.error || "Login failed. Please check your credentials.");
         }
 
+        trackLogin("email");
         router.replace(targetUrl);
         router.refresh();
       } else {
@@ -220,6 +222,7 @@ function AuthForm() {
           throw new Error(data.error || "Failed to create account.");
         }
 
+        trackSignUp("email");
         toast.success("Account created successfully!");
         router.replace(targetUrl);
         router.refresh();

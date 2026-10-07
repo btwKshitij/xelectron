@@ -1,5 +1,7 @@
 import { getPurchaseAnalytics } from "@/lib/server/purchase-analytics";
-import { NextResponse } from "next/server";
+import { metaRequestContext } from "@/lib/server/meta-capi";
+import { sendMetaPurchase } from "@/lib/server/meta-purchase";
+import { after, NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import * as ordersController from "@/lib/server/controllers/orders.controller";
 import { getCurrentUser, AuthError } from "@/lib/server/dal/auth";
@@ -69,6 +71,10 @@ export async function POST(request: NextRequest) {
     if ((order as any).sessionToken) {
       await setSessionCookie((order as any).sessionToken);
     }
+
+    // COD orders count as purchases on placement; unpaid online orders are skipped by sendMetaPurchase.
+    const metaContext = metaRequestContext(request);
+    after(() => sendMetaPurchase(order.id, metaContext));
 
     // Trigger order confirmation email in background to customer and notify info@xelectron.com & customercare@xelectron.com
     if (order) {

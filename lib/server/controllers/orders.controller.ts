@@ -7,6 +7,8 @@ import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import type { Discount } from "@prisma/client";
 import { validateDealCheckout } from "@/lib/server/deal-checkout";
+import { isCodOrder } from "@/lib/server/orders-filter";
+import { sendGa4Refund } from "@/lib/server/ga4-measurement-protocol";
 
 // ─── List ────────────────────────────────────────────────────────────────────
 
@@ -233,6 +235,11 @@ export async function updateOrder(id: string, data: ordersDal.UpdateOrderInput &
   if (!existing) throw new Error("Order not found");
 
   const updated = await ordersDal.updateOrder(id, data);
+
+  // Cancelling a paid online order is the store's refund action: report it to GA4 against the original transaction.
+  if (data.status === "CANCELLED" && existing.status !== "CANCELLED" && existing.paymentVerified && !isCodOrder(existing)) {
+    void sendGa4Refund(existing).catch(() => null);
+  }
 
   // If status changed or fulfillment tracking was updated and customer notification is enabled
   const notificationDispatched = Boolean(data.notifyCustomer ?? true);

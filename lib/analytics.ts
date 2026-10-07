@@ -1,4 +1,10 @@
-/** Platform-neutral GTM contract. Only allowlisted measurement fields leave the app. */
+/**
+ * Platform-neutral GTM contract. Only allowlisted measurement fields leave the app.
+ * GA4 events go to the dataLayer (GTM owns delivery). The same funnel actions are
+ * mirrored to Meta Pixel + Conversions API through lib/meta-pixel with shared event IDs.
+ */
+import { metaCustomData, trackMeta, TRACKED_QUERY_KEYS, type MetaEventName } from "@/lib/meta-pixel";
+
 export type AnalyticsProduct = {
   id: string;
   name: string;
@@ -78,11 +84,23 @@ function push(value: unknown) {
   } catch { return false; } // Analytics must never break a business action.
 }
 
+/** GA4 events that have a Meta standard-event equivalent. Purchase is paired separately in trackPurchase. */
+const META_EVENTS: Partial<Record<EcommerceEvent, MetaEventName>> = {
+  view_item: "ViewContent",
+  add_to_wishlist: "AddToWishlist",
+  add_to_cart: "AddToCart",
+  begin_checkout: "InitiateCheckout",
+  add_payment_info: "AddPaymentInfo",
+};
+
 export function trackEcommerce(event: EcommerceEvent, ecommerce: Ecommerce) {
   if (ecommerce.items.some(item => !item.item_id || !item.item_name || !item.item_category || !Number.isFinite(item.price) || !Number.isInteger(item.quantity) || item.quantity < 1)) return false;
   if (ecommerce.value !== undefined && (!Number.isFinite(ecommerce.value) || !ecommerce.currency)) return false;
   push({ ecommerce: null });
-  return push({ event, ecommerce });
+  const sent = push({ event, ecommerce });
+  const metaEvent = META_EVENTS[event];
+  if (sent && metaEvent) trackMeta(metaEvent, metaCustomData(ecommerce));
+  return sent;
 }
 
 export function cartEcommerce(products: AnalyticsProduct[], extra: Partial<Ecommerce> = {}): Ecommerce {
@@ -134,6 +152,8 @@ export async function trackPurchase(purchase?: Purchase | null) {
       };
     } catch { /* A redirect may return in a different tab without session context. */ }
     if (!trackEcommerce("purchase", payload)) return;
+    // Browser copy of the server-sent Purchase; the deterministic ID lets Meta deduplicate the pair.
+    trackMeta("Purchase", { ...metaCustomData(payload), order_id: payload.transaction_id }, { eventId: `purchase_${payload.transaction_id}` });
     purchases.add(key);
     try { window.localStorage.setItem(key, "1"); } catch { /* storage may be disabled */ }
   };
@@ -150,7 +170,15 @@ export function safeSearchTerm(term: string) {
 
 export function trackSearch(term: string) {
   const search_term = safeSearchTerm(term);
-  if (search_term) push({ event: "search", search_term });
+  if (search_term && push({ event: "search", search_term })) trackMeta("Search", { search_string: search_term });
+}
+
+export function trackLogin(method: string) {
+  push({ event: "login", method });
+}
+
+export function trackSignUp(method: string) {
+  push({ event: "sign_up", method });
 }
 
 export function trackPromotion(id: string, name: string, slot: string, creative?: string) {
@@ -176,9 +204,10 @@ export function trackPageView(location: string, title: string, type: string) {
   const url = new URL(location);
   // Do not expose payment return state, order IDs, email, or other query data.
   const clean = new URL(url.pathname, url.origin);
-  for (const key of ["filter", "category", "product", "id"]) {
+  for (const key of TRACKED_QUERY_KEYS) {
     const value = url.searchParams.get(key);
     if (value && /^[a-zA-Z0-9_-]+$/.test(value) && !url.pathname.startsWith("/checkout")) clean.searchParams.set(key, value);
   }
-  push({ event: "page_view", page_location: clean.href, page_title: title, page_type: type });
+  // One PageView per real route view for both GA4 and Meta (initial load and SPA navigations alike).
+  if (push({ event: "page_view", page_location: clean.href, page_title: title, page_type: type })) trackMeta("PageView");
 }

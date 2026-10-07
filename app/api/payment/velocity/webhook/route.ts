@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { verifyVelocityWebhook, getVelocityConfig } from "@/lib/server/velocity";
 import { cancelVelocityOrder, confirmVelocityOrder } from "@/lib/server/velocity-orders";
+import { sendMetaPurchase } from "@/lib/server/meta-purchase";
 
 type VelocityWebhookData = {
   order_id?: string;
@@ -81,6 +82,8 @@ export async function POST(request: NextRequest) {
 
       if (result.confirmed && result.order) {
         const confirmedOrder = result.order as any;
+        // Signed webhook is the authoritative payment confirmation for Velocity.
+        after(() => sendMetaPurchase(confirmedOrder.id, {}, "/checkout/velocity-callback"));
         import("@/lib/server/mail").then(({ sendOrderConfirmationEmail }) => {
           sendOrderConfirmationEmail({
             id: confirmedOrder.id,
