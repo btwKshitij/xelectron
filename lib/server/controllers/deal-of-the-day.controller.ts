@@ -1,5 +1,6 @@
 import * as dealOfTheDayDal from "@/lib/server/dal/deal-of-the-day.dal";
 import * as productsController from "@/lib/server/controllers/products.controller";
+import { formatINR, parsePriceNumber } from "@/lib/format-price";
 
 type SaveDealOfTheDayInput = {
   productId?: string;
@@ -8,6 +9,7 @@ type SaveDealOfTheDayInput = {
   image?: string | null;
   dealPrice?: string | null;
   compareAtPrice?: string | null;
+  discountPercent?: number;
   badge?: string | null;
   features?: string[];
   unitsLeft?: number;
@@ -28,8 +30,8 @@ export async function saveDealOfTheDay(input: SaveDealOfTheDayInput) {
   const productId = input.productId?.trim();
   const title = input.title?.trim();
   const description = input.description?.trim();
-  const dealPrice = input.dealPrice?.trim() || null;
-  const compareAtPrice = input.compareAtPrice?.trim() || null;
+  let dealPrice = input.dealPrice?.trim() || null;
+  let compareAtPrice = input.compareAtPrice?.trim() || null;
   const unitsLeft = Number(input.unitsLeft);
   const totalUnits = Number(input.totalUnits);
   const endsAt = input.endsAt ? new Date(input.endsAt) : null;
@@ -47,8 +49,21 @@ export async function saveDealOfTheDay(input: SaveDealOfTheDayInput) {
     throw new Error("Choose a valid deal end date and time");
   }
 
-  const product = await productsController.getProduct(productId);
+  const product = await productsController.getProduct(productId, "catalog");
   if (!product) throw new Error("Selected product was not found");
+
+  // Always apply the percentage once to the stored catalog price, never the active deal.
+  if (input.discountPercent !== undefined) {
+    const percent = input.discountPercent;
+    if (!Number.isFinite(percent) || percent < 0 || percent >= 100) {
+      throw new Error("Enter a discount percentage from 0 to less than 100");
+    }
+    const basePrice = parsePriceNumber(product.price);
+    const discountedPrice = Math.round(basePrice * (1 - percent / 100));
+    if (basePrice <= 0 || discountedPrice <= 0) throw new Error("Deal price must be greater than zero");
+    dealPrice = formatINR(discountedPrice);
+    compareAtPrice = percent > 0 ? formatINR(basePrice) : null;
+  }
 
   const features = Array.isArray(input.features)
     ? input.features.map((feature) => feature.trim()).filter(Boolean).slice(0, 8)

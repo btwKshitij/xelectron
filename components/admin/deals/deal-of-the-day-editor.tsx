@@ -273,7 +273,7 @@ export function DealOfTheDayEditor({ deal, products }: { deal: EditableDeal | nu
   function handleDiscountPercentChange(value: string) {
     const cleaned = value.replace(/[^\d]/g, "");
     const num = Number(cleaned);
-    if (cleaned !== "" && num > 100) return;
+    if (cleaned !== "" && num >= 100) return;
     setDiscountPercent(cleaned);
   }
 
@@ -326,6 +326,7 @@ export function DealOfTheDayEditor({ deal, products }: { deal: EditableDeal | nu
           image: image || null,
           dealPrice: finalDealPrice,
           compareAtPrice: finalCompareAt,
+          ...(!isCustomPricing ? { discountPercent: Number(discountPercent) } : {}),
           badge: badge.trim() || null,
           features: featuresText.split(",").map((feature) => feature.trim()).filter(Boolean),
           unitsLeft: unitsLeftValue,

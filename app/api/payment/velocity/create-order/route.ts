@@ -8,6 +8,7 @@ import {
 import * as ordersDal from "@/lib/server/dal/orders.dal";
 import * as usersDal from "@/lib/server/dal/users.dal";
 import * as productsDal from "@/lib/server/dal/products.dal";
+import { validateDealCheckout } from "@/lib/server/deal-checkout";
 
 type CheckoutItem = {
   id?: string;
@@ -80,6 +81,8 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    await validateDealCheckout(items, orderTotal, discountCode);
 
     // Validate credentials before creating an internal order.
     assertVelocityConfig();

@@ -79,12 +79,12 @@ export async function listCatalogProducts(searchQuery?: string, categorySlug?: s
 
 // ─── Get One ─────────────────────────────────────────────────────────────────
 
-export async function getProduct(idOrSlug: string) {
+export async function getProduct(idOrSlug: string, pricing: "storefront" | "catalog" = "storefront") {
   // Try by ID first, then by slug
   const byId = await productsDal.getProductById(idOrSlug);
   if (byId) {
     const defaultHeadings = await getSpecHeadings();
-    const product = applyEffectivePrice(byId);
+    const product = pricing === "catalog" ? byId : applyEffectivePrice(byId);
     return {
       ...defaultHeadings,
       ...product,
@@ -95,7 +95,7 @@ export async function getProduct(idOrSlug: string) {
   const bySlug = await productsDal.getProductBySlug(idOrSlug);
   if (bySlug) {
     const defaultHeadings = await getSpecHeadings();
-    const product = applyEffectivePrice(bySlug);
+    const product = pricing === "catalog" ? bySlug : applyEffectivePrice(bySlug);
     return {
       ...defaultHeadings,
       ...product,

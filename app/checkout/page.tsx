@@ -660,6 +660,7 @@ function CheckoutContent() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             amount: total,
+            discountCode: appliedCoupon || undefined,
             receipt: `rcpt_${Date.now()}`,
             items: orderItems.map((item) => ({ id: item.id, quantity: item.quantity })),
             notes: {

@@ -17,7 +17,7 @@ export const revalidate = 0;
 
 export async function generateMetadata({ params }: ProductEditPageProps): Promise<Metadata> {
   const { id } = await params;
-  const product = await productsController.getProduct(id);
+  const product = await productsController.getProduct(id, "catalog");
   return {
     title: product ? `${product.name} | Xelectron Admin` : "Product not found | Xelectron Admin",
     description: product ? `Edit product details for ${product.name}` : "Product not found.",
@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: ProductEditPageProps): Promis
 export default async function ProductEditPage({ params }: ProductEditPageProps) {
   const { id } = await params;
   const [product, categories] = await Promise.all([
-    productsController.getProduct(id),
+    productsController.getProduct(id, "catalog"),
     categoriesController.listCategories(),
   ]);
 

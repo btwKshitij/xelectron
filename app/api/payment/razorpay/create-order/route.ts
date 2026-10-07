@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getRazorpayInstance } from "@/lib/server/razorpay";
+import { validateDealCheckout } from "@/lib/server/deal-checkout";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { amount, receipt, notes, items } = body;
+    const { amount, receipt, notes, items, discountCode } = body;
 
     if (!amount || Number(amount) <= 0) {
       return NextResponse.json(
@@ -15,6 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (Array.isArray(items) && items.length > 0) {
+      await validateDealCheckout(items, Number(amount), discountCode);
       const { db } = await import("@/lib/db");
       for (const item of items) {
         if (!item?.id) continue;

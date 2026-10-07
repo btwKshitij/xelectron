@@ -6,6 +6,7 @@ import * as discountsDal from "@/lib/server/dal/discounts.dal";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import type { Discount } from "@prisma/client";
+import { validateDealCheckout } from "@/lib/server/deal-checkout";
 
 // ─── List ────────────────────────────────────────────────────────────────────
 
@@ -33,6 +34,7 @@ export async function createOrder(data: ordersDal.CreateOrderInput) {
   if (!data.items || data.items.length === 0) {
     throw new Error("Missing required fields: items (non-empty)");
   }
+  await validateDealCheckout(data.items, data.total, data.discountCode);
 
   let finalUserId = data.userId || null;
   let sessionToken: string | null = null;
