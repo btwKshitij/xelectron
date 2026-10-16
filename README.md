@@ -46,6 +46,22 @@ SMTP rejection now produces an error instead of a false success page and removes
 
 Regression checks: `node --test --test-isolation=none scripts/test-password-reset-mail.cjs`.
 
+## SMS templates and notifications
+
+All 21 approved XELECT messages and their IDs are stored in `lib/server/sms/templates.ts`. Checkout OTP uses the mobile-verification template, independently of the legacy `SMSALERT_TEMPLATE_ID`. Keep `SMSALERT_API_KEY` and `SMSALERT_SENDER_ID=XELECT` in the server environment. Each notification supplies its own template ID and exact message text. Signup and password recovery remain email-based; account/login/password OTP templates are available for future verified SMS authentication flows, not triggered by the existing email routes.
+
+Before starting the updated application on **each deployment database**, run `npm run db:sms`, then `npm run build` and restart the application. The additive setup creates `sms_notifications`; notification errors never roll back orders. It has been run against the development environment's configured database, not independently verified on the VPS. Deploy the new scripts along with the application.
+
+Automatic notifications: paid orders (Razorpay verification/signed webhooks, Velocity confirmation), COD placement, changed admin order statuses, shipment processing, contact/repair requests and warranty registration. Paid/COD confirmation replaces a redundant order-received SMS. Razorpay refund SMS requires a signed `refund.created` or `refund.processed` webhook matched to the original payment; subscribe to those events in Razorpay. Cancellation alone never claims a refund was initiated. Payment-failure notifications require an existing unpaid order that can be matched to the verified event; no message is fabricated for unmatched checkout attempts.
+
+Support Requests has staff actions for service-update SMS and warranty-service registration linked to an order belonging to the same phone number. Each action sends once per request/order. Account/login/password OTP templates are intentionally not exposed as arbitrary staff-send actions.
+
+Courier events are checked when authorized users view tracking, and can also be polled. Set a long random `SMS_SYNC_SECRET` and `SMS_SYNC_URL` to the application's canonical origin (no redirects). Run `node scripts/sync-sms-courier.cjs` on the VPS; it pages through active tracked orders. For unattended operation, configure the VPS scheduler to run it every five minutes from `/var/www/xelectron`. No scheduler is installed automatically. Known forward-delivery states map to shipped, out-for-delivery, delivered, failed or rescheduled; unknown/return states are skipped. These messages are sent once per order/event, not on every poll.
+
+`sms_notifications` records `SENDING`, `ACCEPTED` or `REVIEW`, with the provider batch ID. ACCEPTED means provider acceptance, not handset delivery; use SMS Alert's delivery report to confirm delivery. Ambiguous failures and interrupted sends are not automatically replayed. After checking the provider report, an authenticated admin may POST `{ "key": "the event_key", "confirmedNotDelivered": true }` to `/api/admin/sms/retry` for a REVIEW record or SENDING record older than 15 minutes. Already accepted records cannot be retried through this endpoint. Review the event's current relevance before resending old messages.
+
+Verification without sending SMS: `node --test --test-isolation=none scripts/test-sms-templates.cjs`.
+
 ## Order discount breakdown
 
 Before deploying the order pricing changes against a different database, run `npm run db:order-pricing` with that environment's `DATABASE_URL`, then build and restart the app. This adds the nullable `orders.pricing_summary` JSONB column without changing existing orders. The configured database has already been initialized during development. Prisma generation runs automatically before development and builds.

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import * as ordersController from "@/lib/server/controllers/orders.controller";
 import { getCurrentUser, AuthError } from "@/lib/server/dal/auth";
 import { getDelhiveryTracking } from "@/lib/server/delhivery";
+import { notifyCourierSms } from "@/lib/server/sms/courier";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -40,6 +41,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     }
 
     const tracking = await getDelhiveryTracking(order.trackingNumber);
+    await notifyCourierSms(order.id, tracking);
     return NextResponse.json({
       success: true,
       data: {

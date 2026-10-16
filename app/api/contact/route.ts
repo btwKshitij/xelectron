@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { notifySms } from "@/lib/server/sms/notifications";
 import { z } from "zod";
 import { NextRequest, NextResponse } from "next/server";
 import { sendEmail, sendInquiryCustomerEmail } from "@/lib/server/mail";
@@ -46,6 +47,8 @@ export async function POST(request: NextRequest) {
         },
       },
     });
+
+    await notifySms(`service:${saved.id}`, "service", phone, [saved.id]);
 
     // 1. Send Notification Email to Internal Team
     const escapeHtml = (value: string) => value.replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]!);

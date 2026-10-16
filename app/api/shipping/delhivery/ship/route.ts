@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db";
+import { notifyOrderSms } from "@/lib/server/sms/notifications";
 import { requireAdmin, AuthError } from "@/lib/server/dal/auth";
 import { getDelhiveryToken, getDelhiveryTracking, getDelhiveryTrackingUrl } from "@/lib/server/delhivery";
 import { buildShipment, parcelSchema, pickupSchema, type DeliveryBooking } from "@/lib/delivery-booking";
@@ -65,6 +66,7 @@ export async function POST(request: NextRequest) {
         booking.state = "MANIFESTED";
         booking.awb = awb;
         const saved = await save(booking, { trackingNumber: awb, shippingCarrier: `Delhivery ${parsed.data.shippingMode}`, trackingUrl: getDelhiveryTrackingUrl(awb), estimatedDelivery: null, status: "PROCESSING" });
+        await notifyOrderSms(order.id, "processing");
         return respond(saved, `Shipment ${awb} created in Delhivery. Schedule pickup below.`);
       } catch (error) {
         booking.state = error instanceof CourierError && !error.uncertain ? "FAILED" : "UNKNOWN";

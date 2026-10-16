@@ -331,6 +331,19 @@ model Discount {
   @@map("discounts")
 }
 
+model SmsNotification {
+  eventKey String @id @map("event_key")
+  event String
+  phone String
+  variables Json
+  status String
+  batchId String? @map("batch_id")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz
+
+  @@map("sms_notifications")
+}
+
 model Order {
   paymentVerified Boolean @default(false) @map("payment_verified")
   id                String      @id @default(cuid())

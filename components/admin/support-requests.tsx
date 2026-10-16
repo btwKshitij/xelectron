@@ -12,6 +12,16 @@ function dateLabel(date: string) {
 }
 
 export function SupportRequests({ requests }: { requests: SupportRequestRow[] }) {
+  const [smsStatus, setSmsStatus] = useState<Record<string, string>>({});
+  const [warrantyOrders, setWarrantyOrders] = useState<Record<string, string>>({});
+  async function sendUpdate(id: string, event: "serviceUpdate" | "warrantyService") {
+    setSmsStatus(current => ({ ...current, [id]: "Sending…" }));
+    try {
+      const response = await fetch(`/api/support-requests/${id}/sms`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ event, orderId: warrantyOrders[id] }) });
+      const data = await response.json();
+      setSmsStatus(current => ({ ...current, [id]: data.error || (data.accepted ? "SMS accepted for delivery" : "Not sent: already notified or delivery requires review") }));
+    } catch { setSmsStatus(current => ({ ...current, [id]: "Unable to send SMS" })); }
+  }
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState("ALL");
   const kinds = Array.from(new Set(requests.map(request => request.kind)));
@@ -45,6 +55,14 @@ export function SupportRequests({ requests }: { requests: SupportRequestRow[] })
             <div className="border-t border-slate-100 bg-slate-50/40 px-4 pb-5 pt-4 sm:pl-[72px] sm:pr-5">
               <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><p className="break-all text-[10px] text-slate-400">Reference <span className="font-mono">{request.id}</span></p><div className="flex gap-3">{phone && /^[+\d\s()-]+$/.test(phone) && <a href={`tel:${phone.replace(/[^+\d]/g, "")}`} className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:underline">Call customer <ArrowUpRight className="size-3" /></a>}{email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && <a href={`mailto:${email}`} className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:underline">Email customer <ArrowUpRight className="size-3" /></a>}</div></div>
               <dl className="grid gap-x-8 gap-y-5 sm:grid-cols-2">{Object.entries(request.details).map(([key, value]) => <div key={key} className={/message|issueDetails|address|description/i.test(key) ? "sm:col-span-2" : ""}><dt className="text-[11px] font-medium text-slate-400">{label(key)}</dt><dd className="mt-1 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700">{text(value) || "Not provided"}</dd></div>)}</dl>
+              {phone && ["WARRANTY", "COMPLAINT", "INQUIRY"].includes(request.kind) && <div className="mt-5 space-y-3 border-t border-slate-200 pt-4">
+                <button type="button" disabled={smsStatus[request.id] === "Sending…"} onClick={() => void sendUpdate(request.id, "serviceUpdate")} className="rounded border px-3 py-2 text-xs font-medium disabled:opacity-50">Send service update SMS</button>
+                {["WARRANTY", "COMPLAINT"].includes(request.kind) && <div className="flex flex-wrap gap-2">
+                  <input aria-label="Order database ID for warranty service" placeholder="Order database ID" value={warrantyOrders[request.id] || ""} onChange={e => setWarrantyOrders(current => ({ ...current, [request.id]: e.target.value }))} className="rounded border bg-white px-3 py-2 text-xs" />
+                  <button type="button" disabled={!warrantyOrders[request.id] || smsStatus[request.id] === "Sending…"} onClick={() => void sendUpdate(request.id, "warrantyService")} className="rounded border px-3 py-2 text-xs font-medium disabled:opacity-50">Register warranty service and send SMS</button>
+                </div>}
+                <p role="status" className="text-xs text-slate-600">{smsStatus[request.id]}</p>
+              </div>}
             </div>
           </details>;
         })}

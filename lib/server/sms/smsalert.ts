@@ -3,6 +3,8 @@
  * Used for sending real OTPs and order tracking notifications to Indian phone numbers via SMS.
  */
 
+import { renderSms } from "./templates";
+
 export interface SendSmsOptions {
   phone: string;
   message: string;
@@ -36,7 +38,7 @@ export async function sendSmsViaSmsAlert(options: SendSmsOptions) {
   }
 
   try {
-    console.info("[SMS ALERT] Submitting OTP", { recipient, sender: senderId, route: "transactional" });
+    console.info("[SMS ALERT] Submitting SMS", { recipient, sender: senderId, route: "transactional", templateId: options.templateId });
     const url = new URL("https://www.smsalert.co.in/api/push.json");
     url.searchParams.set("apikey", apiKey);
     url.searchParams.set("sender", senderId);
@@ -102,6 +104,5 @@ export async function sendSmsViaSmsAlert(options: SendSmsOptions) {
  * Sends a 6-digit OTP SMS to customer mobile
  */
 export async function sendOtpSms(phone: string, otp: string) {
-  const message = `XElectron: Your account verification code is ${otp}. Please use this code to complete your account registration.`;
-  return sendSmsViaSmsAlert({ phone, message });
+  return sendSmsViaSmsAlert({ phone, ...renderSms("mobileOtp", [otp]) });
 }

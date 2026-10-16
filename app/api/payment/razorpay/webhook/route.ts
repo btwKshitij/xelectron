@@ -1,6 +1,7 @@
 import { after, NextRequest, NextResponse } from "next/server";
 import { verifyRazorpayWebhook } from "@/lib/server/razorpay";
 import { db } from "@/lib/db";
+import { notifyOrderSms } from "@/lib/server/sms/notifications";
 import * as productsDal from "@/lib/server/dal/products.dal";
 import { sendMetaPurchase } from "@/lib/server/meta-purchase";
 
@@ -34,7 +35,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    let payload: any;
+    type Entity = { id?: string; payment_id?: string; method?: string; order_id?: string; amount?: number; amount_paid?: number; currency?: string; notes?: Record<string, string> };
+    let payload: { event?: string; payload?: { payment?: { entity?: Entity }; order?: { entity?: Entity }; refund?: { entity?: Entity } } };
     try {
       payload = JSON.parse(rawBody);
     } catch {
@@ -93,6 +95,7 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ success: false, error: "Payment amount mismatch" }, { status: 400 });
         }
         await db.order.update({ where: { id: order.id }, data: { paymentVerified: true } });
+        await notifyOrderSms(order.id, "paid");
       }
 
       if (order && order.status !== "CONFIRMED" && order.status !== "PROCESSING" && order.status !== "SHIPPED") {
@@ -113,7 +116,7 @@ export async function POST(request: NextRequest) {
         if (order.items && order.items.length > 0 && order.status === "PENDING") {
           try {
             await Promise.all(
-              order.items.map((item: any) =>
+              order.items.map((item: { productId: string; quantity: number }) =>
                 productsDal.decrementProductStock(item.productId, item.quantity).catch(() => null)
               )
             );
@@ -128,12 +131,19 @@ export async function POST(request: NextRequest) {
       }
     } else if (event === "payment.failed") {
       if (dbOrderId) {
-        await db.order.updateMany({
-          where: { id: dbOrderId, status: "PENDING" },
+        const cancelled = await db.order.updateMany({
+          where: { id: dbOrderId, status: "PENDING", paymentVerified: false },
           data: {
             status: "CANCELLED",
           },
         });
+        if (cancelled.count) await notifyOrderSms(dbOrderId, "paymentFailed");
+      }
+    } else if (event === "refund.created" || event === "refund.processed") {
+      const refund = eventPayload?.refund?.entity;
+      if (typeof refund?.id === "string" && typeof refund?.payment_id === "string" && /^pay_[A-Za-z0-9]+$/.test(refund.payment_id)) {
+        const order = await db.order.findFirst({ where: { paymentVerified: true, internalNotes: { contains: refund.payment_id } } });
+        if (order) await notifyOrderSms(order.id, "refund", refund.id);
       }
     }
 

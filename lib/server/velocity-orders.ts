@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { notifyOrderSms } from "@/lib/server/sms/notifications";
 import type { Prisma } from "@prisma/client";
 
 function appendPaymentNote(existingNotes: string | null, note: string) {
@@ -11,7 +12,7 @@ function appendPaymentNote(existingNotes: string | null, note: string) {
  * more than once.
  */
 export async function confirmVelocityOrder(orderId: string, paymentId?: string) {
-  return db.$transaction(async (tx: Prisma.TransactionClient) => {
+  const result = await db.$transaction(async (tx: Prisma.TransactionClient) => {
     const order = await tx.order.findUnique({
       where: { id: orderId },
       include: { items: true },
@@ -54,6 +55,8 @@ export async function confirmVelocityOrder(orderId: string, paymentId?: string) 
 
     return { found: true, confirmed: true, order: confirmedOrder };
   });
+  if (result.order?.paymentVerified) await notifyOrderSms(result.order.id, "paid");
+  return result;
 }
 
 /** Records a terminal payment failure without cancelling an already-paid order. */
@@ -73,5 +76,6 @@ export async function cancelVelocityOrder(orderId: string, paymentId?: string) {
     },
   });
 
+  await notifyOrderSms(orderId, "paymentFailed");
   return { found: true, cancelled: true };
 }

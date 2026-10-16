@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { notifySms } from "@/lib/server/sms/notifications";
 import { NextRequest, NextResponse } from "next/server";
 import { sendEmail } from "@/lib/server/mail";
 
@@ -59,6 +60,8 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    await notifySms(`warranty:${cleanSerial}:${cleanInvoice}`, "warranty", warrantyDetails.phone, [warrantyDetails.productModel]);
+
     // Send email notification to customercare@xelectron.com
     try {
       await sendEmail({
@@ -115,7 +118,7 @@ export async function GET(request: NextRequest) {
     });
 
     for (const req of warrantyRequests) {
-      const details = req.details as any;
+      const details = req.details as Record<string, unknown> | null;
       if (!details) continue;
 
       const serial = String(details.serialNumber || "").toUpperCase();

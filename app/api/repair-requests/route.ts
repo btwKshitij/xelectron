@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { notifySms } from "@/lib/server/sms/notifications";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { z } from "zod";
@@ -60,6 +61,7 @@ export async function POST(request: NextRequest) {
     }
     const email = emailInput.data;
     const saved = await db.supportRequest.create({ data: { kind: "COMPLAINT", details: { name, email, phone, serialNumber, requestType, address, issueDetails } } });
+    await notifySms(`service:${saved.id}`, "service", phone, [saved.id]);
 
     const serviceInbox = "kapil@xelectron.com";
 

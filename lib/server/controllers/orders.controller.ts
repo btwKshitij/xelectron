@@ -1,4 +1,8 @@
 import * as ordersDal from "@/lib/server/dal/orders.dal";
+
+
+
+import { notifyOrderSms } from "@/lib/server/sms/notifications";
 import * as productsDal from "@/lib/server/dal/products.dal";
 import * as usersDal from "@/lib/server/dal/users.dal";
 import * as sessionsDal from "@/lib/server/dal/sessions.dal";
@@ -223,6 +227,9 @@ export async function createOrder(data: ordersDal.CreateOrderInput) {
     } catch {}
   }
 
+  if (createdOrder.paymentVerified) await notifyOrderSms(createdOrder.id, "paid");
+  else if (isCodOrder(createdOrder)) await notifyOrderSms(createdOrder.id, "cod");
+
   return sessionToken
     ? { ...createdOrder, sessionToken }
     : createdOrder;
@@ -235,6 +242,12 @@ export async function updateOrder(id: string, data: ordersDal.UpdateOrderInput &
   if (!existing) throw new Error("Order not found");
 
   const updated = await ordersDal.updateOrder(id, data);
+  let smsDispatched = false;
+  if ((data.notifyCustomer ?? true) && (existing.status !== updated.status || existing.trackingNumber !== updated.trackingNumber)) {
+    const events = { PENDING: "received", CONFIRMED: "confirmed", PROCESSING: "processing", SHIPPED: "shipped", DELIVERED: "delivered", CANCELLED: "cancelled" } as const;
+    const event = events[updated.status as keyof typeof events];
+    if (event) smsDispatched = await notifyOrderSms(id, event);
+  }
 
   // Cancelling a paid online order is the store's refund action: report it to GA4 against the original transaction.
   if (data.status === "CANCELLED" && existing.status !== "CANCELLED" && existing.paymentVerified && !isCodOrder(existing)) {
@@ -248,14 +261,14 @@ export async function updateOrder(id: string, data: ordersDal.UpdateOrderInput &
 
   if (notificationDispatched && (targetEmail || targetPhone)) {
     console.log(
-      `[ORDER NOTIFICATION] Dispatched status "${updated.status}" update to Customer: ${targetEmail || targetPhone} (Tracking: ${updated.trackingNumber || "N/A"})`
+      `[ORDER NOTIFICATION] Status ${updated.status}; SMS accepted: ${smsDispatched}`
     );
   }
 
   return {
     ...updated,
     notificationStatus: {
-      dispatched: notificationDispatched,
+      dispatched: smsDispatched,
       email: targetEmail || null,
       phone: targetPhone || null,
       timestamp: new Date().toISOString(),
