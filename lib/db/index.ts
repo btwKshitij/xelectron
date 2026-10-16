@@ -56,6 +56,7 @@ function getDbInstance(): PrismaClient {
   if (process.env.NODE_ENV !== "production" && globalForPrisma.prisma) {
     if (
       typeof globalForPrisma.prisma.passwordResetToken === "undefined" ||
+      !(globalForPrisma.prisma as unknown as { _runtimeDataModel?: { models?: Record<string, RuntimeModel> } })._runtimeDataModel?.models?.Order?.fields?.some((field) => field.name === "pricingSummary") ||
       typeof (globalForPrisma.prisma as any).festivePopupSettings === "undefined" ||
       typeof (globalForPrisma.prisma as any).supportRequest === "undefined" ||
       !(globalForPrisma.prisma as unknown as { _runtimeDataModel?: { models?: Record<string, RuntimeModel> } })._runtimeDataModel?.models?.Order?.fields?.some((field) => field.name === "deliveryBooking") ||

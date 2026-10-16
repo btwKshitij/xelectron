@@ -164,6 +164,7 @@ export async function POST(request: NextRequest) {
     const createdOrder = await ordersDal.createOrder({
       userId: finalUserId,
       total: Math.round(orderTotal),
+      discountCode,
       customerName: customerName || "Customer",
       customerEmail,
       customerPhone,

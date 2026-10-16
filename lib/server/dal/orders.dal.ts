@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { captureOrderPricing } from "@/lib/server/order-pricing";
 import type { Prisma } from "@prisma/client";
 import { isOrderPaidOrCod, paidOrCodOrderPrismaFilter } from "@/lib/server/orders-filter";
 
@@ -158,6 +159,7 @@ export type CreateOrderInput = {
 };
 
 export async function createOrder(data: CreateOrderInput) {
+  const pricingSummary = await captureOrderPricing(data);
   const cleanEmail = data.customerEmail ? data.customerEmail.toLowerCase().trim() : undefined;
   const cleanPhone = (data.customerPhone || data.phone)?.trim();
 
@@ -165,6 +167,7 @@ export async function createOrder(data: CreateOrderInput) {
     data: {
       userId: data.userId || null,
       total: data.total,
+      pricingSummary,
       shippingAddress: data.shippingAddress,
       customerName: data.customerName,
       customerEmail: cleanEmail,

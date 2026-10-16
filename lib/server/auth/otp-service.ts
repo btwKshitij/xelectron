@@ -1,3 +1,5 @@
+import { randomInt } from "node:crypto";
+
 // In-memory OTP storage for phone and email verification with TTL expiration
 // Preserves OTPs across hot-reloads in development
 
@@ -46,13 +48,13 @@ export function generateAndStoreOtp(rawIdentifier: string): {
       throw new Error("Please enter a valid email address");
     }
   } else {
-    if (!identifier || identifier.length < 10) {
+    if (!/^[6-9]\d{9}$/.test(identifier)) {
       throw new Error("Please enter a valid 10-digit phone number");
     }
   }
 
   // Generate 6-digit numeric OTP
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const otp = randomInt(100000, 1000000).toString();
   const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes validity
 
   otpStore.set(identifier, {
@@ -62,9 +64,13 @@ export function generateAndStoreOtp(rawIdentifier: string): {
     verified: false,
   });
 
-  console.log(`[OTP SERVICE] Generated OTP ${otp} for ${isEmail ? "email" : "phone"} ${identifier} (Valid for 10 min)`);
 
   return { otp, identifier, expiresAt, isEmail };
+}
+
+export function invalidateOtp(rawIdentifier: string, otp: string): void {
+  const identifier = normalizeIdentifier(rawIdentifier);
+  if (otpStore.get(identifier)?.otp === otp) otpStore.delete(identifier);
 }
 
 export function verifyOtp(rawIdentifier: string, rawOtp: string): { success: boolean; message: string } {
@@ -85,8 +91,7 @@ export function verifyOtp(rawIdentifier: string, rawOtp: string): { success: boo
     return { success: false, message: "OTP has expired. Please request a new OTP." };
   }
 
-  // Demo bypass: "123456" is also accepted in dev or test environments for convenience
-  if (record.otp === otp || otp === "123456") {
+  if (record.otp === otp) {
     record.verified = true;
     otpStore.set(identifier, record);
     return {

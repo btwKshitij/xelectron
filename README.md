@@ -45,3 +45,13 @@ On the VPS, run `node scripts/check-smtp.cjs` from the project directory to chec
 SMTP rejection now produces an error instead of a false success page and removes the unusable reset token. Unknown account emails retain a generic response. For delivery failures, inspect application logs for `Failed to send email via SMTP` and `Password recovery unavailable`; verify the VPS environment, outbound SMTP access, and sender authorization with your mail provider.
 
 Regression checks: `node --test --test-isolation=none scripts/test-password-reset-mail.cjs`.
+
+## Order discount breakdown
+
+Before deploying the order pricing changes against a different database, run `npm run db:order-pricing` with that environment's `DATABASE_URL`, then build and restart the app. This adds the nullable `orders.pricing_summary` JSONB column without changing existing orders. The configured database has already been initialized during development. Prisma generation runs automatically before development and builds.
+
+New orders store the item subtotal, actual checkout discount, coupon code and coupon definition at creation time. The amount comes from saved item prices and the order total; it does not recalculate or change the amount paid. Checkout currently offers free shipping. Active Deal of the Day savings are captured only when the saved item price matches the deal price, relative to the product's regular selling price. The admin card adds these savings back to its displayed subtotal and deducts them once as a separate Deal of the Day discount row. Coupon discounts are labelled with their code, rather than percentage/fixed amount categories. Older snapshots without deal savings are left unchanged.
+
+Historical orders show a calculated breakdown and identify missing coupon types and shipping details as unrecorded. Original coupon details cannot be recovered reliably from today's discount settings, so historical orders are not backfilled. A positive difference above the item subtotal is shown as additional charges with an unknown breakdown.
+
+Regression checks: `node --test --test-isolation=none scripts/test-order-pricing.cjs`.

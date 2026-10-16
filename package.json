@@ -13,6 +13,7 @@
     "test:delivery": "node --test --test-isolation=none scripts/test-delhivery.cjs",
     "db:delivery": "node scripts/setup-delhivery-db.mjs",
     "db:generate": "prisma generate",
+    "db:order-pricing": "node scripts/setup-order-pricing.cjs",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",

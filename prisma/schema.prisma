@@ -348,6 +348,7 @@ model Order {
   trackingNumber    String?     @map("tracking_number")
   trackingUrl       String?     @map("tracking_url")
   deliveryBooking   Json?       @map("delivery_booking")
+  pricingSummary    Json?       @map("pricing_summary")
   estimatedDelivery String?     @map("estimated_delivery")
   internalNotes     String?     @map("internal_notes")
 

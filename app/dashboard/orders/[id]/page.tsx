@@ -1,6 +1,7 @@
 "use client";
 
 import { formatOrderReference } from "@/lib/order-reference";
+import { getOrderPricing, getDiscountRows, type OrderPricing } from "@/lib/shared/order-pricing";
 import { useEffect, useState, use } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -56,6 +57,7 @@ export type OrderDetailData = {
   status: "PENDING" | "CONFIRMED" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED";
   total: number;
   subtotal?: number;
+  pricingSummary?: OrderPricing | null;
   discount?: number;
   shippingFee?: number;
   tax?: number;
@@ -453,6 +455,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
   const orderRef = `#${formatOrderReference(order.id)}`;
   const totalItemsCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
+  const pricing = getOrderPricing(order);
+  const discountRows = getDiscountRows(pricing);
   const isFulfilled = order.status === "DELIVERED" || order.status === "SHIPPED";
   const hasLiveDelivery = deliveryDetails?.found === true;
 
@@ -736,13 +740,26 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                       </span>
                     </div>
                     <div className="flex justify-between py-0.5">
-                      <span className="text-black/60">Subtotal ({totalItemsCount} items)</span>
-                      <span>{formatINR(order.total)}</span>
+                      <span className="text-black/60">Subtotal{(pricing.dealDiscountAmount ?? 0) > 0 ? " before discounts" : ""} ({totalItemsCount} items)</span>
+                      <span>{formatINR(pricing.subtotal + (pricing.dealDiscountAmount ?? 0))}</span>
                     </div>
+                    {discountRows.map((discount) => <div key={discount.label} className="flex justify-between gap-4 py-0.5">
+                      <span className="text-black/60">{discount.label}</span>
+                      <span className="font-semibold text-emerald-700">−{formatINR(discount.amount)}</span>
+                    </div>)}
+                    {discountRows.length === 0 && <div className="flex justify-between gap-4 py-0.5">
+                      <span className="text-black/60">Discount</span><span>{formatINR(0)}</span>
+                    </div>}
+                    {pricing.dealDiscountAmount === undefined && !pricing.inferred && <p className="text-[11px] text-black/50">Deal of the Day savings were not recorded separately for this order.</p>}
                     <div className="flex justify-between py-0.5">
-                      <span className="text-black/60">Shipping (Standard Free Delivery)</span>
-                      <span>₹0.00</span>
+                      <span className="text-black/60">Shipping</span>
+                      <span>{pricing.shippingAmount === null ? "Not recorded separately" : formatINR(pricing.shippingAmount)}</span>
                     </div>
+                    {pricing.additionalAmount > 0 && <div className="flex justify-between gap-4 py-0.5">
+                      <span className="text-black/60">Additional charges (breakdown not recorded)</span>
+                      <span>{formatINR(pricing.additionalAmount)}</span>
+                    </div>}
+                    {pricing.inferred && <p className="text-[11px] text-black/50">Historical breakdown calculated from saved item prices and order total. Original coupon details may be unavailable.</p>}
                     <div className="flex justify-between pt-2.5 border-t border-black/10 text-sm font-bold text-black">
                       <span>{order.paymentVerified === true ? "Total Paid" : "Order Total"}</span>
                       <span className="text-[#0a7ae6] text-base">{formatINR(order.total)}</span>

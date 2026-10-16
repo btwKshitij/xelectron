@@ -1901,7 +1901,7 @@ function CheckoutContent() {
                   Verify COD Order
                 </h3>
                 <p className="text-[12px] text-slate-500 mt-0.5">
-                  Code sent to <span className="font-semibold text-slate-800">+91 {phone.replace(/[^0-9]/g, "")}</span>
+                  {isSendingOtp ? "Requesting code for " : otpError ? "Verification number: " : "Check SMS on "}<span className="font-semibold text-slate-800">+91 {phone.replace(/[^0-9]/g, "")}</span>
                 </p>
               </div>
             </div>

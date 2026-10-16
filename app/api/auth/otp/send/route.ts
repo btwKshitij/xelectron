@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateAndStoreOtp } from "@/lib/server/auth/otp-service";
+import { generateAndStoreOtp, invalidateOtp } from "@/lib/server/auth/otp-service";
+import { sendOtpSms } from "@/lib/server/sms/smsalert";
 
 export async function POST(request: NextRequest) {
   try {
@@ -61,15 +62,18 @@ export async function POST(request: NextRequest) {
       const { otp, identifier: cleanPhone } = generateAndStoreOtp(phone);
 
       // Dispatch SMS to mobile via SMS Alert India (smsalert.co.in)
-      import("@/lib/server/sms/smsalert").then(({ sendOtpSms }) => {
-        sendOtpSms(cleanPhone, otp).catch((err) =>
-          console.warn("[OTP] SMS Alert delivery warning:", err)
+      const result = await sendOtpSms(cleanPhone, otp);
+      if (!result.success) {
+        invalidateOtp(cleanPhone, otp);
+        return NextResponse.json(
+          { success: false, error: result.error },
+          { status: 502 }
         );
-      });
+      }
 
       return NextResponse.json({
         success: true,
-        message: `OTP sent successfully to +91 ${cleanPhone}`,
+        message: `SMS request accepted for +91 ${cleanPhone}. Delivery may take a moment.`,
         phone: cleanPhone,
       });
     }
