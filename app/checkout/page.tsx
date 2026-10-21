@@ -82,7 +82,6 @@ function CheckoutContent() {
   // Prevent resurrecting products that the user explicitly removed, and ensure ?product= is processed once
   const processedProductParamRef = useRef<string | null>(null);
   const removedProductIdsRef = useRef<Set<string>>(new Set());
-  const [dealProductIds, setDealProductIds] = useState<Set<string>>(new Set());
   const [liveStockMap, setLiveStockMap] = useState<Map<string, number>>(new Map());
 
   useEffect(() => {
@@ -157,31 +156,12 @@ function CheckoutContent() {
       setProductParamLoading(true);
     }
 
-    // Load active deal of the day info
-    fetch(`/api/deal-of-the-day?_t=${Date.now()}`, { cache: "no-store" })
-      .then((res) => res.json())
-      .then((dealJson) => {
-        if (!isSubscribed || !dealJson.success || !dealJson.data) return;
-        const deal = dealJson.data;
-        if (deal.isActive && (!deal.endsAt || new Date(deal.endsAt) > new Date())) {
-          setDealProductIds((prev) => {
-            const next = new Set(prev);
-            if (deal.productId) next.add(deal.productId);
-            if (deal.product?.id) next.add(deal.product.id);
-            if (deal.product?.slug) next.add(deal.product.slug);
-            return next;
-          });
-        }
-      })
-      .catch(() => {});
-
     fetch(`/api/products?_t=${Date.now()}`, { cache: "no-store" })
       .then((res) => res.json())
       .then((json) => {
         if (!isSubscribed || !json.success || !Array.isArray(json.data)) return;
 
         const productsMap = new Map<string, any>();
-        const dealIds = new Set<string>();
         const stockMap = new Map<string, number>();
 
         for (const p of json.data) {
@@ -191,25 +171,11 @@ function CheckoutContent() {
           const stock = typeof p.quantity === "number" ? p.quantity : 0;
           if (p.id) stockMap.set(p.id, stock);
           if (p.slug) stockMap.set(p.slug, stock);
-
-          if (
-            p.dealOfTheDay &&
-            p.dealOfTheDay.isActive &&
-            (!p.dealOfTheDay.endsAt || new Date(p.dealOfTheDay.endsAt) > new Date())
-          ) {
-            if (p.id) dealIds.add(p.id);
-            if (p.slug) dealIds.add(p.slug);
-            if (p.dealOfTheDay.productId) dealIds.add(p.dealOfTheDay.productId);
-          }
         }
 
         setLiveStockMap(stockMap);
         setCatalogIds(new Set(json.data.map((product: { id: string }) => product.id)));
         setCatalogReady(true);
-
-        if (dealIds.size > 0) {
-          setDealProductIds((prev) => new Set([...prev, ...dealIds]));
-        }
 
         // 1. Sync live prices from DB for all items currently in cart
         orderItems.forEach((item) => {
@@ -399,23 +365,6 @@ function CheckoutContent() {
     setCheckoutSessionToken(sessionToken);
   }, []);
 
-  const isDealItem = useCallback(
-    (item: { id: string; slug?: string }) => {
-      return dealProductIds.has(item.id) || Boolean(item.slug && dealProductIds.has(item.slug));
-    },
-    [dealProductIds]
-  );
-
-  const hasDealItems = useMemo(
-    () => orderItems.some((item) => isDealItem(item)),
-    [orderItems, isDealItem]
-  );
-
-  const allItemsAreDeal = useMemo(
-    () => orderItems.length > 0 && orderItems.every((item) => isDealItem(item)),
-    [orderItems, isDealItem]
-  );
-
   const outOfStockItems = useMemo(() => {
     if (liveStockMap.size === 0) return [];
     return orderItems.filter((item) => {
@@ -426,20 +375,12 @@ function CheckoutContent() {
 
   const hasOutOfStockItems = outOfStockItems.length > 0;
 
-  const eligibleItems = useMemo(
-    () => orderItems.filter((item) => !isDealItem(item)),
-    [orderItems, isDealItem]
-  );
-
-  const eligibleSubtotal = useMemo(
-    () => eligibleItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
-    [eligibleItems]
-  );
+  // Coupons apply to every item in the cart, including Deal of the Day items (at their deal price).
+  const eligibleSubtotal = subtotal;
 
   const discountAmount = useMemo(() => {
     if (paymentMethod === "cod") return 0;
     if (couponDiscount > 0) {
-      // Coupon discounts only apply to eligible items, excluding Deal of the Day items
       return Math.round((eligibleSubtotal * couponDiscount) / 100);
     }
     return 0;
@@ -469,17 +410,6 @@ function CheckoutContent() {
       trackEcommerce("add_payment_info", { ...ecommerce, payment_type: paymentMethod === "razorpay" ? "Razorpay" : paymentMethod === "velocity" ? "Velocity EMI" : "COD" });
     }
   }
-
-  // Auto-remove applied coupon if user modifies cart to only contain Deal of the Day items
-  useEffect(() => {
-    if (appliedCoupon && allItemsAreDeal) {
-      setAppliedCoupon(null);
-      setCouponDiscount(0);
-      setCouponCode("");
-      setCouponSuccess("");
-      setCouponError("Coupon was removed because Deal of the Day items already have an exclusive offer and are not eligible for coupon discounts.");
-    }
-  }, [appliedCoupon, allItemsAreDeal]);
 
   // Auto-remove applied coupon if user selects Cash on Delivery
   useEffect(() => {
@@ -529,11 +459,6 @@ function CheckoutContent() {
       return;
     }
 
-    if (allItemsAreDeal) {
-      setCouponError("Coupon codes cannot be applied to Deal of the Day items as they already have an exclusive offer.");
-      return;
-    }
-
     const code = couponCode.trim().toUpperCase();
     if (!code) {
       setCouponError("Please enter a coupon code");
@@ -574,7 +499,7 @@ function CheckoutContent() {
         // Check eligible product IDs
         if (matchedDiscount.eligibleProductIds) {
           const allowedIds = matchedDiscount.eligibleProductIds.split(",").map((id: string) => id.trim()).filter(Boolean);
-          const cartHasEligible = orderItems.some((item) => allowedIds.includes(item.id) && !isDealItem(item));
+          const cartHasEligible = orderItems.some((item) => allowedIds.includes(item.id) || (item.slug && allowedIds.includes(item.slug)));
           if (!cartHasEligible) {
             setCouponError(`Coupon code "${code}" is only valid for selected products.`);
             return;

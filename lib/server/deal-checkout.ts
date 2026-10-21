@@ -24,10 +24,8 @@ export async function validateDealCheckout(
   if (!lines.some((line) => line.isDeal)) return;
 
   const code = couponCode?.trim().toUpperCase();
-  const eligible = lines.filter((line) => !line.isDeal);
-  if (code && eligible.length === 0) {
-    throw new Error("Coupons cannot be applied to Deal of the Day products.");
-  }
+  // Coupons apply to every line, including Deal of the Day items (at their deal price).
+  const eligible = lines;
   let discountAmount = 0;
   if (code) {
     const discounts: Discount[] = await discountsDal.getAllDiscounts();
@@ -48,6 +46,6 @@ export async function validateDealCheckout(
   }
   const minimumTotal = lines.reduce((sum, line) => sum + line.amount, 0) - discountAmount;
   if (!Number.isFinite(total) || total < minimumTotal - 0.01) {
-    throw new Error("Deal of the Day products cannot receive extra discounts. Please refresh your cart and reapply your coupon.");
+    throw new Error("Order total does not match the current Deal of the Day pricing. Please refresh your cart and reapply your coupon.");
   }
 }
