@@ -6,8 +6,16 @@ import type { NextRequest } from "next/server";
 import crypto from "crypto";
 import { getRazorpayInstance } from "@/lib/server/razorpay";
 import * as ordersController from "@/lib/server/controllers/orders.controller";
+import * as ordersDal from "@/lib/server/dal/orders.dal";
 import { getCurrentUser } from "@/lib/server/dal/auth";
 import { setSessionCookie } from "@/lib/server/auth/session-utils";
+import {
+  confirmRazorpayOrder,
+  findRazorpayOrder,
+  queueRazorpayOrderEmail,
+  razorpayOrderNote,
+  RAZORPAY_PAYMENT_NOTE,
+} from "@/lib/server/razorpay-orders";
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,6 +25,7 @@ export async function POST(request: NextRequest) {
       razorpay_payment_id,
       razorpay_signature,
       orderDetails,
+      dbOrderId,
     } = body;
 
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
@@ -47,19 +56,59 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // The order was created before the popup opened (see create-order).
+    const pendingOrder = await findRazorpayOrder(
+      typeof dbOrderId === "string" ? dbOrderId : null,
+      razorpay_order_id
+    );
+
     const payment = await getRazorpayInstance().payments.fetch(razorpay_payment_id);
-    const expectedAmount = Math.round(Number(orderDetails?.total) * 100);
+    const expectedTotal = pendingOrder ? pendingOrder.total : Number(orderDetails?.total);
+    const expectedAmount = Math.round(expectedTotal * 100);
     if (payment.order_id !== razorpay_order_id || payment.status !== "captured" || payment.currency !== "INR" || !Number.isFinite(expectedAmount) || Number(payment.amount) !== expectedAmount) {
       return NextResponse.json({ success: false, error: "Payment has not been captured for this order amount." }, { status: 400 });
     }
 
-    // Only a captured payment can mark an order paid.
+    const coupon = orderDetails?.discountCode || "";
+    const metaContext = metaRequestContext(request);
+
+    if (pendingOrder) {
+      const result = await confirmRazorpayOrder(pendingOrder.id, {
+        paymentId: razorpay_payment_id,
+        razorpayOrderId: razorpay_order_id,
+        method: typeof payment.method === "string" ? payment.method : null,
+        source: "verify",
+      });
+      const order = result.order ?? pendingOrder;
+
+      // If the webhook got here first the email and Meta event were already sent.
+      if (result.confirmed) {
+        after(() => sendMetaPurchase(order.id, metaContext));
+        queueRazorpayOrderEmail(order);
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: order,
+        analytics: await getPurchaseAnalytics(order.id, coupon),
+        paymentId: razorpay_payment_id,
+      });
+    }
+
+    // Fallback for checkouts started before the pending-order flow was deployed:
+    // create the order now from the details the browser sent.
+    if (!orderDetails) {
+      return NextResponse.json(
+        { success: false, error: "No order found for this payment. Please contact support with your payment ID." },
+        { status: 404 }
+      );
+    }
+
     const user = await getCurrentUser();
-    const internalNotes = `Paid via Razorpay. Payment ID: ${razorpay_payment_id} | Order ID: ${razorpay_order_id}`;
+    const internalNotes = `${RAZORPAY_PAYMENT_NOTE}\nPaid via Razorpay. Payment ID: ${razorpay_payment_id} | Order ID: ${razorpay_order_id}\n${razorpayOrderNote(razorpay_order_id)}`;
 
     const order = await ordersController.createOrder({
       ...orderDetails,
-      status: "CONFIRMED",
       paymentVerified: true,
       userId: user?.id || orderDetails?.userId || null,
       customerName:
@@ -68,48 +117,20 @@ export async function POST(request: NextRequest) {
       customerEmail: (orderDetails?.customerEmail || orderDetails?.email || user?.email)?.toLowerCase().trim(),
       customerPhone: (orderDetails?.customerPhone || orderDetails?.phone)?.replace(/[^0-9]/g, ""),
       internalNotes,
-      paymentMethod: "ONLINE_RAZORPAY",
     });
+    await ordersDal.updateOrderStatus(order.id, "CONFIRMED").catch(() => null);
 
-    if ((order as any).sessionToken) {
-      await setSessionCookie((order as any).sessionToken);
+    if ("sessionToken" in order && typeof order.sessionToken === "string") {
+      await setSessionCookie(order.sessionToken);
     }
 
-    // Server-side Meta Purchase from the captured payment, with the shopper's browser signals.
-    const metaContext = metaRequestContext(request);
     after(() => sendMetaPurchase(order.id, metaContext));
-
-    // Trigger order confirmation email in background to customer and notify info@xelectron.com & customercare@xelectron.com
-    if (order) {
-      import("@/lib/server/mail").then(({ sendOrderConfirmationEmail }) => {
-        sendOrderConfirmationEmail({
-          id: order.id,
-          customerName: order.customerName,
-          customerEmail: order.customerEmail || orderDetails?.customerEmail || orderDetails?.email,
-          customerPhone: order.customerPhone || orderDetails?.customerPhone || orderDetails?.phone,
-          shippingAddress: order.shippingAddress || orderDetails?.shippingAddress,
-          city: order.city || orderDetails?.city,
-          state: order.state || orderDetails?.state,
-          pincode: order.pincode || orderDetails?.pincode,
-          paymentMethod: "Razorpay (Online Paid)",
-          total: order.total,
-          trackingNumber: order.trackingNumber,
-          trackingUrl: order.trackingUrl,
-          estimatedDelivery: order.estimatedDelivery,
-          items: order.items?.map((item: any) => ({
-            name: item.product?.name || item.name || "Product",
-            quantity: item.quantity,
-            price: item.unitPrice,
-            unitPrice: item.unitPrice,
-          })),
-        }).catch((err) => console.warn("Failed to send Razorpay order email:", err));
-      });
-    }
+    queueRazorpayOrderEmail(order);
 
     return NextResponse.json({
       success: true,
       data: order,
-      analytics: await getPurchaseAnalytics(order.id, orderDetails?.discountCode || ""),
+      analytics: await getPurchaseAnalytics(order.id, coupon),
       paymentId: razorpay_payment_id,
     });
   } catch (error) {

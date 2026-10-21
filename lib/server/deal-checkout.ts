@@ -32,21 +32,19 @@ export async function validateDealCheckout(
   if (code) {
     const discounts: Discount[] = await discountsDal.getAllDiscounts();
     const discount = discounts.find((entry) => entry.code?.toUpperCase() === code);
-    // Match the legacy coupons currently offered by checkout.
-    const legacyPercent = ["WELCOME10", "XELECTRON10"].includes(code) ? 10
-      : ["SAVE20", "FESTIVE20"].includes(code) ? 20 : 0;
-    if (discount && (!discount.isActive || (discount.startDate && discount.startDate > now) || (discount.endDate && discount.endDate < now))) {
+    // Only coupons created in the admin Discounts panel are accepted.
+    if (!discount) throw new Error("Invalid coupon code.");
+    if (!discount.isActive || (discount.startDate && discount.startDate > now) || (discount.endDate && discount.endDate < now)) {
       throw new Error("Coupon is inactive or expired.");
     }
-    if (!discount && !legacyPercent) throw new Error("Invalid coupon code.");
-    const allowedIds = discount?.eligibleProductIds?.split(",").map((id) => id.trim()).filter(Boolean);
+    const allowedIds = discount.eligibleProductIds?.split(",").map((id) => id.trim()).filter(Boolean);
     const eligibleSubtotal = eligible.reduce((sum, line) => sum + (
       !allowedIds?.length || allowedIds.includes(line.product.id) || allowedIds.includes(line.product.slug)
         ? line.amount : 0
     ), 0);
-    discountAmount = discount?.type === "FIXED_AMOUNT"
+    discountAmount = discount.type === "FIXED_AMOUNT"
       ? Math.min(eligibleSubtotal, discount.value)
-      : Math.round(eligibleSubtotal * Math.min(100, discount?.value ?? legacyPercent) / 100);
+      : Math.round(eligibleSubtotal * Math.min(100, discount.value) / 100);
   }
   const minimumTotal = lines.reduce((sum, line) => sum + line.amount, 0) - discountAmount;
   if (!Number.isFinite(total) || total < minimumTotal - 0.01) {

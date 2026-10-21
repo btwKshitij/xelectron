@@ -36,7 +36,15 @@ export async function getOrder(id: string) {
 
 // ─── Create ──────────────────────────────────────────────────────────────────
 
-export async function createOrder(data: ordersDal.CreateOrderInput) {
+export type CreateOrderOptions = {
+  /**
+   * Skip the inventory decrement at creation time. Used for orders that are
+   * awaiting an online payment; stock is decremented when the payment is confirmed.
+   */
+  deferStockDecrement?: boolean;
+};
+
+export async function createOrder(data: ordersDal.CreateOrderInput, options: CreateOrderOptions = {}) {
   if (!data.items || data.items.length === 0) {
     throw new Error("Missing required fields: items (non-empty)");
   }
@@ -186,11 +194,13 @@ export async function createOrder(data: ordersDal.CreateOrderInput) {
   });
 
   // Automatically reduce product inventory stock in database
-  await Promise.all(
-    resolvedItems.map((item) =>
-      productsDal.decrementProductStock(item.productId, item.quantity)
-    )
-  );
+  if (!options.deferStockDecrement) {
+    await Promise.all(
+      resolvedItems.map((item) =>
+        productsDal.decrementProductStock(item.productId, item.quantity)
+      )
+    );
+  }
 
   try {
     revalidatePath("/shop", "page");

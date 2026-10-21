@@ -593,25 +593,11 @@ function CheckoutContent() {
           setCouponDiscount(10);
           setCouponSuccess("Discount applied successfully!");
         }
-      } else if (code === "WELCOME10" || code === "XELECTRON10") {
-        setAppliedCoupon(code);
-        setCouponDiscount(10);
-        setCouponSuccess("10% discount applied successfully!");
-      } else if (code === "SAVE20" || code === "FESTIVE20") {
-        setAppliedCoupon(code);
-        setCouponDiscount(20);
-        setCouponSuccess("20% special discount applied!");
       } else {
         setCouponError(`Invalid or expired coupon code "${code}".`);
       }
     } catch {
-      if (code === "WELCOME10" || code === "XELECTRON10" || code === "SAVE10") {
-        setAppliedCoupon(code);
-        setCouponDiscount(10);
-        setCouponSuccess("10% discount applied successfully!");
-      } else {
-        setCouponError("Unable to validate coupon code. Please try again.");
-      }
+      setCouponError("Unable to validate coupon code. Please try again.");
     }
   };
 
@@ -656,6 +642,29 @@ function CheckoutContent() {
 
       // ─── RAZORPAY PAYMENT FLOW ─────────────────────────────────────────────
       if (paymentMethod === "razorpay") {
+        // Sent to create-order so the order exists BEFORE payment, and to verify afterwards.
+        const razorpayOrderDetails = {
+          userId: currentUser?.id,
+          customerName: `${firstName} ${lastName}`.trim(),
+          customerEmail: email.trim().toLowerCase(),
+          customerPhone: phone.trim(),
+          city,
+          state,
+          pincode: postalCode,
+          createAccount: !currentUser && createAccountOnCheckout,
+          password: accountPassword || undefined,
+          items: orderItems.map((item) => ({
+            productId: item.id,
+            quantity: item.quantity,
+            unitPrice: item.price,
+            price: item.price,
+          })),
+          total,
+          shippingAddress: fullAddress,
+          phone,
+          discountCode: appliedCoupon || undefined,
+        };
+
         const createOrderRes = await fetch("/api/payment/razorpay/create-order", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -669,6 +678,7 @@ function CheckoutContent() {
               customerEmail: email,
               customerPhone: phone,
             },
+            orderDetails: razorpayOrderDetails,
           }),
         });
 
@@ -716,27 +726,8 @@ function CheckoutContent() {
                   razorpay_order_id: response.razorpay_order_id,
                   razorpay_payment_id: response.razorpay_payment_id,
                   razorpay_signature: response.razorpay_signature,
-                  orderDetails: {
-                    userId: currentUser?.id,
-                    customerName: `${firstName} ${lastName}`.trim(),
-                    customerEmail: email.trim().toLowerCase(),
-                    customerPhone: phone.trim(),
-                    city,
-                    state,
-                    pincode: postalCode,
-                    createAccount: !currentUser && createAccountOnCheckout,
-                    password: accountPassword || undefined,
-                    items: orderItems.map((item) => ({
-                      productId: item.id,
-                      quantity: item.quantity,
-                      unitPrice: item.price,
-                      price: item.price,
-                    })),
-                    total,
-                    shippingAddress: fullAddress,
-                    phone,
-                    discountCode: appliedCoupon || undefined,
-                  },
+                  orderDetails: razorpayOrderDetails,
+                  dbOrderId: rzpOrderData.dbOrderId || undefined,
                 }),
               });
 
