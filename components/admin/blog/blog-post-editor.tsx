@@ -4,6 +4,7 @@ import { type FormEvent, type ReactNode, useMemo, useRef, useState } from "react
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { InlineMarkdown, normalizeLinkUrl } from "@/components/blog/inline-markdown";
 import {
   ArrowLeft,
   Bold,
@@ -123,9 +124,16 @@ function insertLinkAtCursor(
   const start = textarea.selectionStart;
   const end = textarea.selectionEnd;
   const selectedText = value.slice(start, end) || "link text";
-  const providedUrl = window.prompt("Enter or paste URL", "https://");
-  if (!providedUrl?.trim() || providedUrl === "https://") return;
-  const url = /^https?:\/\//i.test(providedUrl.trim()) ? providedUrl.trim() : `https://${providedUrl.trim()}`;
+  const providedUrl = window.prompt(
+    "Enter or paste the link URL (e.g. https://example.com or /product/luminex)",
+    "https://"
+  );
+  if (!providedUrl?.trim() || providedUrl.trim() === "https://") return;
+  const url = normalizeLinkUrl(providedUrl);
+  if (!url) {
+    window.alert("That does not look like a valid link. Use a full web address like https://example.com or a site path like /product/luminex.");
+    return;
+  }
   const insertion = `[${selectedText}](${url})`;
   const nextValue = `${value.slice(0, start)}${insertion}${value.slice(end)}`;
   setValue(nextValue);
@@ -136,53 +144,15 @@ function insertLinkAtCursor(
 }
 
 function InlineContent({ text }: { text: string }) {
-  // Parse links [text](url) and bold **text** and italic *text*
-  const parts: ReactNode[] = [];
-  const regex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|\*\*([^*]+)\*\*|\*([^*]+)\*/g;
-  let cursor = 0;
-  let match: RegExpExecArray | null;
-  let idx = 0;
-
-  while ((match = regex.exec(text))) {
-    if (match.index > cursor) {
-      parts.push(text.slice(cursor, match.index));
-    }
-    if (match[1] && match[2]) {
-      // Link
-      parts.push(
-        <a
-          key={`link-${idx++}`}
-          href={match[2]}
-          target="_blank"
-          rel="noreferrer"
-          className="font-medium text-[#0a7ae6] underline decoration-[#0a7ae6]/35 underline-offset-4 hover:text-[#075faf]"
-        >
-          {match[1]}
-        </a>
-      );
-    } else if (match[3]) {
-      // Bold
-      parts.push(
-        <strong key={`bold-${idx++}`} className="font-semibold text-slate-900">
-          {match[3]}
-        </strong>
-      );
-    } else if (match[4]) {
-      // Italic
-      parts.push(
-        <em key={`italic-${idx++}`} className="italic text-slate-700">
-          {match[4]}
-        </em>
-      );
-    }
-    cursor = match.index + match[0].length;
-  }
-
-  if (cursor < text.length) {
-    parts.push(text.slice(cursor));
-  }
-
-  return <>{parts}</>;
+  // Links [text](url), bold **text** and italic *text*, shared with the public article page.
+  return (
+    <InlineMarkdown
+      text={text}
+      linkClassName="font-medium text-[#0a7ae6] underline decoration-[#0a7ae6]/35 underline-offset-4 hover:text-[#075faf]"
+      strongClassName="font-semibold text-slate-900"
+      emClassName="italic text-slate-700"
+    />
+  );
 }
 
 function ArticleBody({ content }: { content: string }) {

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { InlineMarkdown } from "@/components/blog/inline-markdown";
 import {
   ArrowLeft,
   ArrowRight,
@@ -60,45 +61,15 @@ function slugify(text: string) {
 }
 
 function InlineFormattedText({ text }: { text: string }) {
-  const parts: React.ReactNode[] = [];
-  const regex = /(\*\*([^*]+)\*\*)|(\[([^\]]+)\]\((https?:\/\/[^\s)]+)\))/g;
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-  let keyIdx = 0;
-
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(text.slice(lastIndex, match.index));
-    }
-
-    if (match[1]) {
-      parts.push(
-        <strong key={`b-${keyIdx++}`} className="font-bold text-slate-900">
-          {match[2]}
-        </strong>
-      );
-    } else if (match[3]) {
-      parts.push(
-        <a
-          key={`a-${keyIdx++}`}
-          href={match[5]}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="font-semibold text-[#0a7ae6] underline decoration-[#0a7ae6]/40 underline-offset-4 hover:text-[#025bb5] transition-colors"
-        >
-          {match[4]}
-        </a>
-      );
-    }
-
-    lastIndex = match.index + match[0].length;
-  }
-
-  if (lastIndex < text.length) {
-    parts.push(text.slice(lastIndex));
-  }
-
-  return <>{parts.length > 0 ? parts : text}</>;
+  // Links [text](url), bold **text** and italic *text*, shared with the admin editor preview.
+  return (
+    <InlineMarkdown
+      text={text}
+      linkClassName="font-semibold text-[#0a7ae6] underline decoration-[#0a7ae6]/40 underline-offset-4 hover:text-[#025bb5] transition-colors"
+      strongClassName="font-bold text-slate-900"
+      emClassName="italic text-slate-800"
+    />
+  );
 }
 
 function ArticleBodyContent({ content }: { content: string }) {
