@@ -96,6 +96,27 @@ function insertAtCursor(
   });
 }
 
+/**
+ * Which text should a toolbar action apply to? Normally the textarea selection.
+ * If the author highlighted text in the live preview pane instead, find that
+ * same text in the markdown and use it.
+ */
+function resolveSelection(textarea: HTMLTextAreaElement, value: string) {
+  let start = textarea.selectionStart;
+  let end = textarea.selectionEnd;
+  if (start === end && typeof window !== "undefined") {
+    const highlighted = window.getSelection()?.toString().trim() ?? "";
+    if (highlighted) {
+      const index = value.indexOf(highlighted);
+      if (index >= 0) {
+        start = index;
+        end = index + highlighted.length;
+      }
+    }
+  }
+  return { start, end };
+}
+
 function wrapSelection(
   textarea: HTMLTextAreaElement | null,
   value: string,
@@ -103,8 +124,7 @@ function wrapSelection(
   wrapper: string
 ) {
   if (!textarea) return;
-  const start = textarea.selectionStart;
-  const end = textarea.selectionEnd;
+  const { start, end } = resolveSelection(textarea, value);
   const selectedText = value.slice(start, end) || "text";
   const insertion = `${wrapper}${selectedText}${wrapper}`;
   const nextValue = `${value.slice(0, start)}${insertion}${value.slice(end)}`;
@@ -121,9 +141,7 @@ function insertLinkAtCursor(
   setValue: (next: string) => void
 ) {
   if (!textarea) return;
-  const start = textarea.selectionStart;
-  const end = textarea.selectionEnd;
-  const selectedText = value.slice(start, end) || "link text";
+  const { start, end } = resolveSelection(textarea, value);
   const providedUrl = window.prompt(
     "Enter or paste the link URL (e.g. https://example.com or /product/luminex)",
     "https://"
@@ -134,12 +152,21 @@ function insertLinkAtCursor(
     window.alert("That does not look like a valid link. Use a full web address like https://example.com or a site path like /product/luminex.");
     return;
   }
-  const insertion = `[${selectedText}](${url})`;
+
+  // Selected text becomes the link. With nothing selected, ask what to show.
+  let linkText = value.slice(start, end);
+  if (!linkText) {
+    const typed = window.prompt("Text to show for the link", "");
+    if (typed === null) return;
+    linkText = typed.trim() || url.replace(/^https?:\/\//i, "");
+  }
+
+  const insertion = `[${linkText}](${url})`;
   const nextValue = `${value.slice(0, start)}${insertion}${value.slice(end)}`;
   setValue(nextValue);
   requestAnimationFrame(() => {
     textarea.focus();
-    textarea.setSelectionRange(start + 1, start + 1 + selectedText.length);
+    textarea.setSelectionRange(start + 1, start + 1 + linkText.length);
   });
 }
 
@@ -637,7 +664,8 @@ export function BlogPostEditor({ post }: { post?: BlogPostItem }) {
 
                 {/* Rich Formatting Toolbar */}
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 bg-white px-6 py-2.5">
-                  <div className="flex flex-wrap items-center gap-1">
+                  {/* Keep the editor's text selection when a toolbar button is pressed. */}
+                  <div className="flex flex-wrap items-center gap-1" onMouseDown={(event) => event.preventDefault()}>
                     {/* Headings */}
                     <button
                       type="button"
