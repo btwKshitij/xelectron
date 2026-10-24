@@ -29,6 +29,14 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     if (user.role !== "ADMIN" && !isOwner) {
       throw new AuthError("Forbidden", 403);
     }
+    if (order.status === "CANCELLED") {
+      return NextResponse.json({ success: true, data: {
+        found: true, status: "Cancelled", statusType: null, location: null,
+        updatedAt: order.updatedAt, estimatedDelivery: null, scans: [],
+        trackingNumber: order.trackingNumber || "", carrier: order.shippingCarrier || "",
+        orderCancelled: true,
+      } });
+    }
     if (!order.trackingNumber) {
       return NextResponse.json(
         {

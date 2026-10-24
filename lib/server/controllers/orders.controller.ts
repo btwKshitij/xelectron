@@ -1,4 +1,6 @@
 import * as ordersDal from "@/lib/server/dal/orders.dal";
+import { sendOrderStatusEmail } from "@/lib/server/order-status-email";
+import { sendOrderConfirmationEmail } from "@/lib/server/mail";
 
 
 
@@ -252,6 +254,15 @@ export async function updateOrder(id: string, data: ordersDal.UpdateOrderInput &
   if (!existing) throw new Error("Order not found");
 
   const updated = await ordersDal.updateOrder(id, data);
+  let emailDispatched = false;
+  if (data.notifyCustomer ?? true) {
+    if (existing.status !== updated.status) {
+      emailDispatched = (await sendOrderStatusEmail(updated)).success;
+    }
+    if (!existing.paymentVerified && updated.paymentVerified && updated.status !== "CANCELLED") {
+      await sendOrderConfirmationEmail({ ...updated, customerEmail: updated.customerEmail || updated.user?.email, paymentMethod: "Payment received" });
+    }
+  }
   let smsDispatched = false;
   if ((data.notifyCustomer ?? true) && (existing.status !== updated.status || existing.trackingNumber !== updated.trackingNumber)) {
     const events = { PENDING: "received", CONFIRMED: "confirmed", PROCESSING: "processing", SHIPPED: "shipped", DELIVERED: "delivered", CANCELLED: "cancelled" } as const;
@@ -278,7 +289,9 @@ export async function updateOrder(id: string, data: ordersDal.UpdateOrderInput &
   return {
     ...updated,
     notificationStatus: {
-      dispatched: smsDispatched,
+      dispatched: smsDispatched || emailDispatched,
+      emailDispatched,
+      smsDispatched,
       email: targetEmail || null,
       phone: targetPhone || null,
       timestamp: new Date().toISOString(),

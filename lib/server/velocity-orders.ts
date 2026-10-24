@@ -23,6 +23,12 @@ export async function confirmVelocityOrder(orderId: string, paymentId?: string) 
       return { found: true, confirmed: false, order };
     }
 
+    const claimed = await tx.order.updateMany({
+      where: { id: orderId, status: "PENDING", paymentVerified: false },
+      data: { status: "CONFIRMED", paymentVerified: true },
+    });
+    if (claimed.count !== 1) return { found: true, confirmed: false, order };
+
     for (const item of order.items) {
       const stockUpdate = await tx.product.updateMany({
         where: { id: item.productId, quantity: { gte: item.quantity } },

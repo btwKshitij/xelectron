@@ -77,9 +77,10 @@ export async function POST(request: NextRequest) {
     after(() => sendMetaPurchase(order.id, metaContext));
 
     // Trigger order confirmation email in background to customer and notify info@xelectron.com & customercare@xelectron.com
-    if (order) {
-      import("@/lib/server/mail").then(({ sendOrderConfirmationEmail }) => {
-        sendOrderConfirmationEmail({
+    if (order && isCod) {
+      after(async () => {
+        const { sendOrderConfirmationEmail } = await import("@/lib/server/mail");
+        await sendOrderConfirmationEmail({
           id: order.id,
           customerName: order.customerName,
           customerEmail: order.customerEmail || body.email,

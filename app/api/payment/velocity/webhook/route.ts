@@ -84,8 +84,9 @@ export async function POST(request: NextRequest) {
         const confirmedOrder = result.order as any;
         // Signed webhook is the authoritative payment confirmation for Velocity.
         after(() => sendMetaPurchase(confirmedOrder.id, {}, "/checkout/velocity-callback"));
-        import("@/lib/server/mail").then(({ sendOrderConfirmationEmail }) => {
-          sendOrderConfirmationEmail({
+        after(async () => {
+          const { sendOrderConfirmationEmail } = await import("@/lib/server/mail");
+          await sendOrderConfirmationEmail({
             id: confirmedOrder.id,
             customerName: confirmedOrder.customerName,
             customerEmail: confirmedOrder.customerEmail,

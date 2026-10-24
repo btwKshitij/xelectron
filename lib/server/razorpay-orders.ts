@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { db } from "@/lib/db";
 import { notifyOrderSms } from "@/lib/server/sms/notifications";
 import type { Prisma } from "@prisma/client";
@@ -96,6 +97,14 @@ export async function confirmRazorpayOrder(orderId: string, details: ConfirmRazo
       return { found: true, confirmed: false, order };
     }
 
+    const claimed = await tx.order.updateMany({
+      where: { id: orderId, status: "PENDING", paymentVerified: false },
+      data: { status: "CONFIRMED", paymentVerified: true },
+    });
+    if (claimed.count !== 1) {
+      return { found: true, confirmed: false, order: await tx.order.findUnique({ where: { id: orderId }, include: orderInclude }) };
+    }
+
     // Stock was checked but not reserved when the pending order was created.
     // The customer has paid, so decrement unconditionally and let admins
     // resolve any oversell manually.
@@ -130,7 +139,7 @@ export async function confirmRazorpayOrder(orderId: string, details: ConfirmRazo
 
 /** Send the customer + staff confirmation email in the background. */
 export function queueRazorpayOrderEmail(order: RazorpayOrderRecord) {
-  import("@/lib/server/mail")
+  after(() => import("@/lib/server/mail")
     .then(({ sendOrderConfirmationEmail }) =>
       sendOrderConfirmationEmail({
         id: order.id,
@@ -154,5 +163,5 @@ export function queueRazorpayOrderEmail(order: RazorpayOrderRecord) {
         })),
       })
     )
-    .catch((err) => console.warn("Failed to send Razorpay order email:", err));
+    .catch((err) => console.warn("Failed to send Razorpay order email:", err)));
 }

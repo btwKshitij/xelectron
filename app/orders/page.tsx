@@ -9,6 +9,7 @@ import Navbar from "@/components/navbar/navbar";
 import Footer from "@/components/footer/footer";
 import {
   CheckCircle2,
+  XCircle,
   Clock,
   Package,
   Truck,
@@ -66,7 +67,7 @@ function OrdersContent() {
 
     async function fetchOrders() {
       try {
-        const res = await fetch("/api/orders");
+        const res = await fetch("/api/orders", { cache: "no-store" });
         const json = await res.json();
 
         if (isMounted) {
@@ -86,16 +87,18 @@ function OrdersContent() {
       }
     }
 
-    if (typeof window !== "undefined") {
+    const initialRequest = window.setTimeout(() => {
       const stored = localStorage.getItem("xelectron_guest_email");
       if (stored) setGuestEmail(stored);
-    }
-
-    fetchOrders();
+      void fetchOrders();
+    }, 0);
+    window.addEventListener("focus", fetchOrders);
     const refreshId = window.setInterval(fetchOrders, 15_000);
     return () => {
       isMounted = false;
+      window.clearTimeout(initialRequest);
       window.clearInterval(refreshId);
+      window.removeEventListener("focus", fetchOrders);
     };
   }, []);
 
@@ -108,6 +111,8 @@ function OrdersContent() {
 
   const getStatusBadge = (status: string) => {
     switch (status?.toUpperCase()) {
+      case "CANCELLED":
+        return <span className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700"><XCircle className="size-3.5" /> Cancelled</span>;
       case "DELIVERED":
         return (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200/60">
@@ -275,7 +280,7 @@ function OrdersContent() {
                   </div>
 
                   {/* 2. SHIPPING & TRACKING HERO CARD */}
-                  <div className="bg-blue-50/40 border-b border-slate-100 p-5 sm:p-6 space-y-4">
+                  {order.status === "CANCELLED" ? <div className="border-b border-red-100 bg-red-50/50 p-5 text-sm text-red-800 sm:p-6">This order has been cancelled. Contact customer care for payment or refund questions.</div> : <div className="bg-blue-50/40 border-b border-slate-100 p-5 sm:p-6 space-y-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div className="space-y-1">
                         {hasTracking ? (
@@ -418,7 +423,7 @@ function OrdersContent() {
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </div>}
 
                   {/* 3. ORDER ITEMS LIST */}
                   <div className="divide-y divide-slate-100 px-5 sm:px-6">

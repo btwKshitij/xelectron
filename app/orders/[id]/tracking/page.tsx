@@ -24,6 +24,7 @@ type TrackingScan = {
 };
 
 type TrackingData = {
+  orderCancelled?: boolean;
   found: boolean;
   trackingNumber: string;
   status: string | null;
@@ -115,8 +116,8 @@ function TrackingContent({ orderId }: { orderId: string }) {
             {error && <div role="alert" className="mx-6 mt-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"><AlertCircle className="mt-0.5 size-5 shrink-0" /><div><p className="font-semibold">We could not refresh your tracking</p><p className="mt-1">{error}</p>{data && <p className="mt-1 text-xs">Showing the last available update.</p>}</div></div>}
             {data?.status === "Cancelled" ? <section className="px-6 py-10 sm:p-10">
               <span className="inline-flex size-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-600"><AlertCircle className="size-6" /></span>
-              <h2 className="mt-5 text-2xl font-semibold tracking-tight text-slate-900">Shipment cancelled</h2>
-              <p className="mt-3 max-w-lg text-sm leading-6 text-slate-500">This shipment is no longer active. Tracking details will appear here if a replacement shipment is created for your order.</p>
+              <h2 className="mt-5 text-2xl font-semibold tracking-tight text-slate-900">{data.orderCancelled ? "Order cancelled" : "Shipment cancelled"}</h2>
+              <p className="mt-3 max-w-lg text-sm leading-6 text-slate-500">{data.orderCancelled ? "Your order has been cancelled. Contact customer care for payment or refund questions." : "This shipment is no longer active. Tracking details will appear here if a replacement shipment is created for your order."}</p>
               <Link href="/orders" className="mt-6 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"><ArrowLeft className="size-4" />Back to my orders</Link>
             </section> : data ? <>
               <div className="grid lg:grid-cols-[1fr_280px]">
