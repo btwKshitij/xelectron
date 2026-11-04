@@ -5,8 +5,7 @@ import Script from "next/script";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import CartProvider from "@/components/providers/cart-provider";
-import SmoothScrollProvider from "@/components/providers/smooth-scroll-provider";
-import FestiveOfferPopup from "@/components/common/deferred-festive-offer";
+import FestiveOfferPopup from "@/components/common/festive-offer-popup";
 import ChunkErrorHandler from "@/components/common/chunk-error-handler";
 
 export const metadata: Metadata = {
@@ -39,7 +38,7 @@ export default function RootLayout({
         {/* Google Tag Manager */}
         <Script
           id="google-tag-manager"
-          strategy="afterInteractive"
+          strategy="lazyOnload"
           dangerouslySetInnerHTML={{
             __html: `window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
@@ -79,7 +78,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         <ChunkErrorHandler />
         <Suspense fallback={null}><PageTracking /></Suspense>
         <CartProvider>
-          <SmoothScrollProvider>{children}</SmoothScrollProvider>
+          {children}
           <FestiveOfferPopup />
         </CartProvider>
       </body>

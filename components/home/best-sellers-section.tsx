@@ -3,17 +3,13 @@ import { TrackedProduct } from "@/components/analytics/product-tracking";
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { BestSellerItem } from "@/components/home/best-sellers-data";
 import { formatINR } from "@/lib/format-price";
 import { Plus } from "lucide-react";
 import { useCart } from "@/components/providers/cart-provider";
 import { toast } from "sonner";
 
-import gsap from "gsap";
-import ScrollTrigger from "gsap/ScrollTrigger";
-
-gsap.registerPlugin(ScrollTrigger);
 
 function SpecificationRow({ label, value }: { label: string; value: string }) {
   return (
@@ -48,10 +44,9 @@ function SafeBestSellerImage({
     return "/category-tv.png";
   };
 
-  const [imgSrc, setImgSrc] = useState(() => getValidUrl(src));
-  useEffect(() => {
-    setImgSrc(getValidUrl(src));
-  }, [src]);
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const validSrc = getValidUrl(src);
+  const imgSrc = failedSrc === validSrc ? "/category-tv.png" : validSrc;
 
   return (
     <Image
@@ -62,7 +57,7 @@ function SafeBestSellerImage({
       sizes={sizes}
       priority={priority}
       onError={() => {
-        setImgSrc("/category-tv.png");
+        setFailedSrc(validSrc);
       }}
     />
   );
@@ -335,7 +330,7 @@ export default function BestSellersSection({ additionalItems = [] }: { additiona
     return () => media.removeEventListener("change", update);
   }, []);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (items.length === 0 || reduceMotion) return;
 
     const section = sectionRef.current;
@@ -344,145 +339,172 @@ export default function BestSellersSection({ additionalItems = [] }: { additiona
 
     if (!section || !viewport || !track) return;
 
-    const ctx = gsap.context(() => {
-      // Helper: calculate X translation to center title[index] inside container
-      const getTitleX = (index: number) => {
-        const title = titleRefs.current[index];
-        if (!title || !track.parentElement) return 0;
-        const titleCenter = title.offsetLeft + title.offsetWidth / 2;
-        const containerCenter = track.parentElement.offsetWidth / 2;
-        return containerCenter - titleCenter;
-      };
+    let disposed = false;
+    let initializing = false;
+    let context: { revert: () => void } | undefined;
+    const initialize = async () => {
+      if (initializing || !window.matchMedia("(min-width: 1024px)").matches) return;
+      initializing = true;
+      try {
+        const [{ default: gsap }, { default: ScrollTrigger }] = await Promise.all([
+          import("gsap"),
+          import("gsap/ScrollTrigger"),
+        ]);
+        if (disposed) return;
+        gsap.registerPlugin(ScrollTrigger);
+        context = gsap.context(() => {
+          // Helper: calculate X translation to center title[index] inside container
+          const getTitleX = (index: number) => {
+            const title = titleRefs.current[index];
+            if (!title || !track.parentElement) return 0;
+            const titleCenter = title.offsetLeft + title.offsetWidth / 2;
+            const containerCenter = track.parentElement.offsetWidth / 2;
+            return containerCenter - titleCenter;
+          };
 
-      // Set initial states (Slide 0 visible, rest hidden)
-      cardRefs.current.forEach((card, i) => {
-        if (!card) return;
-        gsap.set(card, {
-          autoAlpha: i === 0 ? 1 : 0,
-          y: i === 0 ? 0 : 35,
-          scale: i === 0 ? 1 : 0.96,
-        });
-      });
+          // Set initial states (Slide 0 visible, rest hidden)
+          cardRefs.current.forEach((card, i) => {
+            if (!card) return;
+            gsap.set(card, {
+              autoAlpha: i === 0 ? 1 : 0,
+              y: i === 0 ? 0 : 35,
+              scale: i === 0 ? 1 : 0.96,
+            });
+          });
 
-      visualRefs.current.forEach((visual, i) => {
-        if (!visual) return;
-        gsap.set(visual, {
-          autoAlpha: i === 0 ? 1 : 0,
-          y: i === 0 ? 0 : 100,
-          rotation: i === 0 ? 0 : -15,
-          scale: i === 0 ? 1 : 0.90,
-        });
-      });
+          visualRefs.current.forEach((visual, i) => {
+            if (!visual) return;
+            gsap.set(visual, {
+              autoAlpha: i === 0 ? 1 : 0,
+              y: i === 0 ? 0 : 100,
+              rotation: i === 0 ? 0 : -15,
+              scale: i === 0 ? 1 : 0.90,
+            });
+          });
 
-      titleRefs.current.forEach((title, i) => {
-        if (!title) return;
-        gsap.set(title, {
-          opacity: i === 0 ? 1 : 0.35,
-          color: i === 0 ? "#0f172a" : "#cbd5e1",
-        });
-      });
+          titleRefs.current.forEach((title, i) => {
+            if (!title) return;
+            gsap.set(title, {
+              opacity: i === 0 ? 1 : 0.35,
+              color: i === 0 ? "#0f172a" : "#cbd5e1",
+            });
+          });
 
-      glowRefs.current.forEach((glow, i) => {
-        if (!glow) return;
-        gsap.set(glow, { autoAlpha: i === 0 ? 1 : 0 });
-      });
+          glowRefs.current.forEach((glow, i) => {
+            if (!glow) return;
+            gsap.set(glow, { autoAlpha: i === 0 ? 1 : 0 });
+          });
 
-      // Position title rail initially
-      gsap.set(track, { x: getTitleX(0) });
+          // Position title rail initially
+          gsap.set(track, { x: getTitleX(0) });
 
-      const numSlides = items.length;
-      const scrollDistance = (numSlides - 1) * window.innerHeight;
+          const numSlides = items.length;
+          const scrollDistance = (numSlides - 1) * window.innerHeight;
 
-      // Master Timeline scrubbed by ScrollTrigger
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: section,
-          start: "top top",
-          end: () => `+=${scrollDistance}`,
-          scrub: 0.8,
-          pin: section,
-          pinSpacing: true,
-          anticipatePin: 1,
-          invalidateOnRefresh: true,
-        },
-      });
+          // Master Timeline scrubbed by ScrollTrigger
+          const tl = gsap.timeline({
+            scrollTrigger: {
+              trigger: section,
+              start: "top top",
+              end: () => `+=${scrollDistance}`,
+              scrub: 0.8,
+              pin: section,
+              pinSpacing: true,
+              anticipatePin: 1,
+              invalidateOnRefresh: true,
+            },
+          });
 
-      for (let i = 0; i < numSlides - 1; i++) {
-        const tStart = i;
+          for (let i = 0; i < numSlides - 1; i++) {
+            const tStart = i;
 
-        const cardCur = cardRefs.current[i];
-        const visualCur = visualRefs.current[i];
-        const glowCur = glowRefs.current[i];
-        const titleCur = titleRefs.current[i];
+            const cardCur = cardRefs.current[i];
+            const visualCur = visualRefs.current[i];
+            const glowCur = glowRefs.current[i];
+            const titleCur = titleRefs.current[i];
 
-        if (cardCur) {
-          tl.to(
-            cardCur,
-            { autoAlpha: 0, y: -35, scale: 0.96, ease: "power2.in", duration: 0.35 },
-            tStart + 0.15
-          );
-        }
-        if (visualCur) {
-          tl.to(
-            visualCur,
-            { autoAlpha: 0, y: -100, rotation: 15, scale: 0.90, ease: "power3.in", duration: 0.4 },
-            tStart + 0.15
-          );
-        }
-        if (glowCur) {
-          tl.to(glowCur, { autoAlpha: 0, ease: "power2.in", duration: 0.35 }, tStart + 0.15);
-        }
-        if (titleCur) {
-          tl.to(
-            titleCur,
-            { opacity: 0.35, color: "#cbd5e1", ease: "power1.inOut", duration: 0.5 },
-            tStart + 0.25
-          );
-        }
+            if (cardCur) {
+              tl.to(
+                cardCur,
+                { autoAlpha: 0, y: -35, scale: 0.96, ease: "power2.in", duration: 0.35 },
+                tStart + 0.15
+              );
+            }
+            if (visualCur) {
+              tl.to(
+                visualCur,
+                { autoAlpha: 0, y: -100, rotation: 15, scale: 0.90, ease: "power3.in", duration: 0.4 },
+                tStart + 0.15
+              );
+            }
+            if (glowCur) {
+              tl.to(glowCur, { autoAlpha: 0, ease: "power2.in", duration: 0.35 }, tStart + 0.15);
+            }
+            if (titleCur) {
+              tl.to(
+                titleCur,
+                { opacity: 0.35, color: "#cbd5e1", ease: "power1.inOut", duration: 0.5 },
+                tStart + 0.25
+              );
+            }
 
-        tl.to(
-          track,
-          {
-            x: () => getTitleX(i + 1),
-            ease: "power2.inOut",
-            duration: 0.6,
-          },
-          tStart + 0.2
-        );
+            tl.to(
+              track,
+              {
+                x: () => getTitleX(i + 1),
+                ease: "power2.inOut",
+                duration: 0.6,
+              },
+              tStart + 0.2
+            );
 
-        const cardNext = cardRefs.current[i + 1];
-        const visualNext = visualRefs.current[i + 1];
-        const glowNext = glowRefs.current[i + 1];
-        const titleNext = titleRefs.current[i + 1];
+            const cardNext = cardRefs.current[i + 1];
+            const visualNext = visualRefs.current[i + 1];
+            const glowNext = glowRefs.current[i + 1];
+            const titleNext = titleRefs.current[i + 1];
 
-        if (cardNext) {
-          tl.to(
-            cardNext,
-            { autoAlpha: 1, y: 0, scale: 1, ease: "power2.out", duration: 0.35 },
-            tStart + 0.52
-          );
-        }
-        if (visualNext) {
-          tl.to(
-            visualNext,
-            { autoAlpha: 1, y: 0, rotation: 0, scale: 1, ease: "power3.out", duration: 0.55 },
-            tStart + 0.52
-          );
-        }
-        if (glowNext) {
-          tl.to(glowNext, { autoAlpha: 1, ease: "power2.out", duration: 0.35 }, tStart + 0.52);
-        }
-        if (titleNext) {
-          tl.to(
-            titleNext,
-            { opacity: 1, color: "#0f172a", ease: "power1.inOut", duration: 0.5 },
-            tStart + 0.25
-          );
-        }
+            if (cardNext) {
+              tl.to(
+                cardNext,
+                { autoAlpha: 1, y: 0, scale: 1, ease: "power2.out", duration: 0.35 },
+                tStart + 0.52
+              );
+            }
+            if (visualNext) {
+              tl.to(
+                visualNext,
+                { autoAlpha: 1, y: 0, rotation: 0, scale: 1, ease: "power3.out", duration: 0.55 },
+                tStart + 0.52
+              );
+            }
+            if (glowNext) {
+              tl.to(glowNext, { autoAlpha: 1, ease: "power2.out", duration: 0.35 }, tStart + 0.52);
+            }
+            if (titleNext) {
+              tl.to(
+                titleNext,
+                { opacity: 1, color: "#0f172a", ease: "power1.inOut", duration: 0.5 },
+                tStart + 0.25
+              );
+            }
+          }
+        }, section);
+
+        ScrollTrigger.refresh();
+      } catch (error) {
+        initializing = false;
+        console.error("Unable to initialize best-seller animation", error);
       }
-    }, section);
-
-    return () => ctx.revert();
+    };
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) void initialize();
+    }, { rootMargin: "800px" });
+    observer.observe(section);
+    return () => {
+      disposed = true;
+      observer.disconnect();
+      context?.revert();
+    };
   }, [items, reduceMotion]);
 
   const goToSlide = (targetIndex: number) => {
@@ -561,6 +583,7 @@ export default function BestSellersSection({ additionalItems = [] }: { additiona
                 ref={(node) => {
                   cardRefs.current[index] = node;
                 }}
+                style={{ opacity: index === 0 ? 1 : 0, visibility: index === 0 ? "visible" : "hidden" }}
                 className="absolute inset-0 flex items-center will-change-[transform,opacity]"
               >
                 <div className="relative z-10 w-full max-w-[560px] xl:max-w-[620px] rounded-[20px] sm:rounded-[24px] xl:rounded-[28px] border border-slate-200/80 bg-white/95 backdrop-blur-md p-4 sm:p-5 lg:p-5 xl:p-7 shadow-[0_15px_50px_rgba(15,23,42,0.06)]">
@@ -619,6 +642,7 @@ export default function BestSellersSection({ additionalItems = [] }: { additiona
                   ref={(node) => {
                     visualRefs.current[index] = node;
                   }}
+                  style={{ opacity: index === 0 ? 1 : 0, visibility: index === 0 ? "visible" : "hidden" }}
                   className="absolute inset-0 flex items-center justify-center will-change-[transform,opacity]"
                 >
                   <div

@@ -1,4 +1,5 @@
 import Navbar from "@/components/navbar/navbar";
+import { Suspense } from "react";
 import HeroShowcase from "@/components/home/hero-showcase";
 import CategorySection from "@/components/home/category-section";
 import ProductShowcaseSection from "@/components/home/product-showcase-section";
@@ -32,8 +33,30 @@ const BlogSection = dynamic(() => import("@/components/home/blog-section"));
 // Read current offers on every visit, including after an admin changes the deal.
 export const revalidate = 0;
 
-export default async function Home() {
-  // Execute all database queries in parallel for ultra-fast TTFB
+async function HomeHero() {
+  const banners = await bannersController.listActiveBanners().catch(() => []);
+  return <HeroShowcase initialBanners={banners} />;
+}
+
+export default function Home() {
+  return (
+    <div className="min-h-screen w-full bg-white text-[#1d1d1f]">
+      <Navbar />
+      <main className="w-full">
+        <Suspense fallback={<div className="w-full aspect-[9/16] sm:aspect-[1672/941] bg-slate-50" aria-hidden="true" />}>
+          <HomeHero />
+        </Suspense>
+        <Suspense fallback={<div className="min-h-screen" aria-hidden="true" />}>
+          <HomeSections />
+        </Suspense>
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
+async function HomeSections() {
+  // Below-the-fold queries run in parallel without holding up the hero image.
   const [
     bestSellerProductsResult,
     allProductsResult,
@@ -41,7 +64,6 @@ export default async function Home() {
     savedDealResult,
     activeDealResult,
     categoriesResult,
-    heroBannersResult,
     brandShowcaseItemsResult,
     brandMarqueeItemsResult,
     verifiedReviewsResult,
@@ -52,7 +74,6 @@ export default async function Home() {
     dealOfTheDayController.getDealOfTheDay().catch(() => null),
     dealOfTheDayController.getActiveDealOfTheDay().catch(() => null),
     categoriesController.listCategories().catch(() => []),
-    bannersController.listActiveBanners().catch(() => []),
     brandShowcaseController.listBrandShowcaseItems(true).catch(() => []),
     brandMarqueeController.listBrandMarqueeItems(true).catch(() => []),
     verifiedReviewsController.listActiveVerifiedReviews().catch(() => []),
@@ -178,10 +199,7 @@ export default async function Home() {
   }));
 
   return (
-    <div className="min-h-screen w-full bg-white text-[#1d1d1f]">
-      <Navbar />
-      <main className="w-full">
-        <HeroShowcase initialBanners={heroBannersResult || []} />
+    <>
         <CategorySection categories={storefrontCategories} />
         <ProductShowcaseSection products={featuredProducts} />
         <BestSellersSection additionalItems={selectedBestSellers} />
@@ -193,8 +211,6 @@ export default async function Home() {
         <FaqSection />
         <BlogSection />
         <WhatsAppSupportBanner />
-      </main>
-      <Footer />
-    </div>
+    </>
   );
 }

@@ -4,7 +4,7 @@ import { trackPromotion } from "@/lib/analytics";
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { X, Loader2, Check, Copy, Sparkles, Tag, Gift } from "lucide-react";
+import { X, Loader2, Check, Copy, Sparkles, Tag } from "lucide-react";
 import { toast } from "sonner";
 
 export type FestiveOfferSettings = {
@@ -45,22 +45,6 @@ export default function FestiveOfferPopup() {
   const [discountCode, setDiscountCode] = useState(DEFAULT_SETTINGS.discountCode);
   const [loadedPath, setLoadedPath] = useState<string | null>(null);
   const isMounted = loadedPath === pathname;
-
-  // Check stored dismissal and unlocked code on mount
-  useEffect(() => {
-    try {
-      if (sessionStorage.getItem("xelectron_festive_closed") === "true") {
-        setHasDismissed(true);
-      }
-      if (sessionStorage.getItem("xelectron_festive_tab_dismissed") === "true") {
-        setIsTabDismissed(true);
-      }
-      const saved = localStorage.getItem("xelectron_festive_submitted");
-      if (saved) {
-        setIsSuccess(true);
-      }
-    } catch {}
-  }, []);
 
   // Exclude dashboard, admin, auth, and checkout pages
   const isExcluded =
@@ -104,6 +88,13 @@ export default function FestiveOfferPopup() {
           }
         } catch {}
 
+        // Restore browser state alongside settings, before making the popup visible.
+        try {
+          setHasDismissed(sessionStorage.getItem("xelectron_festive_closed") === "true");
+          setIsTabDismissed(sessionStorage.getItem("xelectron_festive_tab_dismissed") === "true");
+          setIsSuccess(Boolean(localStorage.getItem("xelectron_festive_submitted")));
+        } catch {}
+
         setSettings(data.settings);
         setDiscountCode(data.settings.discountCode);
         if (!data.settings.isActive) setIsOpen(false);
@@ -140,12 +131,14 @@ export default function FestiveOfferPopup() {
   useEffect(() => {
     if (!isMounted || isExcluded) return;
     if (settings.isActive === false) return;
-    if (sessionStorage.getItem("xelectron_festive_closed") === "true") return;
+    try {
+      if (sessionStorage.getItem("xelectron_festive_closed") === "true") return;
+    } catch {}
 
     // Show popup automatically when opening the website
     const timer = setTimeout(() => {
       setIsOpen(true);
-    }, 350);
+    }, 100);
     return () => clearTimeout(timer);
   }, [isMounted, isExcluded, settings.isActive]);
 
@@ -298,6 +291,7 @@ export default function FestiveOfferPopup() {
             <div className="relative w-full aspect-[770/588]">
               <Image
                 src={settings.imageUrl}
+                fetchPriority="high"
                 alt={`${settings.badgeTitle} - ${settings.heading} - ${settings.offerText}`}
                 fill
                 className="object-cover"
@@ -397,6 +391,7 @@ export default function FestiveOfferPopup() {
             >
               <Image
                 src={settings.imageUrl}
+                fetchPriority="high"
                 alt={settings.heading || "Festive Offer"}
                 fill
                 className="object-contain"
@@ -486,6 +481,7 @@ export default function FestiveOfferPopup() {
               <div className="col-span-5 relative min-h-[420px] bg-gradient-to-br from-slate-900 to-black overflow-hidden border-r border-slate-800/80">
                 <Image
                   src={settings.imageUrl}
+                fetchPriority="high"
                   alt={settings.heading || "Special Offer"}
                   fill
                   className="object-cover"
@@ -608,6 +604,7 @@ export default function FestiveOfferPopup() {
           >
             <Image
               src={settings.imageUrl}
+                fetchPriority="high"
               alt={settings.heading || "Special Offer"}
               fill
               className="object-contain"

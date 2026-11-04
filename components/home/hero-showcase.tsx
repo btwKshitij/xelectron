@@ -392,6 +392,7 @@ export default function HeroShowcase({ initialBanners }: { initialBanners?: Bann
                     alt: banner.alt || banner.title,
                     fill: true,
                     sizes: "100vw",
+                    quality: 60,
                     loading: "eager" as const,
                     fetchPriority: index === 0 ? "high" as const : "auto" as const,
                     className: "object-cover object-center pointer-events-none",
