@@ -223,7 +223,6 @@ export default function DealOfTheDaySection({ deal }: { deal: StorefrontDealOfTh
                 fill
                 className="rounded-2xl sm:rounded-[28px] object-contain transition-transform duration-700 group-hover:scale-[1.02] drop-shadow-md"
                 sizes="(min-width: 1024px) 50vw, 100vw"
-                priority
               />
             </div>
           </div>

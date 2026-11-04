@@ -236,7 +236,6 @@ export default function CreatorVideosSection() {
                         src={extractYouTubeThumbnail(vid.thumbnailUrl)}
                         alt={vid.title || "Approved by Creators"}
                         fill
-                        unoptimized
                         className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                         sizes="(max-width: 640px) 260px, 320px"
                       />
@@ -360,7 +359,6 @@ export default function CreatorVideosSection() {
                             src={vid.product.mainImage}
                             alt={vid.product.name}
                             fill
-                            unoptimized
                             className="object-contain p-2 transition-transform duration-300 group-hover/img:scale-105"
                           /> : <span className="text-xs text-slate-400">No product image</span>}
                         </div>

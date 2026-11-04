@@ -46,18 +46,6 @@ export default function FestiveOfferPopup() {
   const [loadedPath, setLoadedPath] = useState<string | null>(null);
   const isMounted = loadedPath === pathname;
 
-  // Track image natural dimensions to automatically adjust section proportions
-  useEffect(() => {
-    if (!settings.imageUrl) return;
-    const img = new window.Image();
-    img.src = settings.imageUrl;
-    img.onload = () => {
-      if (img.naturalWidth && img.naturalHeight) {
-        setImageAspect(img.naturalWidth / img.naturalHeight);
-      }
-    };
-  }, [settings.imageUrl]);
-
   // Check stored dismissal and unlocked code on mount
   useEffect(() => {
     try {
@@ -312,9 +300,14 @@ export default function FestiveOfferPopup() {
                 src={settings.imageUrl}
                 alt={`${settings.badgeTitle} - ${settings.heading} - ${settings.offerText}`}
                 fill
-                priority
                 className="object-cover"
                 sizes="760px"
+                onLoad={(event) => {
+                  const image = event.currentTarget;
+                  if (image.naturalWidth && image.naturalHeight) {
+                    setImageAspect(image.naturalWidth / image.naturalHeight);
+                  }
+                }}
               />
 
               {/* INTERACTIVE FORM & SUCCESS OVERLAY */}
@@ -406,9 +399,14 @@ export default function FestiveOfferPopup() {
                 src={settings.imageUrl}
                 alt={settings.heading || "Festive Offer"}
                 fill
-                priority
                 className="object-contain"
                 sizes="760px"
+                onLoad={(event) => {
+                  const image = event.currentTarget;
+                  if (image.naturalWidth && image.naturalHeight) {
+                    setImageAspect(image.naturalWidth / image.naturalHeight);
+                  }
+                }}
               />
 
               {/* COMPACT FLOATING GLASS CARD OVERLAY */}
@@ -490,9 +488,14 @@ export default function FestiveOfferPopup() {
                   src={settings.imageUrl}
                   alt={settings.heading || "Special Offer"}
                   fill
-                  priority
                   className="object-cover"
                   sizes="380px"
+                onLoad={(event) => {
+                  const image = event.currentTarget;
+                  if (image.naturalWidth && image.naturalHeight) {
+                    setImageAspect(image.naturalWidth / image.naturalHeight);
+                  }
+                }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0c1017]/80 via-transparent to-transparent" />
               </div>
@@ -607,9 +610,14 @@ export default function FestiveOfferPopup() {
               src={settings.imageUrl}
               alt={settings.heading || "Special Offer"}
               fill
-              priority
               className="object-contain"
-              sizes="100vw"
+              sizes="(max-width: 639px) 100vw, 1px"
+              onLoad={(event) => {
+                const image = event.currentTarget;
+                if (image.naturalWidth && image.naturalHeight) {
+                  setImageAspect(image.naturalWidth / image.naturalHeight);
+                }
+              }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#0c1017] via-[#0c1017]/30 to-transparent pointer-events-none" />
           </div>

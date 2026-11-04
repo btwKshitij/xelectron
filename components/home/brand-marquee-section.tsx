@@ -42,7 +42,6 @@ export default function BrandMarqueeSection({
                   alt={b.name}
                   width={240}
                   height={75}
-                  unoptimized
                   className="h-full w-auto max-w-[130px] sm:max-w-[170px] lg:max-w-[210px] object-contain select-none filter drop-shadow-2xs"
                 />
               </div>

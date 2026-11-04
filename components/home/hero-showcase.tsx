@@ -1,7 +1,7 @@
 "use client";
 import { trackPromotion } from "@/lib/analytics";
 
-import Image from "next/image";
+import { getImageProps } from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { banners as defaultBanners } from "@/components/home/content";
@@ -53,14 +53,13 @@ function HeroVideo({
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const onEndedRef = useRef(onEnded);
-  onEndedRef.current = onEnded;
+  useEffect(() => { onEndedRef.current = onEnded; }, [onEnded]);
   const wasActiveRef = useRef(false);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    // Mobile and desktop browsers require muted, defaultMuted, and playsInline for autoplay
     video.defaultMuted = true;
     video.muted = true;
     video.playsInline = true;
@@ -148,6 +147,7 @@ export default function HeroShowcase({ initialBanners }: { initialBanners?: Bann
   const minSwipeDistance = 45;
 
   useEffect(() => {
+    if (initialBanners !== undefined) return;
     // Always fetch fresh data from the API with cache-buster timestamp to bypass CDN and browser cache
     async function syncBanners() {
       try {
@@ -242,6 +242,7 @@ export default function HeroShowcase({ initialBanners }: { initialBanners?: Bann
 
   // Smooth RAF loop for fluid, non-jittery arrow glide
   useEffect(() => {
+    if (!isInRightHalf) return;
     const animate = () => {
       if (isInRightHalf) {
         currentPos.current.x += (targetPos.current.x - currentPos.current.x) * 0.1;
@@ -342,6 +343,7 @@ export default function HeroShowcase({ initialBanners }: { initialBanners?: Bann
         {/* SLIDE LAYERS */}
         {activeBanners.map((banner, index) => {
           const isActive = index === currentIndex;
+          if (!isActive) return null;
 
           return (
             <div
@@ -389,46 +391,24 @@ export default function HeroShowcase({ initialBanners }: { initialBanners?: Bann
                     );
                   }
 
+                  const common = {
+                    alt: banner.alt || banner.title,
+                    fill: true,
+                    sizes: "100vw",
+                    loading: "eager" as const,
+                    fetchPriority: index === 0 ? "high" as const : "auto" as const,
+                    className: "object-cover object-center pointer-events-none",
+                  };
+                  const { props: desktop } = getImageProps({ ...common, src: banner.src });
+                  const { props: mobile } = getImageProps({
+                    ...common, src: banner.mobileSrc || banner.src,
+                  });
                   return (
-                    <>
-                      {/* DESKTOP BANNER IMAGE */}
-                      <div className="hidden sm:block relative h-full w-full overflow-hidden">
-                        <div
-                          key={`img-desktop-${index}`}
-                          className={`relative h-full w-full transform-gpu ${
-                            isActive ? "animate-hero-zoom" : "scale-100"
-                          }`}
-                        >
-                          <Image
-                            src={banner.src}
-                            alt={banner.alt || banner.title}
-                            fill
-                            priority={index === 0}
-                            className="object-cover object-center pointer-events-none"
-                            sizes="100vw"
-                          />
-                        </div>
-                      </div>
-
-                      {/* MOBILE BANNER IMAGE */}
-                      <div className="sm:hidden relative h-full w-full overflow-hidden">
-                        <div
-                          key={`img-mobile-${index}`}
-                          className={`relative h-full w-full transform-gpu ${
-                            isActive ? "animate-hero-zoom" : "scale-100"
-                          }`}
-                        >
-                          <Image
-                            src={banner.mobileSrc || banner.src}
-                            alt={banner.alt || banner.title}
-                            fill
-                            priority={index === 0}
-                            className="object-cover object-center pointer-events-none"
-                            sizes="100vw"
-                          />
-                        </div>
-                      </div>
-                    </>
+                    <picture className="relative block h-full w-full overflow-hidden animate-hero-zoom">
+                      <source media="(min-width: 640px)" srcSet={desktop.srcSet} sizes="100vw" />
+                      {/* getImageProps supplies optimized, responsive image URLs. */}
+                      <img {...mobile} alt={common.alt} />
+                    </picture>
                   );
                 })()}
               </Link>

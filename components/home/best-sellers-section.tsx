@@ -634,7 +634,6 @@ export default function BestSellersSection({ additionalItems = [] }: { additiona
                       fill
                       className="object-contain filter drop-shadow-[0_20px_45px_rgba(15,23,42,0.16)] scale-105 sm:scale-110 lg:scale-115 xl:scale-125"
                       sizes="(min-width: 1024px) 60vw, 100vw"
-                      priority={index === 0}
                     />
                   </div>
                 </div>

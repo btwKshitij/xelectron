@@ -39,7 +39,6 @@ function CategoryCardImage({ category }: { category: StorefrontCategory }) {
       src={imgSrc}
       alt={category.title}
       fill
-      unoptimized
       onError={() => {
         if (imgSrc !== fallback) {
           setImgSrc(fallback);

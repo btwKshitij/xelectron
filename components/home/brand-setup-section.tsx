@@ -73,7 +73,7 @@ export default function BrandSetupSection({
             Swipe to explore
           </p>
           <div className="no-scrollbar flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 pr-2">
-            {displayItems.map((item, index) => {
+            {displayItems.map((item) => {
               const cardContent = (
                 <article className="relative min-w-[76vw] snap-start overflow-hidden rounded-[10px] bg-slate-100">
                   <div className="relative h-[370px] w-full">
@@ -81,10 +81,8 @@ export default function BrandSetupSection({
                       src={item.mobileImage || item.image}
                       alt={item.title}
                       fill
-                      unoptimized
                       className="object-cover"
                       sizes="78vw"
-                      priority={index === 0}
                     />
                     {/* Clean image display with no dark shade overlay */}
                     <div className="absolute inset-x-0 bottom-0 p-5">
@@ -147,7 +145,6 @@ export default function BrandSetupSection({
                   src={item.image}
                   alt={item.title}
                   fill
-                  unoptimized
                   className={`object-cover transition-transform duration-700 ease-in-out ${
                     isActive ? "scale-105" : "scale-100"
                   }`}
