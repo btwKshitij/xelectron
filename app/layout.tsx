@@ -6,7 +6,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import CartProvider from "@/components/providers/cart-provider";
 import SmoothScrollProvider from "@/components/providers/smooth-scroll-provider";
-import FestiveOfferPopup from "@/components/common/festive-offer-popup";
+import FestiveOfferPopup from "@/components/common/deferred-festive-offer";
 import ChunkErrorHandler from "@/components/common/chunk-error-handler";
 
 export const metadata: Metadata = {

@@ -7,6 +7,7 @@ import DealOfTheDaySection from "@/components/home/deal-of-the-day-section";
 import WhatsAppSupportBanner from "@/components/home/whatsapp-support-banner";
 import Footer from "@/components/footer/footer";
 import dynamic from "next/dynamic";
+import CreatorVideosSection from "@/components/home/lazy-creator-videos";
 import type { BestSellerItem } from "@/components/home/best-sellers-data";
 import type { StorefrontProduct } from "@/components/home/product-showcase-section";
 import * as productsController from "@/lib/server/controllers/products.controller";
@@ -23,7 +24,6 @@ import { selectLatestLaunchProducts } from "@/lib/latest-launch";
 
 // Dynamic import for below-the-fold sections to speed up initial page load
 const BrandSetupSection = dynamic(() => import("@/components/home/brand-setup-section"));
-const CreatorVideosSection = dynamic(() => import("@/components/home/creator-videos-section"));
 const BrandMarqueeSection = dynamic(() => import("@/components/home/brand-marquee-section"));
 const VerifiedReviewsSection = dynamic(() => import("@/components/home/verified-reviews-section"));
 const FaqSection = dynamic(() => import("@/components/home/faq-section"));

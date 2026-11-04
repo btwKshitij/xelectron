@@ -51,6 +51,27 @@ export default function CreatorVideosSection() {
   const [isPlaying, setIsPlaying] = useState(true);
   const [showFlipHint, setShowFlipHint] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [visibleVideos, setVisibleVideos] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const cards = scrollRef.current?.querySelectorAll<HTMLElement>("[data-video-id]");
+    if (!cards?.length) return;
+    // The viewport clips both the page and the horizontal carousel: offscreen
+    // cards never instantiate third-party players or download video streams.
+    const observer = new IntersectionObserver((entries) => {
+      setVisibleVideos((previous) => {
+        const next = new Set(previous);
+        for (const entry of entries) {
+          const id = (entry.target as HTMLElement).dataset.videoId!;
+          if (entry.isIntersecting) next.add(id);
+          else next.delete(id);
+        }
+        return next;
+      });
+    }, { threshold: 0.25 });
+    cards.forEach((card) => observer.observe(card));
+    return () => observer.disconnect();
+  }, [videoList]);
 
   useEffect(() => {
     if (isLoading || videoList.length === 0 || !scrollRef.current || flipHintSeen) return;
@@ -173,10 +194,12 @@ export default function CreatorVideosSection() {
             const ytId = getYouTubeId(vid.videoUrl);
             const instagramUrl = getInstagramPostUrl(vid.videoUrl);
             const isFlipped = !!flippedCards[vid.id];
+            const canPlay = visibleVideos.has(vid.id) && !isFlipped;
 
             return (
               <div
                 key={vid.id}
+                data-video-id={vid.id}
                 className="group relative [perspective:1000px] aspect-[9/16] w-[86vw] xs:w-[82vw] max-w-[360px] sm:w-[calc(50%-12px)] md:w-[calc(33.333%-16px)] lg:w-[calc(25%-18px)] shrink-0 snap-center sm:snap-start select-none cursor-pointer"
                 onClick={(e) => toggleFlip(vid.id, e)}
               >
@@ -201,7 +224,7 @@ export default function CreatorVideosSection() {
                     }`}
                   >
                     {/* VIDEO AUTOPLAY LAYER */}
-                    {instagramUrl ? (
+                    {instagramUrl && canPlay ? (
                       <iframe
                         src={`${instagramUrl}embed/`}
                         title={vid.title || "Instagram creator video"}
@@ -210,7 +233,7 @@ export default function CreatorVideosSection() {
                         loading="lazy"
                         className="absolute inset-x-0 top-0 h-[calc(100%-48px)] w-full border-0 bg-white"
                       />
-                    ) : ytId && isPlaying ? (
+                    ) : ytId && isPlaying && canPlay ? (
                       <div className="absolute inset-0 flex items-center justify-center bg-black overflow-hidden pointer-events-none select-none">
                         <iframe
                           src={`https://www.youtube.com/embed/${ytId}?autoplay=${isPlaying ? 1 : 0}&mute=${isMuted ? 1 : 0}&loop=1&playlist=${ytId}&controls=0&showinfo=0&rel=0&modestbranding=1&disablekb=1&fs=0&playsinline=1&iv_load_policy=3&enablejsapi=1`}
@@ -220,7 +243,7 @@ export default function CreatorVideosSection() {
                           className="pointer-events-none absolute inset-0 w-full h-full object-cover border-0 select-none scale-[1.03]"
                         />
                       </div>
-                    ) : vid.videoUrl && !ytId && isPlaying ? (
+                    ) : vid.videoUrl && !ytId && !instagramUrl && isPlaying && canPlay ? (
                       <video
                         src={vid.videoUrl}
                         poster={extractYouTubeThumbnail(vid.thumbnailUrl)}

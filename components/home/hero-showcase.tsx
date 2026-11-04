@@ -3,7 +3,7 @@ import { trackPromotion } from "@/lib/analytics";
 
 import { getImageProps } from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { banners as defaultBanners } from "@/components/home/content";
 import { ChevronRight } from "lucide-react";
 import { isYouTubeUrl, getYouTubeEmbedUrl } from "@/lib/banner-media";
@@ -20,6 +20,15 @@ type BannerType = {
 };
 
 const SLIDE_DURATION = 6500;
+
+function subscribeDesktop(onChange: () => void) {
+  const query = window.matchMedia("(min-width: 640px)");
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
+
+const getDesktopSnapshot = () => window.matchMedia("(min-width: 640px)").matches;
+const getServerDesktopSnapshot = () => true;
 
 function isVideoUrl(url?: string | null): boolean {
   if (!url) return false;
@@ -137,7 +146,7 @@ export default function HeroShowcase({ initialBanners }: { initialBanners?: Bann
   const viewportRef = useRef<HTMLDivElement>(null);
   const targetPos = useRef({ x: 0, y: 0 });
   const currentPos = useRef({ x: 0, y: 0 });
-  const [renderPos, setRenderPos] = useState<{ x: number; y: number } | null>(null);
+  const cursorRef = useRef<HTMLDivElement>(null);
   const [isInRightHalf, setIsInRightHalf] = useState(false);
   const rafId = useRef<number | null>(null);
 
@@ -171,17 +180,7 @@ export default function HeroShowcase({ initialBanners }: { initialBanners?: Bann
     syncBanners();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const [isDesktop, setIsDesktop] = useState(true);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const mq = window.matchMedia("(min-width: 640px)");
-    setIsDesktop(mq.matches);
-
-    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
+  const isDesktop = useSyncExternalStore(subscribeDesktop, getDesktopSnapshot, getServerDesktopSnapshot);
 
   const activeBanners = bannerList.length > 0 ? bannerList : defaultBanners;
   const totalBanners = activeBanners.length;
@@ -247,10 +246,9 @@ export default function HeroShowcase({ initialBanners }: { initialBanners?: Bann
       if (isInRightHalf) {
         currentPos.current.x += (targetPos.current.x - currentPos.current.x) * 0.1;
         currentPos.current.y += (targetPos.current.y - currentPos.current.y) * 0.1;
-        setRenderPos({
-          x: Math.round(currentPos.current.x * 100) / 100,
-          y: Math.round(currentPos.current.y * 100) / 100,
-        });
+        if (cursorRef.current) {
+          cursorRef.current.style.transform = `translate3d(${currentPos.current.x}px, ${currentPos.current.y}px, 0) translate(-50%, -50%)`;
+        }
       }
       rafId.current = requestAnimationFrame(animate);
     };
@@ -294,7 +292,6 @@ export default function HeroShowcase({ initialBanners }: { initialBanners?: Bann
     if (x >= rect.width * 0.45) {
       if (!isInRightHalf) {
         currentPos.current = { x, y };
-        setRenderPos({ x, y });
         setIsInRightHalf(true);
       }
       targetPos.current = { x, y };
@@ -417,7 +414,8 @@ export default function HeroShowcase({ initialBanners }: { initialBanners?: Bann
         })}
 
         {/* RIGHT HALF INTERACTIVE CLICK ZONE (ADVANCES TO NEXT SLIDE) */}
-        <div
+        <button
+          type="button"
           className="absolute right-0 top-0 w-1/2 h-full z-20 cursor-pointer"
           onClick={(e) => {
             e.preventDefault();
@@ -428,14 +426,13 @@ export default function HeroShowcase({ initialBanners }: { initialBanners?: Bann
         />
 
         {/* MOUSE-FOLLOWING BLUE CIRCULAR ARROW (FLOWS SMOOTHLY IN RIGHT HALF OF BANNER) */}
-        {renderPos && (
+        {(
           <div
-            className={`pointer-events-none hidden sm:flex absolute z-30 items-center justify-center -translate-x-1/2 -translate-y-1/2 ${
+            ref={cursorRef}
+            className={`pointer-events-none hidden sm:flex absolute left-0 top-0 z-30 items-center justify-center ${
               isInRightHalf ? "opacity-100 scale-100" : "opacity-0 scale-75"
             }`}
             style={{
-              left: `${renderPos.x}px`,
-              top: `${renderPos.y}px`,
               transition: "opacity 300ms ease-out, scale 300ms cubic-bezier(0.16, 1, 0.3, 1)",
             }}
           >
