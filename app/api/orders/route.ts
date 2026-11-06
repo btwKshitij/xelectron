@@ -6,6 +6,7 @@ import type { NextRequest } from "next/server";
 import * as ordersController from "@/lib/server/controllers/orders.controller";
 import { getCurrentUser, AuthError } from "@/lib/server/dal/auth";
 import { setSessionCookie } from "@/lib/server/auth/session-utils";
+import { CodNotAvailableError } from "@/lib/payment-eligibility";
 
 // GET /api/orders?userId=
 export async function GET(request: NextRequest) {
@@ -110,7 +111,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: error.message }, { status: error.status });
     }
     const message = error instanceof Error ? error.message : "Internal server error";
-    const status = message.includes("Missing") ? 400 : 500;
+    const status = error instanceof CodNotAvailableError || message.includes("Missing") ? 400 : 500;
     return NextResponse.json({ success: false, error: message }, { status });
   }
 }

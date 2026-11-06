@@ -14,6 +14,7 @@ import { revalidatePath } from "next/cache";
 import type { Discount } from "@prisma/client";
 import { validateDealCheckout } from "@/lib/server/deal-checkout";
 import { isCodOrder } from "@/lib/server/orders-filter";
+import { CodNotAvailableError, isExtendedWarrantyCategory } from "@/lib/payment-eligibility";
 import { sendGa4Refund } from "@/lib/server/ga4-measurement-protocol";
 
 // ─── List ────────────────────────────────────────────────────────────────────
@@ -128,6 +129,10 @@ export async function createOrder(data: ordersDal.CreateOrderInput, options: Cre
       }
 
       // Calculate true live price from database
+      if (isCodOrder(data) && isExtendedWarrantyCategory(product.category)) {
+        throw new CodNotAvailableError();
+      }
+
       let dbPrice =
         typeof product.price === "number"
           ? product.price

@@ -1,4 +1,5 @@
 "use client";
+import { isExtendedWarrantyCategory } from "@/lib/payment-eligibility";
 import { formatOrderReference } from "@/lib/order-reference";
 import { cartEcommerce, trackEcommerce, trackPurchase, rememberOrderContext } from "@/lib/analytics";
 
@@ -74,6 +75,7 @@ function CheckoutContent() {
   const [productParamLoading, setProductParamLoading] = useState(false);
   const [catalogReady, setCatalogReady] = useState(false);
   const [catalogIds, setCatalogIds] = useState<Set<string>>(new Set());
+  const [warrantyProductIds, setWarrantyProductIds] = useState<Set<string>>(new Set());
   const checkoutTracked = useRef(false);
   const acceptedSteps = useRef(new Set<string>());
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string; email: string } | null>(null);
@@ -174,6 +176,9 @@ function CheckoutContent() {
         }
 
         setLiveStockMap(stockMap);
+        setWarrantyProductIds(new Set<string>(json.data
+          .filter((product: { category?: { slug?: string; title?: string } }) => isExtendedWarrantyCategory(product.category))
+          .flatMap((product: { id: string; slug: string }) => [product.id, product.slug])));
         setCatalogIds(new Set(json.data.map((product: { id: string }) => product.id)));
         setCatalogReady(true);
 
@@ -307,7 +312,12 @@ function CheckoutContent() {
   const [showPassword, setShowPassword] = useState(false);
 
   // Payment State
-  const [paymentMethod, setPaymentMethod] = useState<"razorpay" | "velocity" | "cod">("razorpay");
+  const [selectedPaymentMethod, setPaymentMethod] = useState<"razorpay" | "velocity" | "cod">("razorpay");
+  const hasExtendedWarranty = orderItems.some((item) =>
+    isExtendedWarrantyCategory(item.category) || warrantyProductIds.has(item.id) ||
+    (item.slug ? warrantyProductIds.has(item.slug) : false));
+  const paymentMethod = hasExtendedWarranty && selectedPaymentMethod === "cod"
+    ? "razorpay" : selectedPaymentMethod;
 
   // Product-page EMI links arrive with the Velocity method already selected.
   useEffect(() => {
@@ -1669,6 +1679,7 @@ function CheckoutContent() {
                   </button>
 
                   {/* Option 3: Cash on Delivery (Compact) */}
+                  {!hasExtendedWarranty && (
                   <button
                     type="button"
                     onClick={() => setPaymentMethod("cod")}
@@ -1702,6 +1713,10 @@ function CheckoutContent() {
                       <span className="font-semibold text-slate-500 shrink-0 whitespace-nowrap">OTP Confirmed</span>
                     </div>
                   </button>
+                  )}
+                  {hasExtendedWarranty && (
+                    <p className="text-xs text-slate-600">Extended Warranty products require online payment. Cash on Delivery is unavailable for this order.</p>
+                  )}
                 </div>
 
                 {/* Compact Razorpay Security Line */}
