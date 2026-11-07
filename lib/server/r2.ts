@@ -138,7 +138,7 @@ function safeFileName(name: string) {
   return cleaned || "product-image";
 }
 
-export async function uploadProductImage(file: File) {
+export function validateProductMedia(file: { name: string; type: string; size: number }) {
   const ext = file.name.split(".").pop()?.toLowerCase() || "";
   const isAllowed = allowedImageTypes.has(file.type) || allowedExtensions.has(ext);
 
@@ -163,6 +163,10 @@ export async function uploadProductImage(file: File) {
     );
   }
 
+}
+
+export async function uploadProductImage(file: File) {
+  validateProductMedia(file);
   const contentType = inferMimeType(file.name, file.type);
   const key = `products/${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}-${safeFileName(file.name)}`;
   

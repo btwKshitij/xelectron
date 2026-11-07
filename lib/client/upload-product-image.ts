@@ -1,3 +1,6 @@
+import { MEDIA_CHUNK_BYTES } from "@/lib/media-upload";
+import { uploadMediaInChunks } from "./upload-media-chunks";
+
 export type UploadedProductImage = {
   key: string;
   url: string;
@@ -168,6 +171,9 @@ export async function uploadProductImage(
   const { timeoutMs = 300000, retries = 2, signal, onProgress } = options;
 
   const preparedFile = await optimizeImageForUpload(file);
+  if (preparedFile.size > MEDIA_CHUNK_BYTES) {
+    return uploadMediaInChunks(preparedFile, options);
+  }
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt <= retries; attempt++) {
