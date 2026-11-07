@@ -118,7 +118,7 @@ function uploadWithXHR(
         if (xhr.status === 413) {
           return reject(
             new Error(
-              `"${file.name}" exceeds the server upload limit. The file is too large for the firewall; please use a compressed image or video under 10 MB.`
+              `The upload server rejected "${file.name}" (${(file.size / (1024 * 1024)).toFixed(2)} MB). Its request-size limit needs to be increased by the site administrator (HTTP 413).`
             )
           );
         }
@@ -220,7 +220,7 @@ export async function uploadProductImage(
           if (!response.ok) {
             if (response.status === 413) {
               throw new Error(
-                `"${file.name}" exceeds the server upload limit. The file is too large for the firewall; please use a compressed image or video under 10 MB.`
+                `The upload server rejected "${file.name}" (${(preparedFile.size / (1024 * 1024)).toFixed(2)} MB). Its request-size limit needs to be increased by the site administrator (HTTP 413).`
               );
             }
             if (response.status === 504 || response.status === 502) {
