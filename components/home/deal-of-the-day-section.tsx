@@ -147,13 +147,13 @@ export default function DealOfTheDaySection({ deal }: { deal: StorefrontDealOfTh
         </div>
         <div>
           <p
-            className={`text-base sm:text-lg font-bold leading-none transition-colors duration-700 ${
+            className={`text-base sm:text-lg font-semibold leading-none transition-colors duration-700 ${
               isUrgent ? "text-rose-900" : isWhite ? "text-slate-900" : "text-white"
             }`}
           >
             {deal.unitsLeft}
           </p>
-          <p className="mt-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-slate-400">
+          <p className="mt-1 text-[9px] sm:text-[10px] font-semibold uppercase tracking-widest text-slate-400">
             Units Left
           </p>
         </div>
@@ -172,12 +172,12 @@ export default function DealOfTheDaySection({ deal }: { deal: StorefrontDealOfTh
             <p className="text-[9px] sm:text-[10px] font-semibold uppercase tracking-widest text-slate-400">
               {timerInfo.labelText}
             </p>
-            <div className="mt-0.5 text-base sm:text-2xl font-bold tracking-tight text-[#0a7ae6]" suppressHydrationWarning>
+            <div className="mt-0.5 text-base sm:text-2xl font-semibold tracking-tight text-[#0a7ae6]" suppressHydrationWarning>
               {timerInfo.dateDisplay}
             </div>
           </div>
         ) : (
-          <div className="font-mono text-xl sm:text-3xl font-extrabold tracking-tight text-slate-950" suppressHydrationWarning>
+          <div className="font-mono text-xl sm:text-3xl font-semibold tracking-tight text-slate-950" suppressHydrationWarning>
             <span suppressHydrationWarning>{formatTime(timerInfo.totalHours)}</span>:
             <span suppressHydrationWarning>{formatTime(timerInfo.minutes)}</span>:
             <span suppressHydrationWarning className={isUrgent ? "text-rose-600" : "text-[#0a7ae6]"}>
@@ -246,7 +246,7 @@ export default function DealOfTheDaySection({ deal }: { deal: StorefrontDealOfTh
               <div>
                 {/* PRODUCT TITLE & SUBTITLE */}
                 <h3
-                  className={`text-2xl sm:text-3xl lg:text-[32px] font-bold tracking-tight leading-tight transition-colors duration-700 ${
+                  className={`text-2xl sm:text-3xl lg:text-[32px] font-semibold tracking-tight leading-tight transition-colors duration-700 ${
                     isWhite ? "text-slate-950" : "text-white"
                   }`}
                 >
