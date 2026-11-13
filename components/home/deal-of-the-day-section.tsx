@@ -5,7 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { formatINR, parsePriceNumber } from "@/lib/format-price";
+import { DealPriceDisplay, dealDiscountPercent } from "./deal-price-display";
+import { formatINR } from "@/lib/format-price";
 import { useEffect, useRef, useState } from "react";
 import { Flame } from "lucide-react";
 
@@ -22,6 +23,8 @@ export type StorefrontDealOfTheDay = {
     slug: string;
     name: string;
     price: string;
+    catalogPrice?: string;
+    mrp?: string | null;
     oldPrice: string | null;
     description?: string | null;
     shippingNotice?: string | null;
@@ -81,9 +84,7 @@ export default function DealOfTheDaySection({ deal }: { deal: StorefrontDealOfTh
   const [timerInfo, setTimerInfo] = useState(() => getTimeLeftInfo(deal.endsAt));
   const claimedPercent = Math.max(0, Math.min(100, Math.round(((deal.totalUnits - deal.unitsLeft) / deal.totalUnits) * 100)));
 
-  const numPrice = parsePriceNumber(deal.product.price);
-  const numOld = parsePriceNumber(deal.product.oldPrice);
-  const discountPercent = numOld > 0 && numPrice > 0 && numPrice < numOld ? Math.round(((numOld - numPrice) / numOld) * 100) : 0;
+  const discountPercent = dealDiscountPercent(deal.product.price, deal.product.mrp || deal.product.catalogPrice || deal.product.oldPrice);
 
   // A storefront tab can remain open while the deal is edited in another tab.
   useEffect(() => {
@@ -124,7 +125,7 @@ export default function DealOfTheDaySection({ deal }: { deal: StorefrontDealOfTh
 
   const isUrgent = timerInfo.isUrgent;
 
-  const renderTimerBox = (isMobile = false) => (
+  const renderTimerBox = () => (
     <div
       className={`flex items-center justify-between rounded-2xl sm:rounded-[22px] border px-5 py-3.5 sm:px-6 sm:py-4 shadow-xs transition-all duration-700 shrink-0 ${
         isUrgent
@@ -209,14 +210,14 @@ export default function DealOfTheDaySection({ deal }: { deal: StorefrontDealOfTh
 
         {/* MOBILE TIMER CARD (Displays right below title on phone view) */}
         <div className="block lg:hidden mb-4">
-          {renderTimerBox(true)}
+          {renderTimerBox()}
         </div>
 
         {/* 2-COLUMN GRID (DESKTOP: IMAGE LEFT, DETAILS RIGHT) */}
         <div className="grid gap-4 sm:gap-6 lg:gap-8 lg:grid-cols-12 lg:items-stretch">
           {/* LEFT COLUMN: LIFESTYLE IMAGE BANNER */}
           <div className="lg:col-span-6 flex items-center justify-center">
-            <div className="group relative h-[300px] xs:h-[340px] sm:h-[460px] md:h-[500px] lg:h-[560px] xl:h-[580px] w-full flex items-center justify-center">
+            <div className="group relative h-[300px] xs:h-[340px] sm:h-[460px] md:h-[500px] lg:min-h-[560px] xl:min-h-[580px] w-full flex items-center justify-center">
               <Image
                 src={deal.image}
                 alt={deal.title}
@@ -228,10 +229,10 @@ export default function DealOfTheDaySection({ deal }: { deal: StorefrontDealOfTh
           </div>
 
           {/* RIGHT COLUMN: TIMER + DETAILS CARDS */}
-          <div className="flex flex-col gap-4 sm:gap-5 lg:col-span-6 justify-between h-auto lg:h-[560px] xl:h-[580px]">
+          <div className="flex flex-col gap-4 sm:gap-5 lg:col-span-6 justify-between h-auto lg:min-h-[560px] xl:min-h-[580px]">
             {/* DESKTOP TIMER BOX (Hidden on mobile, shown on lg+) */}
             <div className="hidden lg:block">
-              {renderTimerBox(false)}
+              {renderTimerBox()}
             </div>
 
             {/* PRODUCT CARD BODY */}
@@ -297,28 +298,7 @@ export default function DealOfTheDaySection({ deal }: { deal: StorefrontDealOfTh
               <div className="mt-4">
                 {/* PRICING */}
                 <div className="border-t border-slate-100 pt-4">
-                  <div className="flex flex-wrap items-baseline gap-2.5 sm:gap-3">
-                    <span
-                      className={`text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight transition-colors duration-700 ${
-                        isWhite ? "text-slate-950" : "text-white"
-                      }`}
-                    >
-                      {displayPrice(deal.product.price)}
-                    </span>
-                    {deal.product.oldPrice ? (
-                      <span className="text-sm sm:text-base font-normal text-slate-400 line-through">
-                        {displayPrice(deal.product.oldPrice)}
-                      </span>
-                    ) : null}
-                    {discountPercent > 0 ? (
-                      <span className="rounded-md bg-emerald-500/15 px-2.5 py-0.5 text-xs sm:text-sm font-bold text-emerald-600 tracking-wide">
-                        {discountPercent}% OFF
-                      </span>
-                    ) : null}
-                  </div>
-                  <p className="mt-0.5 text-[11px] font-medium uppercase tracking-wider text-[#0a7ae6]">
-                    Limited-time offer
-                  </p>
+                  <DealPriceDisplay price={deal.product.price} regularPrice={deal.product.catalogPrice || (!deal.product.mrp ? deal.product.oldPrice : null)} mrp={deal.product.mrp} dark={!isWhite} />
                 </div>
 
                 {/* STOCK CLAIM PROGRESS BAR */}

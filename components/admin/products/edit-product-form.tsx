@@ -422,7 +422,7 @@ export function EditProductForm({ product, categories }: { product: EditableProd
     if (compareAtPrice.trim()) {
       const parsed = parseCleanNumber(compareAtPrice);
       if (isNaN(parsed) || parsed < 0) {
-        setMessage("Enter a valid compare-at price or leave it blank.");
+        setMessage("Enter a valid MRP or leave it blank.");
         if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
         return;
       }
@@ -698,13 +698,13 @@ export function EditProductForm({ product, categories }: { product: EditableProd
             <div className="mt-4"><ProductMediaUploader onFilesChange={setMediaFiles} /></div>
           </Card>
           <Card title="Price">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="grid gap-1.5 text-sm text-black/75"><span>Price</span><span className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-black/65">₹</span><input value={price} onChange={(event) => setPrice(event.target.value)} inputMode="decimal" className={`${inputClass} pl-7`} /></span></label>
-              <label className="grid gap-1.5 text-sm text-black/75"><span>Compare-at price</span><span className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-black/65">₹</span><input value={compareAtPrice} onChange={(event) => setCompareAtPrice(event.target.value)} inputMode="decimal" placeholder="0.00" className={`${inputClass} pl-7`} /></span></label>
+            <div id="product-pricing" className="grid scroll-mt-28 gap-4 sm:grid-cols-2">
+              <label className="grid gap-1.5 text-sm text-black/75"><span>Selling price</span><span className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-black/65">₹</span><input value={price} onChange={(event) => setPrice(event.target.value)} inputMode="decimal" className={`${inputClass} pl-7`} /></span></label>
+              <label className="grid gap-1.5 text-sm text-black/75"><span className="font-semibold">MRP (Original price)</span><span className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-black/65">₹</span><input value={compareAtPrice} onChange={(event) => setCompareAtPrice(event.target.value)} inputMode="decimal" placeholder="0.00" className={`${inputClass} pl-7`} /></span></label>
             </div>
             {parsePriceNumber(price) > parsePriceNumber(compareAtPrice) && parsePriceNumber(compareAtPrice) > 0 && (
               <p className="mt-3 text-sm text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">
-                Warning: The selling price is higher than the compare-at price. Typically, the compare-at price should be the higher, original MRP.
+                Warning: The selling price is higher than the MRP. MRP is the original product price before discounts.
               </p>
             )}
           </Card>

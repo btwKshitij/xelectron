@@ -172,6 +172,8 @@ async function HomeSections() {
         slug: activeDealResult.product.slug,
         name: activeDealResult.product.name,
         price: dealPrice,
+        catalogPrice: activeDealResult.product.price,
+        mrp: activeDealResult.product.oldPrice,
         oldPrice: compareAtPrice && compareAtPrice !== dealPrice ? compareAtPrice : null,
         description: activeDealResult.product.description || null,
         shippingNotice: activeDealResult.product.shippingNotice || null,
