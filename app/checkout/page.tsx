@@ -1116,6 +1116,9 @@ function CheckoutContent() {
                   {couponError}
                 </p>
               )}
+              <p className="mt-3 text-xs leading-relaxed text-slate-600 sm:text-sm">
+                Get a 10% discount on prepaid orders using coupon code: <strong className="font-semibold text-[#0a7ae6]">PREPAID10</strong>
+              </p>
             </div>
 
             {/* Contact Details Section */}
