@@ -6,9 +6,7 @@ import { preferredRedirect } from "./lib/canonical";
 export function proxy(request: NextRequest) {
   if (request.method === "GET" || request.method === "HEAD") {
     const host = request.headers.get("host") || request.nextUrl.host;
-    const protocol = request.headers.get("x-forwarded-proto")?.split(",")[0].trim()
-      || request.nextUrl.protocol.replace(":", "");
-    const destination = preferredRedirect(new URL(request.url), host, protocol);
+    const destination = preferredRedirect(new URL(request.url), host);
     if (destination) return NextResponse.redirect(destination, 308);
   }
   // If Velocity sends server-to-server POST webhooks to /checkout/velocity-callback,

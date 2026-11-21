@@ -22,7 +22,7 @@ export function normalizePublicQuery(url: URL) {
   }
 }
 
-export function preferredRedirect(url: URL, host: string, protocol: string): URL | null {
+export function preferredRedirect(url: URL, host: string): URL | null {
   const target = new URL(url);
   const hostname = host.toLowerCase().replace(/:\d+$/, "");
   const productionHost = ["xelectron.com", "www.xelectron.com"].includes(hostname);
@@ -34,6 +34,8 @@ export function preferredRedirect(url: URL, host: string, protocol: string): URL
     target.port = "";
   }
   normalizePublicQuery(target);
-  const hostChanged = productionHost && (host.toLowerCase() !== "www.xelectron.com" || protocol !== "https");
+  // Sucuri enforces public HTTP -> HTTPS. The origin can receive HTTP and an
+  // internal port even for HTTPS visitors; neither is a reason to redirect.
+  const hostChanged = productionHost && hostname !== "www.xelectron.com";
   return hostChanged || target.search !== url.search ? target : null;
 }
