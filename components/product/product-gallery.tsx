@@ -1,6 +1,6 @@
 "use client";
 
-import Image, { type ImageProps } from "next/image";
+import NextImage, { type ImageProps } from "next/image";
 import { useState, useEffect, useRef, useCallback, type CSSProperties } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -10,6 +10,28 @@ import {
   CarouselItem,
   type CarouselApi,
 } from "@/components/ui/carousel";
+
+// Old catalog entries still contain development-domain URLs. Read those objects
+// through our cached R2 endpoint rather than the rate-limited public endpoint.
+function Image(props: ImageProps) {
+  let src = props.src;
+  if (typeof src === "string" && src.startsWith("https://")) {
+    try {
+      const url = new URL(src);
+      if (url.hostname === "pub-71e14405ed4a425db543797ffb54d14a.r2.dev" && url.pathname.startsWith("/products/")) {
+        src = `/api/media${url.pathname}`;
+      }
+    } catch { /* Keep non-URL sources unchanged. */ }
+  }
+  const [failedSource, setFailedSource] = useState<ImageProps["src"] | null>(null);
+  const useOriginal = props.unoptimized || failedSource === src;
+  return <NextImage {...props} src={src} quality={90} unoptimized={useOriginal}
+    onError={(event) => {
+      // A failed optimizer request gets one attempt with the original image.
+      if (!useOriginal) setFailedSource(src);
+      props.onError?.(event);
+    }} />;
+}
 
 function ZoomableModalViewer({
   src,
@@ -355,7 +377,7 @@ function ZoomImage({ onZoom, ...props }: ImageProps & { onZoom: () => void }) {
       setHovered(true);
     }} onPointerLeave={() => setHovered(false)}
     className="absolute inset-0 h-full w-full cursor-zoom-in overflow-hidden rounded-[inherit] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue-500">
-    <Image {...props} alt={props.alt} draggable={false} style={{ ...props.style, transformOrigin: origin, transform: hovered ? "scale(2)" : "scale(1)", transition: "transform 150ms ease-out" } as CSSProperties} />
+    <Image {...props} alt={props.alt} unoptimized={hovered || props.unoptimized} draggable={false} style={{ ...props.style, transformOrigin: origin, transform: hovered ? "scale(2)" : "scale(1)", transition: "transform 150ms ease-out" } as CSSProperties} />
   </button>;
 }
 

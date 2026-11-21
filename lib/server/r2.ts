@@ -1,4 +1,5 @@
 import "server-only";
+import { optimizeUploadImage } from "@/lib/server/optimize-upload-image";
 
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
@@ -167,19 +168,21 @@ export function validateProductMedia(file: { name: string; type: string; size: n
 
 export async function uploadProductImage(file: File) {
   validateProductMedia(file);
-  const contentType = inferMimeType(file.name, file.type);
-  const key = `products/${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}-${safeFileName(file.name)}`;
+  const prepared = await optimizeUploadImage(Buffer.from(await file.arrayBuffer()), file.name, inferMimeType(file.name, file.type));
+  const key = `products/${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}-${safeFileName(prepared.name)}`;
   
   await getR2Client().send(new PutObjectCommand({
     Bucket: getR2BucketName(),
     Key: key,
-    Body: Buffer.from(await file.arrayBuffer()),
-    ContentType: contentType,
+    Body: prepared.body,
+    ContentType: prepared.contentType,
     CacheControl: "public, max-age=31536000, immutable",
   }));
 
   const publicBase = getR2PublicBaseUrl();
-  const url = publicBase ? `${publicBase}/${key}` : `/api/media/${key}`;
+  // The development endpoint is rate-limited; use authenticated R2 reads instead.
+  const url = new URL(publicBase).hostname.endsWith(".r2.dev")
+    ? `/api/media/${key}` : `${publicBase}/${key}`;
 
   return { key, url };
 }
