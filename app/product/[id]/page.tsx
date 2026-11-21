@@ -27,9 +27,9 @@ export default async function DynamicProductPage({ params }: DynamicProductPageP
   if (!dbProduct) notFound();
 
   const isDealActiveForProduct = activeDeal && dbProduct && (activeDeal.productId === dbProduct.id || activeDeal.product.slug === dbProduct.slug);
-  let effectivePrice = isDealActiveForProduct && activeDeal.dealPrice ? activeDeal.dealPrice : dbProduct?.price;
-  let effectiveOldPrice = isDealActiveForProduct
-    ? (activeDeal.compareAtPrice || (dbProduct && dbProduct.price !== effectivePrice ? dbProduct.price : dbProduct?.oldPrice))
+  const effectivePrice = isDealActiveForProduct && activeDeal.dealPrice ? activeDeal.dealPrice : dbProduct?.price;
+  const effectiveOldPrice = isDealActiveForProduct
+    ? activeDeal.product.oldPrice
     : dbProduct?.oldPrice;
 
   const dashboardProducts = dbProduct ? await productsController.listProducts().catch(() => []) : [];
@@ -86,7 +86,7 @@ export default async function DynamicProductPage({ params }: DynamicProductPageP
         discount:
           isDealActiveForProduct && effectivePrice && effectiveOldPrice && parsePriceNumber(effectiveOldPrice) > parsePriceNumber(effectivePrice)
             ? `${Math.round((1 - parsePriceNumber(effectivePrice) / parsePriceNumber(effectiveOldPrice)) * 100)}% off`
-            : (dbProduct.discount || undefined),
+            : (isDealActiveForProduct ? undefined : dbProduct.discount || undefined),
         rating: dbProduct.rating,
         reviewsCount: `${dbProduct.reviewsCount} Reviews`,
         description: dbProduct.description,

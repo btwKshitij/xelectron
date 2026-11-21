@@ -69,6 +69,23 @@ interface ProductDetailProps {
 }
 
 function toProductDetailItem(product: any, activeDeal?: any): ProductDetailItem {
+  const isDealActiveForProduct = activeDeal?.isActive &&
+    (!activeDeal.endsAt || new Date(activeDeal.endsAt) > new Date()) &&
+    (activeDeal.productId === product.id || activeDeal.product?.slug === product.slug);
+  if (isDealActiveForProduct) {
+    const price = activeDeal.dealPrice || product.price;
+    const mrp = activeDeal.product?.oldPrice;
+    const priceNumber = priceToNumber(price);
+    const mrpNumber = mrp ? priceToNumber(mrp) : 0;
+    product = {
+      ...product,
+      price,
+      oldPrice: mrp,
+      discount: mrpNumber > priceNumber && priceNumber > 0
+        ? `${Math.round((1 - priceNumber / mrpNumber) * 100)}% off`
+        : undefined,
+    };
+  }
   let priceStr = typeof product.price === "number" ? `₹${product.price.toLocaleString("en-IN")}` : String(product.price);
   let oldPriceStr = product.oldPrice
     ? typeof product.oldPrice === "number"

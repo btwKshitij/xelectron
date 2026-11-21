@@ -1,5 +1,5 @@
 "use client";
-import { isExtendedWarrantyCategory } from "@/lib/payment-eligibility";
+import { COD_UNAVAILABLE_MESSAGE, isOnlinePaymentOnlyCategory } from "@/lib/payment-eligibility";
 import { formatOrderReference } from "@/lib/order-reference";
 import { cartEcommerce, trackEcommerce, trackPurchase, rememberOrderContext } from "@/lib/analytics";
 
@@ -75,7 +75,7 @@ function CheckoutContent() {
   const [productParamLoading, setProductParamLoading] = useState(false);
   const [catalogReady, setCatalogReady] = useState(false);
   const [catalogIds, setCatalogIds] = useState<Set<string>>(new Set());
-  const [warrantyProductIds, setWarrantyProductIds] = useState<Set<string>>(new Set());
+  const [onlineOnlyProductIds, setOnlineOnlyProductIds] = useState<Set<string>>(new Set());
   const checkoutTracked = useRef(false);
   const acceptedSteps = useRef(new Set<string>());
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string; email: string } | null>(null);
@@ -176,8 +176,8 @@ function CheckoutContent() {
         }
 
         setLiveStockMap(stockMap);
-        setWarrantyProductIds(new Set<string>(json.data
-          .filter((product: { category?: { slug?: string; title?: string } }) => isExtendedWarrantyCategory(product.category))
+        setOnlineOnlyProductIds(new Set<string>(json.data
+          .filter((product: { category?: { slug?: string; title?: string } }) => isOnlinePaymentOnlyCategory(product.category))
           .flatMap((product: { id: string; slug: string }) => [product.id, product.slug])));
         setCatalogIds(new Set(json.data.map((product: { id: string }) => product.id)));
         setCatalogReady(true);
@@ -313,10 +313,10 @@ function CheckoutContent() {
 
   // Payment State
   const [selectedPaymentMethod, setPaymentMethod] = useState<"razorpay" | "velocity" | "cod">("razorpay");
-  const hasExtendedWarranty = orderItems.some((item) =>
-    isExtendedWarrantyCategory(item.category) || warrantyProductIds.has(item.id) ||
-    (item.slug ? warrantyProductIds.has(item.slug) : false));
-  const paymentMethod = hasExtendedWarranty && selectedPaymentMethod === "cod"
+  const hasOnlineOnlyProducts = orderItems.some((item) =>
+    isOnlinePaymentOnlyCategory(item.category) || onlineOnlyProductIds.has(item.id) ||
+    (item.slug ? onlineOnlyProductIds.has(item.slug) : false));
+  const paymentMethod = hasOnlineOnlyProducts && selectedPaymentMethod === "cod"
     ? "razorpay" : selectedPaymentMethod;
 
   // Product-page EMI links arrive with the Velocity method already selected.
@@ -1679,7 +1679,7 @@ function CheckoutContent() {
                   </button>
 
                   {/* Option 3: Cash on Delivery (Compact) */}
-                  {!hasExtendedWarranty && (
+                  {!hasOnlineOnlyProducts && (
                   <button
                     type="button"
                     onClick={() => setPaymentMethod("cod")}
@@ -1714,8 +1714,8 @@ function CheckoutContent() {
                     </div>
                   </button>
                   )}
-                  {hasExtendedWarranty && (
-                    <p className="text-xs text-slate-600">Extended Warranty products require online payment. Cash on Delivery is unavailable for this order.</p>
+                  {hasOnlineOnlyProducts && (
+                    <p className="text-xs text-slate-600">{COD_UNAVAILABLE_MESSAGE}</p>
                   )}
                 </div>
 

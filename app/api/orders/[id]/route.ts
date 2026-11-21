@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import * as ordersController from "@/lib/server/controllers/orders.controller";
 import { requireAdmin, AuthError } from "@/lib/server/dal/auth";
 
+import { CodNotAvailableError } from "@/lib/payment-eligibility";
+
 type RouteParams = { params: Promise<{ id: string }> };
 
 // GET /api/orders/:id
@@ -12,7 +14,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ success: true, data: order });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Internal server error";
-    const status = message.includes("not found") ? 404 : 500;
+    const status = error instanceof CodNotAvailableError ? 400 : message.includes("not found") ? 404 : 500;
     return NextResponse.json({ success: false, error: message }, { status });
   }
 }
@@ -30,7 +32,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ success: false, error: error.message }, { status: error.status });
     }
     const message = error instanceof Error ? error.message : "Internal server error";
-    const status = message.includes("not found") ? 404 : 500;
+    const status = error instanceof CodNotAvailableError ? 400 : message.includes("not found") ? 404 : 500;
     return NextResponse.json({ success: false, error: message }, { status });
   }
 }
@@ -47,7 +49,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ success: false, error: error.message }, { status: error.status });
     }
     const message = error instanceof Error ? error.message : "Internal server error";
-    const status = message.includes("not found") ? 404 : 500;
+    const status = error instanceof CodNotAvailableError ? 400 : message.includes("not found") ? 404 : 500;
     return NextResponse.json({ success: false, error: message }, { status });
   }
 }
@@ -72,7 +74,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ success: false, error: error.message }, { status: error.status });
     }
     const message = error instanceof Error ? error.message : "Internal server error";
-    const status = message.includes("not found") ? 404 : 500;
+    const status = error instanceof CodNotAvailableError ? 400 : message.includes("not found") ? 404 : 500;
     return NextResponse.json({ success: false, error: message }, { status });
   }
 }

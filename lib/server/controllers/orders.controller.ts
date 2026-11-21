@@ -14,7 +14,7 @@ import { revalidatePath } from "next/cache";
 import type { Discount } from "@prisma/client";
 import { validateDealCheckout } from "@/lib/server/deal-checkout";
 import { isCodOrder } from "@/lib/server/orders-filter";
-import { CodNotAvailableError, isExtendedWarrantyCategory } from "@/lib/payment-eligibility";
+import { CodNotAvailableError, isOnlinePaymentOnlyCategory } from "@/lib/payment-eligibility";
 import { sendGa4Refund } from "@/lib/server/ga4-measurement-protocol";
 
 // ─── List ────────────────────────────────────────────────────────────────────
@@ -129,7 +129,7 @@ export async function createOrder(data: ordersDal.CreateOrderInput, options: Cre
       }
 
       // Calculate true live price from database
-      if (isCodOrder(data) && isExtendedWarrantyCategory(product.category)) {
+      if (isCodOrder(data) && isOnlinePaymentOnlyCategory(product.category)) {
         throw new CodNotAvailableError();
       }
 
@@ -257,6 +257,16 @@ export async function createOrder(data: ordersDal.CreateOrderInput, options: Cre
 export async function updateOrder(id: string, data: ordersDal.UpdateOrderInput & { notifyCustomer?: boolean }) {
   const existing = await ordersDal.getOrderById(id);
   if (!existing) throw new Error("Order not found");
+
+  // Check current catalog categories before converting an existing order to COD.
+  if (!isCodOrder(existing) && isCodOrder({ ...existing, ...data })) {
+    for (const item of existing.items) {
+      const product = await productsDal.getProductById(item.productId);
+      if (isOnlinePaymentOnlyCategory(product?.category)) {
+        throw new CodNotAvailableError();
+      }
+    }
+  }
 
   const updated = await ordersDal.updateOrder(id, data);
   let emailDispatched = false;
