@@ -24,10 +24,14 @@ export function normalizePublicQuery(url: URL) {
 
 export function preferredRedirect(url: URL, host: string, protocol: string): URL | null {
   const target = new URL(url);
-  const productionHost = ["xelectron.com", "www.xelectron.com"].includes(host.toLowerCase());
+  const hostname = host.toLowerCase().replace(/:\d+$/, "");
+  const productionHost = ["xelectron.com", "www.xelectron.com"].includes(hostname);
   if (productionHost) {
     target.protocol = "https:";
     target.host = "www.xelectron.com";
+    // Setting URL.host without a port retains the incoming port (e.g. 3000).
+    // The public HTTPS endpoint must never inherit the Node server's port.
+    target.port = "";
   }
   normalizePublicQuery(target);
   const hostChanged = productionHost && (host.toLowerCase() !== "www.xelectron.com" || protocol !== "https");
