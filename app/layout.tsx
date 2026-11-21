@@ -9,6 +9,7 @@ import FestiveOfferPopup from "@/components/common/festive-offer-popup";
 import ChunkErrorHandler from "@/components/common/chunk-error-handler";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.xelectron.com"),
   title: "XElectron",
   description: "Discover premium XElectron products, smart tech, and official support for home entertainment, lifestyle, and everyday innovation.",
   icons: {

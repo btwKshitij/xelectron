@@ -402,7 +402,8 @@ export default function Navbar() {
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
   const [isSearchDrawerOpen, setIsSearchDrawerOpen] = useState(false);
   const [searchProducts, setSearchProducts] = useState<SearchDrawerProduct[]>([]);
-  const [isLoadingSearchProducts, setIsLoadingSearchProducts] = useState(false);
+  const [isLoadingSearchProducts, setIsLoadingSearchProducts] = useState(true);
+  const [searchProductsError, setSearchProductsError] = useState(false);
   const [menuProducts, setMenuProducts] = useState<SearchDrawerProduct[]>([]);
   const [isLoadingMenuProducts, setIsLoadingMenuProducts] = useState(false);
   const [areMenuProductsLoaded, setAreMenuProductsLoaded] = useState(false);
@@ -467,17 +468,22 @@ export default function Navbar() {
 
     async function loadSearchProducts() {
       setIsLoadingSearchProducts(true);
+      setSearchProductsError(false);
 
       try {
         const response = await fetch("/api/products");
         const payload = await response.json();
 
+        if (!response.ok || !payload.success || !Array.isArray(payload.data)) {
+          throw new Error("Unable to load search products");
+        }
         if (isCurrent && response.ok && payload.success && Array.isArray(payload.data)) {
           setSearchProducts(payload.data);
         }
       } catch {
         if (isCurrent) {
           setSearchProducts([]);
+          setSearchProductsError(true);
         }
       } finally {
         if (isCurrent) {
@@ -1603,7 +1609,7 @@ export default function Navbar() {
       </div>
 
       {/* Search Drawer */}
-      <div className={`fixed inset-0 z-[100] ${isSearchDrawerOpen ? "pointer-events-auto" : "pointer-events-none"}`}>
+      <div hidden={!isSearchDrawerOpen} aria-hidden={!isSearchDrawerOpen} data-nosnippet className={`fixed inset-0 z-[100] ${isSearchDrawerOpen ? "pointer-events-auto" : "pointer-events-none"}`}>
         {/* Backdrop */}
         <div
           className={`fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity duration-500 ease-in-out ${isSearchDrawerOpen ? "opacity-100" : "opacity-0"
@@ -1647,8 +1653,10 @@ export default function Navbar() {
 
           {/* Results List */}
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5 touch-pan-y [-webkit-overflow-scrolling:touch]">
-            {isLoadingSearchProducts ? (
+            {isSearchDrawerOpen && (isLoadingSearchProducts ? (
               <p className="py-10 text-center text-sm text-slate-400">Loading products…</p>
+            ) : searchProductsError ? (
+              <p className="py-10 text-center text-sm text-slate-500">Search is temporarily unavailable. Please try again.</p>
             ) : visibleSearchProducts.length === 0 ? (
               <p className="py-10 text-center text-sm text-slate-400">
                 {searchTerm ? "No products found matching your search." : "No products are available yet."}
@@ -1723,7 +1731,7 @@ export default function Navbar() {
                   </div>
                 ) : null}
               </div>
-            )}
+            ))}
           </div>
         </div>
       </div>

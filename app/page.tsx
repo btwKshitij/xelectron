@@ -1,5 +1,7 @@
 import Navbar from "@/components/navbar/navbar";
 import { Suspense } from "react";
+import type { Metadata } from "next";
+import Link from "next/link";
 import HeroShowcase from "@/components/home/hero-showcase";
 import CategorySection from "@/components/home/category-section";
 import ProductShowcaseSection from "@/components/home/product-showcase-section";
@@ -18,7 +20,6 @@ import * as brandShowcaseController from "@/lib/server/controllers/brand-showcas
 import * as brandMarqueeController from "@/lib/server/controllers/brand-marquee.controller";
 import * as bannersController from "@/lib/server/controllers/banners.controller";
 import * as verifiedReviewsController from "@/lib/server/controllers/verified-reviews.controller";
-import { defaultDealOfTheDay } from "@/lib/shared/default-deal-of-the-day";
 import { resolveCategoryImage } from "@/lib/shared/category-utils";
 import { getLatestLaunchIds } from "@/lib/server/dal/latest-launch.dal";
 import { selectLatestLaunchProducts } from "@/lib/latest-launch";
@@ -33,22 +34,43 @@ const BlogSection = dynamic(() => import("@/components/home/blog-section"));
 // Read current offers on every visit, including after an admin changes the deal.
 export const revalidate = 0;
 
+export const metadata: Metadata = {
+  title: "XElectron | Smart Projectors, TVs & Digital Photo Frames",
+  description: "Shop XElectron smart projectors, LED TVs, digital photo frames and portable monitors. Explore home entertainment, current offers and official product support.",
+  alternates: { canonical: "https://www.xelectron.com/" },
+  openGraph: {
+    title: "XElectron | Smart Projectors, TVs & Digital Photo Frames",
+    description: "Explore XElectron home entertainment: smart projectors, LED TVs, digital photo frames and portable monitors.",
+    url: "https://www.xelectron.com/",
+    type: "website",
+    siteName: "XElectron",
+  },
+};
+
 async function HomeHero() {
   const banners = await bannersController.listActiveBanners().catch(() => []);
   return <HeroShowcase initialBanners={banners} />;
 }
 
-export default function Home() {
+export default async function Home() {
+  // Resolve the catalog before rendering so links and products are in the
+  // visible HTML, not a hidden Suspense segment waiting for JavaScript.
+  const sections = await HomeSections();
   return (
     <div className="min-h-screen w-full bg-white text-[#1d1d1f]">
       <Navbar />
       <main className="w-full">
+        <section className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8">
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">XElectron Smart Projectors, TVs &amp; Digital Photo Frames</h1>
+          <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-600 sm:text-base">
+            Discover home entertainment and everyday displays from XElectron. Shop smart projectors, LED TVs, digital photo frames and portable monitors, with current offers and official product support.
+          </p>
+          <Link href="/shop" className="mt-3 inline-block text-sm font-semibold text-[#0a7ae6] hover:underline">Explore all products</Link>
+        </section>
         <Suspense fallback={<div className="w-full aspect-[9/16] sm:aspect-[1672/941] bg-slate-50" aria-hidden="true" />}>
           <HomeHero />
         </Suspense>
-        <Suspense fallback={<div className="min-h-screen" aria-hidden="true" />}>
-          <HomeSections />
-        </Suspense>
+        {sections}
       </main>
       <Footer />
     </div>
@@ -56,12 +78,11 @@ export default function Home() {
 }
 
 async function HomeSections() {
-  // Below-the-fold queries run in parallel without holding up the hero image.
+  // Resolve independent storefront queries together for server-rendered content.
   const [
     bestSellerProductsResult,
     allProductsResult,
     latestLaunchIdsResult,
-    savedDealResult,
     activeDealResult,
     categoriesResult,
     brandShowcaseItemsResult,
@@ -69,9 +90,8 @@ async function HomeSections() {
     verifiedReviewsResult,
   ] = await Promise.all([
     productsController.listBestSellerProducts().catch(() => []),
-    productsController.listProducts().catch(() => []),
-    getLatestLaunchIds().catch(() => []),
-    dealOfTheDayController.getDealOfTheDay().catch(() => null),
+    productsController.listProducts(),
+    getLatestLaunchIds().catch(() => null),
     dealOfTheDayController.getActiveDealOfTheDay().catch(() => null),
     categoriesController.listCategories().catch(() => []),
     brandShowcaseController.listBrandShowcaseItems(true).catch(() => []),
@@ -110,10 +130,12 @@ async function HomeSections() {
         ],
   }));
 
-  const featuredProducts: StorefrontProduct[] = selectLatestLaunchProducts(
+  const latestProducts = selectLatestLaunchProducts(
     allProductsResult || [],
-    latestLaunchIdsResult || []
-  ).map((product: any) => ({
+    latestLaunchIdsResult
+  );
+  const featuredProducts: StorefrontProduct[] = (latestProducts.length > 0
+    ? latestProducts : allProductsResult.slice(0, 4)).map((product: any) => ({
     id: product.id,
     slug: product.slug,
     name: product.name,
@@ -134,26 +156,9 @@ async function HomeSections() {
     quantity: typeof product.quantity === "number" ? product.quantity : null,
   }));
 
-  let dealOfTheDay: React.ComponentProps<typeof DealOfTheDaySection>["deal"] | null = {
-    title: defaultDealOfTheDay.title,
-    description: defaultDealOfTheDay.description,
-    image: defaultDealOfTheDay.image,
-    badge: defaultDealOfTheDay.badge,
-    features: [...defaultDealOfTheDay.features],
-    unitsLeft: defaultDealOfTheDay.unitsLeft,
-    totalUnits: defaultDealOfTheDay.totalUnits,
-    endsAt: null,
-    product: {
-      slug: defaultDealOfTheDay.productSlug,
-      name: defaultDealOfTheDay.title,
-      price: defaultDealOfTheDay.dealPrice,
-      oldPrice: defaultDealOfTheDay.compareAtPrice,
-    },
-  };
+  let dealOfTheDay: React.ComponentProps<typeof DealOfTheDaySection>["deal"] | null = null;
 
-  if (savedDealResult && !activeDealResult) {
-    dealOfTheDay = null;
-  } else if (activeDealResult) {
+  if (activeDealResult) {
     const dealPrice = activeDealResult.dealPrice || activeDealResult.product.price;
     const compareAtPrice =
       activeDealResult.compareAtPrice ||

@@ -1,5 +1,6 @@
-import { Suspense } from "react";
-import { notFound } from "next/navigation";
+import { cache, Suspense } from "react";
+import type { Metadata } from "next";
+import { notFound, permanentRedirect } from "next/navigation";
 import Navbar from "@/components/navbar/navbar";
 import Footer from "@/components/footer/footer";
 import ProductDetail from "@/components/product/product-detail";
@@ -16,15 +17,29 @@ interface DynamicProductPageProps {
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+const getPageProduct = cache((id: string) => productsController.getProduct(id));
+
+export async function generateMetadata({ params }: DynamicProductPageProps): Promise<Metadata> {
+  const { id } = await params;
+  const product = await getPageProduct(id);
+  if (!product) notFound();
+  return {
+    title: `${product.name} | XElectron`,
+    description: `Shop ${product.name} from XElectron. View product specifications, current pricing, delivery details and official warranty information.`,
+    alternates: { canonical: `/product/${product.slug}` },
+  };
+}
+
 export default async function DynamicProductPage({ params }: DynamicProductPageProps) {
   const { id } = await params;
   const [dbProduct, activeDeal, dbReviews] = await Promise.all([
-    productsController.getProduct(id).catch(() => null),
+    getPageProduct(id),
     dealOfTheDayController.getActiveDealOfTheDay().catch(() => null),
     reviewsController.getProductReviews(id).catch(() => []),
   ]);
 
   if (!dbProduct) notFound();
+  if (id !== dbProduct.slug) permanentRedirect(`/product/${dbProduct.slug}`);
 
   const isDealActiveForProduct = activeDeal && dbProduct && (activeDeal.productId === dbProduct.id || activeDeal.product.slug === dbProduct.slug);
   const effectivePrice = isDealActiveForProduct && activeDeal.dealPrice ? activeDeal.dealPrice : dbProduct?.price;

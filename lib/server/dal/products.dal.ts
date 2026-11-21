@@ -451,16 +451,15 @@ export async function getProductBySlug(slug: string) {
   const exact = await getProductByExactSlug(slug);
   if (exact) return exact;
 
-  // Fallback for long or shortened slug variations
+  // Only accept an unambiguous legacy prefix. Short guesses or shared prefixes
+  // must not silently return an unrelated product (for example a remote).
+  if (slug.length < 30) return null;
   const prefix = slug.slice(0, 30);
-  return safeFindFirst({
-    where: {
-      OR: [
-        { slug: { startsWith: prefix } },
-        { name: { contains: prefix, mode: "insensitive" } },
-      ],
-    },
+  const matches = await safeFindMany({
+    where: { slug: { startsWith: prefix } },
+    take: 2,
   });
+  return matches.length === 1 ? matches[0] : null;
 }
 
 export async function getProductsByCategory(categorySlug: string) {
