@@ -6,6 +6,7 @@ import Footer from "@/components/footer/footer";
 import Navbar from "@/components/navbar/navbar";
 
 export const metadata = {
+  alternates: { canonical: "/service-centers" },
   title: "Authorised Service Centers | XElectron",
   description: "Find XElectron service center details, opening hours, directions, and repair support.",
 };

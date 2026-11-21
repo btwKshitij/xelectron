@@ -1,3 +1,5 @@
+export const metadata = { alternates: { canonical: "/troubleshooting" }, };
+
 import { connection } from "next/server";
 import TroubleshootingContentView from "@/components/troubleshooting/troubleshooting-content";
 import { getTroubleshootingContent } from "@/lib/server/dal/troubleshooting.dal";

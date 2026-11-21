@@ -30,6 +30,7 @@ import {
 export const revalidate = 60;
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/about-us" },
   title: "About Us | XElectron Official Company Profile",
   description:
     "Founded in 2011, XElectron is one of India's fastest-growing homegrown consumer electronics brands, bringing world-class projectors, smart TVs, digital frames, and display solutions to Indian homes and businesses.",

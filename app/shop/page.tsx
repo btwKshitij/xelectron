@@ -1,3 +1,5 @@
+export const metadata = { alternates: { canonical: "/shop" }, };
+
 import { Suspense } from "react";
 import Footer from "@/components/footer/footer";
 import Navbar from "@/components/navbar/navbar";

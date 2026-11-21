@@ -1,8 +1,16 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { SESSION_COOKIE_NAME } from "./lib/server/auth/constants";
+import { preferredRedirect } from "./lib/canonical";
 
 export function proxy(request: NextRequest) {
+  if (request.method === "GET" || request.method === "HEAD") {
+    const host = request.headers.get("host") || request.nextUrl.host;
+    const protocol = request.headers.get("x-forwarded-proto")?.split(",")[0].trim()
+      || request.nextUrl.protocol.replace(":", "");
+    const destination = preferredRedirect(new URL(request.url), host, protocol);
+    if (destination) return NextResponse.redirect(destination, 308);
+  }
   // If Velocity sends server-to-server POST webhooks to /checkout/velocity-callback,
   // rewrite directly to the webhook API handler.
   if (
@@ -25,5 +33,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/checkout/velocity-callback"],
+  matcher: ["/((?!api/|_next/|.*\\.(?:png|jpg|jpeg|webp|svg|ico|css|js|woff2?)$).*)"],
 };

@@ -215,14 +215,6 @@ export default function CategorySection({ categories }: { categories?: Storefron
           </div>
         </div>
 
-        <nav aria-label="Product categories" className="mb-6 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-[#0a7ae6]">
-          {displayCategories.map((category) => (
-            <Link key={category.id} href={`/shop?filter=${encodeURIComponent(category.slug)}`} prefetch={false} className="hover:underline">
-              {category.title}
-            </Link>
-          ))}
-        </nav>
-
         <div
           className="relative group/section"
           onMouseEnter={() => setIsPaused(true)}

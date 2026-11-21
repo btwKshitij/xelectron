@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 
 export const metadata = {
+  alternates: { canonical: "/warranty-terms" },
   title: "Warranty Terms & Conditions | XElectron Official Policy",
   description:
     "Comprehensive warranty policy, coverage details, 7-day replacement terms, exclusions, and doorstep service guidelines for all XElectron devices.",

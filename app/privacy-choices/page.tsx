@@ -1,3 +1,5 @@
+export const metadata = { alternates: { canonical: "/privacy-choices" }, };
+
 import PolicyPage from "@/components/legal/policy-page";
 
 export default function PrivacyChoicesPage() {

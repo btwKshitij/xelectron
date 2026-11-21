@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import Navbar from "@/components/navbar/navbar";
 import Footer from "@/components/footer/footer";
 import BlogArticleRenderer, { type BlogPostData } from "@/components/blog/blog-article-renderer";
@@ -27,6 +27,7 @@ export async function generateMetadata({
 
   return {
     title: `${post.title} | XElectron Blog`,
+    alternates: { canonical: `/blog/${post.slug}` },
     description: post.excerpt || `Read ${post.title} on the official XElectron Journal.`,
     openGraph: {
       title: post.title,
@@ -48,6 +49,7 @@ export default async function DynamicBlogPostPage({ params }: DynamicBlogPagePro
   if (!post) {
     notFound();
   }
+  if (slug !== post.slug) permanentRedirect(`/blog/${post.slug}`);
 
   const serializedPost: BlogPostData = {
     id: String(post.id),

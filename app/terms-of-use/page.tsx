@@ -1,3 +1,5 @@
+export const metadata = { alternates: { canonical: "/terms-of-use" }, };
+
 import PolicyPage from "@/components/legal/policy-page";
 
 export default function TermsOfUsePage() {

@@ -8,6 +8,7 @@ import type { BlogPostData } from "@/components/blog/blog-article-renderer";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/blog" },
   title: "Blog & Stories | XElectron Official",
   description:
     "Explore the latest insights, buyer guides, acoustic engineering breakdowns, and technology updates from the team at XElectron.",

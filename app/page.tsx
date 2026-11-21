@@ -1,7 +1,6 @@
 import Navbar from "@/components/navbar/navbar";
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import HeroShowcase from "@/components/home/hero-showcase";
 import CategorySection from "@/components/home/category-section";
 import ProductShowcaseSection from "@/components/home/product-showcase-section";
@@ -60,13 +59,6 @@ export default async function Home() {
     <div className="min-h-screen w-full bg-white text-[#1d1d1f]">
       <Navbar />
       <main className="w-full">
-        <section className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8">
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">XElectron Smart Projectors, TVs &amp; Digital Photo Frames</h1>
-          <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-600 sm:text-base">
-            Discover home entertainment and everyday displays from XElectron. Shop smart projectors, LED TVs, digital photo frames and portable monitors, with current offers and official product support.
-          </p>
-          <Link href="/shop" className="mt-3 inline-block text-sm font-semibold text-[#0a7ae6] hover:underline">Explore all products</Link>
-        </section>
         <Suspense fallback={<div className="w-full aspect-[9/16] sm:aspect-[1672/941] bg-slate-50" aria-hidden="true" />}>
           <HomeHero />
         </Suspense>

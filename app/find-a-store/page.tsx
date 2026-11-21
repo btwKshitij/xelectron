@@ -1,3 +1,5 @@
+export const metadata = { alternates: { canonical: "/find-a-store" }, };
+
 import Navbar from "@/components/navbar/navbar";
 import Footer from "@/components/footer/footer";
 import Image from "next/image";

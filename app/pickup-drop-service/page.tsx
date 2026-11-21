@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 
 export const metadata = {
+  alternates: { canonical: "/pickup-drop-service" },
   title: "Free Pickup & Drop Service | XElectron Warranty Support",
   description:
     "Enjoy hassle-free doorstep warranty service for all XElectron products. Learn the 6-step warranty service process, packaging guidelines, and doorstep pickup coverage.",

@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  trailingSlash: false,
   images: {
     deviceSizes: [640, 750, 828, 1080, 1200, 1440, 1600, 1920, 2048, 3840],
     qualities: [60, 75, 90],
@@ -42,6 +43,13 @@ const nextConfig: NextConfig = {
       "xelectron-iprojector-3-plus-official-google-tv-dust-proof-brightest-2500-ansi-native-1080p-smart-projector-4k-ultra-hd-for-home-auto-focus-keystone-hdmi-arc-wifi-6-bt-screen-mirroring": "xelectron-iprojector-3-plus-official-google-tv-dust-proof-brightest-25000-lumens",
     };
     return [
+      ...Object.entries({
+        "/contact-us": "/contact",
+        "/bulk-orders": "/bulk-order",
+        "/support": "/pickup-drop-service",
+        "/warranty": "/warranty-registration",
+        "/product": "/shop",
+      }).map(([source, destination]) => ({ source, destination, permanent: true })),
       ...Object.entries(productAliases).map(([oldSlug, currentSlug]) => ({
         source: `/product/${oldSlug}`,
         destination: `/product/${currentSlug}`,
