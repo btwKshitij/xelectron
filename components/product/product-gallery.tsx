@@ -25,7 +25,7 @@ function Image(props: ImageProps) {
   }
   const [failedSource, setFailedSource] = useState<ImageProps["src"] | null>(null);
   const useOriginal = props.unoptimized || failedSource === src;
-  return <NextImage {...props} src={src} quality={90} unoptimized={useOriginal}
+  return <NextImage {...props} src={src} quality={props.quality ?? 75} unoptimized={useOriginal}
     onError={(event) => {
       // A failed optimizer request gets one attempt with the original image.
       if (!useOriginal) setFailedSource(src);
@@ -569,7 +569,7 @@ export function ProductGallery({ images, name }: { images: string[]; name: strin
                             fill
                             priority={idx === 0}
                             className="object-contain rounded-2xl"
-                            sizes="100vw"
+                            sizes="(min-width: 1024px) 55vw, 100vw"
                           />
                         </button>
                       </div>

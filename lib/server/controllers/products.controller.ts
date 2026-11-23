@@ -67,6 +67,11 @@ export async function listProducts(searchQuery?: string, categorySlug?: string) 
   return products.map(applyEffectivePrice);
 }
 
+export async function listHomeProducts() {
+  const products = await productsDal.getHomeProducts();
+  return products.map(applyEffectivePrice);
+}
+
 export async function listCatalogProducts(searchQuery?: string, categorySlug?: string) {
   if (searchQuery) {
     return productsDal.searchProducts(searchQuery);

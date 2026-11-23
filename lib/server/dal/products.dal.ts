@@ -25,6 +25,21 @@ const baseProductInclude = {
   dealOfTheDay: true,
 };
 
+// Homepage cards do not need editor relations, banners, FAQs or video records.
+export async function getHomeProducts() {
+  return db.product.findMany({
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true, slug: true, name: true, description: true,
+      mainImage: true, price: true, oldPrice: true, discount: true,
+      rating: true, reviewsCount: true, quantity: true, showInBestSellers: true,
+      media: { orderBy: { sortOrder: "asc" }, select: { url: true } },
+      category: { select: { title: true } },
+      dealOfTheDay: true,
+    },
+  });
+}
+
 export async function syncProductVariants(
   productId: string,
   variants?: { name: string; sku?: string; price?: string; stock?: number; colorHex?: string; image?: string; sortOrder?: number }[]

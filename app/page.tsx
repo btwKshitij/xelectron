@@ -51,10 +51,7 @@ async function HomeHero() {
   return <HeroShowcase initialBanners={banners} />;
 }
 
-export default async function Home() {
-  // Resolve the catalog before rendering so links and products are in the
-  // visible HTML, not a hidden Suspense segment waiting for JavaScript.
-  const sections = await HomeSections();
+export default function Home() {
   return (
     <div className="min-h-screen w-full bg-white text-[#1d1d1f]">
       <Navbar />
@@ -62,9 +59,11 @@ export default async function Home() {
         <Suspense fallback={<div className="w-full aspect-[9/16] sm:aspect-[1672/941] bg-slate-50" aria-hidden="true" />}>
           <HomeHero />
         </Suspense>
-        {sections}
+        <Suspense fallback={<div className="min-h-screen bg-white" aria-label="Loading products" role="status" />}>
+          <HomeSections />
+          <Footer />
+        </Suspense>
       </main>
-      <Footer />
     </div>
   );
 }
@@ -82,7 +81,7 @@ async function HomeSections() {
     verifiedReviewsResult,
   ] = await Promise.all([
     productsController.listBestSellerProducts().catch(() => []),
-    productsController.listProducts(),
+    productsController.listHomeProducts(),
     getLatestLaunchIds().catch(() => null),
     dealOfTheDayController.getActiveDealOfTheDay().catch(() => null),
     categoriesController.listCategories().catch(() => []),
