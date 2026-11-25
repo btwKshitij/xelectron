@@ -1,4 +1,8 @@
-export const metadata = { alternates: { canonical: "/terms-policy" }, };
+export const metadata = {
+  title: "Terms & Policies | XElectron",
+  description: "Review XElectron terms and policies for purchases and customer services.",
+  alternates: { canonical: "/terms-policy" },
+};
 
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, FileText, RotateCcw, ShieldCheck, Wrench } from "lucide-react";

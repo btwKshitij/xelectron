@@ -1,4 +1,8 @@
-export const metadata = { alternates: { canonical: "/find-a-store" }, };
+export const metadata = {
+  title: "Projector Showroom Noida & Service Center Ghaziabad | XElectron",
+  description: "Find XElectron locations in Sector 75 and Sector 62 Noida and Vaishali, Ghaziabad. View addresses, opening hours, phone numbers and directions.",
+  alternates: { canonical: "/find-a-store" },
+};
 
 import Navbar from "@/components/navbar/navbar";
 import Footer from "@/components/footer/footer";
@@ -78,7 +82,7 @@ const STORES: StoreItem[] = [
     phones: ["0120-4213337", "+91 96508 36754"],
     timing: "10:00 AM – 06:00 PM",
     openDays: "Monday to Saturday",
-    mapUrl: "https://www.google.com/maps/search/?api=1&query=Sector+5+Vaishali+Ghaziabad+Ram+Prashtha+Green",
+    mapUrl: "https://www.google.com/maps/search/?api=1&query=Sector+5+Vaishali+Ghaziabad+Ramprastha+Greens",
     tags: ["Same-Day Diagnostics", "Official Warranty Claims", "Genuine Replacement Spares", "Firmware & Optical Care"],
     image: "/stores/service-center.jpg",
     imageAlt: "XElectron Authorized Technical Repair Center and Workshop",

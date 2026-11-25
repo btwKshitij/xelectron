@@ -1,4 +1,8 @@
-export const metadata = { alternates: { canonical: "/terms-of-use" }, };
+export const metadata = {
+  title: "Website Terms of Use | XElectron",
+  description: "Read the terms governing your use of the XElectron website and its services.",
+  alternates: { canonical: "/terms-of-use" },
+};
 
 import PolicyPage from "@/components/legal/policy-page";
 

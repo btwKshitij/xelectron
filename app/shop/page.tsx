@@ -1,4 +1,8 @@
-export const metadata = { alternates: { canonical: "/shop" }, };
+export const metadata = {
+  title: "Shop Projectors, Photo Frames & Monitors | XElectron",
+  description: "Explore XElectron projectors, digital photo frames, portable monitors and smart TVs. Compare products, prices and specifications.",
+  alternates: { canonical: "/shop" },
+};
 
 import { Suspense } from "react";
 import Footer from "@/components/footer/footer";

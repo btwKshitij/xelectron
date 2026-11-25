@@ -1,4 +1,8 @@
-export const metadata = { alternates: { canonical: "/privacy-policy" }, };
+export const metadata = {
+  title: "Privacy Policy | XElectron",
+  description: "Read how XElectron collects, uses and protects personal information when you browse, shop or contact our support team.",
+  alternates: { canonical: "/privacy-policy" },
+};
 
 import PolicyPage from "@/components/legal/policy-page";
 

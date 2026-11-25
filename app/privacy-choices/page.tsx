@@ -1,4 +1,8 @@
-export const metadata = { alternates: { canonical: "/privacy-choices" }, };
+export const metadata = {
+  title: "Your Privacy Choices | XElectron",
+  description: "Review your privacy choices and learn how to manage your personal information with XElectron.",
+  alternates: { canonical: "/privacy-choices" },
+};
 
 import PolicyPage from "@/components/legal/policy-page";
 
