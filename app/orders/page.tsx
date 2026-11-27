@@ -246,6 +246,7 @@ function OrdersContent() {
           <div className="space-y-6">
             {orders.map((order) => {
               const formattedDate = new Date(order.createdAt).toLocaleDateString("en-IN", {
+                timeZone: "Asia/Kolkata",
                 day: "numeric",
                 month: "short",
                 year: "numeric",

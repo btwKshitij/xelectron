@@ -30,12 +30,14 @@ const currencyFormatter = new Intl.NumberFormat("en-IN", {
 });
 
 const dateFormatter = new Intl.DateTimeFormat("en-IN", {
+  timeZone: "Asia/Kolkata",
   day: "numeric",
   month: "short",
   year: "numeric",
 });
 
 const timeFormatter = new Intl.DateTimeFormat("en-IN", {
+  timeZone: "Asia/Kolkata",
   hour: "numeric",
   minute: "2-digit",
 });

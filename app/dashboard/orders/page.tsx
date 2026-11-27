@@ -32,6 +32,7 @@ function extractPaymentMethod(address: string | null): string {
 }
 
 const dateFormatter = new Intl.DateTimeFormat("en-IN", {
+  timeZone: "Asia/Kolkata",
   day: "numeric",
   month: "short",
   year: "numeric",

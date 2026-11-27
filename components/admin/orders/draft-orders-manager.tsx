@@ -122,6 +122,7 @@ export function DraftOrdersManager() {
                     </td>
                     <td className="border-b border-black/10 px-4 py-3 text-black/65 text-xs">
                       {new Intl.DateTimeFormat("en-IN", {
+                        timeZone: "Asia/Kolkata",
                         day: "numeric",
                         month: "short",
                         year: "numeric",

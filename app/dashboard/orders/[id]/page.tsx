@@ -446,6 +446,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   }
 
   const formattedDate = new Date(order.createdAt).toLocaleDateString("en-US", {
+    timeZone: "Asia/Kolkata",
     month: "long",
     day: "numeric",
     year: "numeric",
